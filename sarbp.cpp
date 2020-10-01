@@ -143,6 +143,8 @@ int main(int argc, char **argv) {
         cerr << "Bad shape!" << endl;
         return 1;
     }
+    complex<float> *phs = static_cast<complex<float> *>(malloc(npulses * nsamples * sizeof(complex<float>)));
+    memcpy(phs, npydata.data<complex<float>>(), npulses * nsamples * sizeof(complex<float>));
 
     // Load primitives
     // du: <class 'numpy.float64'>
@@ -256,7 +258,7 @@ int main(int argc, char **argv) {
     complex<float> *indata = (complex<float> *)inbuf.begin();
     for (int x = 0; x < npulses; x++) {
         for (int y = 0; y < nsamples; y++) {
-            indata[x * nsamples + y] = npydata.data<complex<float>>()[x * nsamples + y];
+            indata[x * nsamples + y] = phs[x * nsamples + y];
         }
     }
     Buffer<float, 1> in_k_r(k_r, nsamples);
