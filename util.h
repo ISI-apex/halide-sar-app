@@ -17,4 +17,9 @@ inline Func linspace_func(Expr start, Expr stop, RDom r) {
     return linspace;
 }
 
+inline Expr log2f_expr(Expr x) {
+    Expr log2 = log(x) / log(Expr(2.0f));
+    return log2;
+}
+
 #endif
