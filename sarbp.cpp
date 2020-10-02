@@ -249,9 +249,8 @@ int main(int argc, char **argv) {
     memcpy(pixel_locs, npydata.data<double>(), 3 * 512*512 * sizeof(double));
 
     // Copy input data
-    vector<int> sizes{2, nsamples, npulses};
-    Buffer<float, 3> outbuf(sizes);
-    Buffer<float, 3> inbuf(sizes);
+    Buffer<float, 3> outbuf(2, 1024, npulses); // TODO: This is changing as we develop
+    Buffer<float, 3> inbuf(2, nsamples, npulses);
     cout << "Width: " << inbuf.width() << endl;
     cout << "Height: " << inbuf.height() << endl;
     cout << "Channels: " << inbuf.channels() << endl;
@@ -268,7 +267,8 @@ int main(int argc, char **argv) {
     printf("Halide kernel returned %d\n", rv);
 
     // write output
-    vector<size_t> shape_out {static_cast<size_t>(npulses), static_cast<size_t>(nsamples)};
+    vector<size_t> shape_out { static_cast<size_t>(outbuf.dim(2).extent()),
+                               static_cast<size_t>(outbuf.dim(1).extent()) };
     cnpy::npy_save("sarbp_test.npy", (complex<float> *)outbuf.begin(), shape_out);
 
     return rv;

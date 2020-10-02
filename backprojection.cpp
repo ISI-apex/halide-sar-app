@@ -8,6 +8,7 @@
 using namespace Halide;
 
 #define TAYLOR_S_L 17
+#define UPSAMPLE 2
 
 class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator> {
 public:
@@ -40,13 +41,36 @@ public:
         ComplexFunc phs_filt(c, "phs_filt");
         phs_filt(x, y) = input(x, y) * filt(x) * win(x, y);
 
-        output_buffer(c, x, y) = phs_filt.inner(c, x, y);
+        // Zero pad phase history
+        Expr N_fft("N_fft");
+        N_fft = ConciseCasts::i32(pow(2, ConciseCasts::i32(log2f_expr(nsamples * UPSAMPLE)) + 1));
+        Expr x_pad("x_pad");
+        x_pad = N_fft - nsamples;
+        Expr y_pad("y_pad");
+        y_pad = 0;
+        Expr x_off("x_off");
+        x_off = select(x_pad % 2 > 0, 1, 0);
+        Expr y_off("y_off");
+        y_off = select(y_pad % 2 > 0, 1, 0);
+        y_pad = y_pad / 2;
+        x_pad = x_pad / 2;
+        RDom r(0, N_fft, 0, npulses, "r");
+        ComplexFunc phs_pad(c, "phs_pad");
+        phs_pad(x, y) = ComplexExpr(c, 0.0f, 0.0f);
+        // The clamp in phs_filt works around a weird compile bug - maybe it can't reason through N_fft's computation
+        phs_pad(r.x, r.y) = select(c,
+                                   r.x < x_pad || r.x >= nsamples + x_pad + x_off || r.y < y_pad || r.y >= npulses + y_pad + y_off,
+                                   ComplexExpr(c, 0.0f, 0.0f),
+                                   phs_filt(clamp(r.x - x_pad - x_off, 0, nsamples - 1), r.y - y_pad - y_off));
+
+        output_buffer(c, x, y) = phs_pad.inner(c, x, y);
 
         phs_func.compute_root();
         win_x.compute_root();
         win_y.compute_root();
         win.compute_root();
         filt.compute_root();
+        phs_pad.inner.compute_root();
     }
 };
 
