@@ -196,6 +196,20 @@ ComplexExpr &ComplexExpr::operator=(ComplexExpr rvalue) {
     return *this;
 }
 
+inline ComplexExpr select(const Halide::Var &element, Halide::Expr c, ComplexExpr t, ComplexExpr f) {
+    return ComplexExpr(element,
+                       Halide::select(c, t.real, f.real),
+                       Halide::select(c, t.imag, f.imag));
+}
+
+inline ComplexExpr select(const Halide::Var &element,
+                          Halide::Expr c1, ComplexExpr t1,
+                          Halide::Expr c2, ComplexExpr t2,
+                          ComplexExpr f) {
+    return ComplexExpr(element,
+                       Halide::select(c1, t1.real, c2, t2.real, f.real),
+                       Halide::select(c1, t1.imag, c2, t2.imag, f.imag));
+}
 
 // ComplexFunc methods
 
