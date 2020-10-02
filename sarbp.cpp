@@ -264,7 +264,7 @@ int main(int argc, char **argv) {
     Buffer<float, 1> in_k_r(k_r, nsamples);
 
     // backprojection
-    int rv = backprojection(inbuf, nsamples, npulses, in_k_r, outbuf);
+    int rv = backprojection(inbuf, in_k_r, outbuf);
     printf("Halide kernel returned %d\n", rv);
 
     // write output

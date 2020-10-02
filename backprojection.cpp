@@ -12,8 +12,6 @@ using namespace Halide;
 class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator> {
 public:
     Input<Buffer<float>> phs {"phs", 3}; // complex 2d input  (Halide thinks this is 3d: [2, x, y])
-    Input<int> nsamples {"nsamples"};
-    Input<int> npulses {"npulses"};
     Input<Buffer<float>> k_r {"k_r", 1};
 
     Output<Buffer<float>> output_buffer{"output_packed", 3}; // complex 2d output (Halide thinks this is 3d: [2, x, y])
@@ -22,6 +20,10 @@ public:
     Var c{"c"}, x{"x"}, y{"y"};
 
     void generate() {
+        Expr nsamples("nsamples");
+        nsamples = phs.dim(1).extent();
+        Expr npulses("npulses");
+        npulses = phs.dim(2).extent();
         // Func input_bounded = BoundaryConditions::constant_exterior(phs, Expr(0.0f));
         Func phs_func = phs;
         ComplexFunc input(c, phs_func, "input");
