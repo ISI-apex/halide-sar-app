@@ -15,7 +15,6 @@ public:
     Input<Buffer<float>> k_r {"k_r", 1};
 
     Output<Buffer<float>> output_buffer{"output_packed", 3}; // complex 2d output (Halide thinks this is 3d: [2, x, y])
-    // Output<Buffer<float>> output_buffer{"output_packed", 2};
 
     Var c{"c"}, x{"x"}, y{"y"};
 
@@ -24,7 +23,6 @@ public:
         nsamples = phs.dim(1).extent();
         Expr npulses("npulses");
         npulses = phs.dim(2).extent();
-        // Func input_bounded = BoundaryConditions::constant_exterior(phs, Expr(0.0f));
         Func phs_func = phs;
         ComplexFunc input(c, phs_func, "input");
 
@@ -44,9 +42,11 @@ public:
 
         output_buffer(c, x, y) = phs_filt.inner(c, x, y);
 
-        // ComplexFunc output(c, "output");
-        // output(x, y) = input(x, y) * ComplexExpr(c, Expr(0.0f), Expr(1.0f));
-        // output_buffer(c, x, y) = output.inner(c, x, y);
+        phs_func.compute_root();
+        win_x.compute_root();
+        win_y.compute_root();
+        win.compute_root();
+        filt.compute_root();
     }
 };
 
