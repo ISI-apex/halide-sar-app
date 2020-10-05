@@ -4,6 +4,7 @@
 
 #include "complexfunc.h"
 #include "signal.h"
+#include "signal_complex.h"
 
 using namespace Halide;
 
@@ -43,20 +44,9 @@ public:
 
         // Zero pad phase history
         Expr N_fft("N_fft");
-        N_fft = ConciseCasts::i32(pow(2, ConciseCasts::i32(log2f_expr(nsamples * UPSAMPLE)) + 1));
-        // if odd values, an extra padded column/row exists at the right/bottom
-        Expr x_pad("x_pad");
-        x_pad = (N_fft - nsamples) / 2;
-        Expr y_pad("y_pad");
-        y_pad = 0;
-        RDom r(0, N_fft, 0, npulses, "r");
+        N_fft = ConciseCasts::i32(pow(2, ConciseCasts::i32(log2f_expr(nsamples  * UPSAMPLE)) + 1));
         ComplexFunc phs_pad(c, "phs_pad");
-        phs_pad(x, y) = ComplexExpr(c, 0.0f, 0.0f);
-        // The clamp in phs_filt works around a weird compile bug - maybe it can't reason through N_fft's computation
-        phs_pad(r.x, r.y) = select(c,
-                                   r.x < x_pad || r.x >= nsamples + x_pad || r.y < y_pad || r.y >= npulses + y_pad,
-                                   ComplexExpr(c, 0.0f, 0.0f),
-                                   phs_filt(clamp(r.x - x_pad, 0, nsamples - 1), r.y - y_pad));
+        phs_pad = pad_func(phs_filt, nsamples, npulses, N_fft, npulses);
 
         output_buffer(c, x, y) = phs_pad.inner(c, x, y);
 
