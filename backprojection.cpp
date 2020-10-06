@@ -63,4 +63,32 @@ public:
     }
 };
 
+class BackprojectionPostFFTGenerator : public Halide::Generator<BackprojectionPostFFTGenerator> {
+public:
+    Input<Buffer<float>> in {"in", 3};
+
+    Output<Buffer<float>> output_buffer{"output_packed", 3};
+
+    Var c{"c"}, x{"x"}, y{"y"};
+
+    void generate() {
+        Expr N_fft("N_fft");
+        N_fft = in.dim(1).extent();
+        Expr npulses("npulses");
+        npulses = in.dim(2).extent();
+        Func in_func = in;
+        ComplexFunc input(c, in_func, "input");
+
+        // shift
+        ComplexFunc fftshift(c, "fftshift");
+        fftshift = fftshift_func(input, N_fft, npulses);
+
+        output_buffer(c, x, y) = fftshift.inner(c, x, y);
+
+        in_func.compute_root();
+        fftshift.inner.compute_root();
+    }
+};
+
 HALIDE_REGISTER_GENERATOR(BackprojectionPreFFTGenerator, backprojection_pre_fft)
+HALIDE_REGISTER_GENERATOR(BackprojectionPostFFTGenerator, backprojection_post_fft)

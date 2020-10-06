@@ -6,6 +6,7 @@
 #include <fftw3.h>
 
 #include "backprojection_pre_fft.h"
+#include "backprojection_post_fft.h"
 
 using namespace std;
 using Halide::Runtime::Buffer;
@@ -267,18 +268,25 @@ int main(int argc, char **argv) {
     }
     Buffer<float, 1> in_k_r(k_r, nsamples);
 
-    // backprojection
-    Buffer<float, 3> outbuf(2, N_fft, npulses); // TODO: This is changing as we develop
+    // backprojection - pre-FFT
     int rv = backprojection_pre_fft(inbuf, in_k_r, N_fft, fftshift_buf);
-    printf("Halide kernel returned %d\n", rv);
+    printf("Halide pre-fft returned %d\n", rv);
+    if (rv != 0) {
+        return rv;
+    }
     // FFT
+    Buffer<float, 3> fft_outbuf(2, N_fft, npulses);
     fftwf_complex *fft_in = reinterpret_cast<fftwf_complex *>(fftshift_buf.begin());
-    fftwf_complex *fft_out = reinterpret_cast<fftwf_complex *>(outbuf.begin());
+    fftwf_complex *fft_out = reinterpret_cast<fftwf_complex *>(fft_outbuf.begin());
     fftwf_plan plan = fftwf_plan_dft_1d(N_fft, fft_in, fft_out, FFTW_FORWARD, FFTW_ESTIMATE);
     for (int i = 0; i < npulses; i++) {
         fftwf_execute_dft(plan, &fft_in[i * N_fft], &fft_out[i * N_fft]);
     }
     fftwf_destroy_plan(plan);
+    // backprojection - post-FFT
+    Buffer<float, 3> outbuf(2, N_fft, npulses); // TODO: This is changing as we develop
+    rv = backprojection_post_fft(fft_outbuf, outbuf);
+    printf("Halide post-fft returned %d\n", rv);
 
     // write output
     vector<size_t> shape_out { static_cast<size_t>(outbuf.dim(2).extent()),
