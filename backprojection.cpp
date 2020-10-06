@@ -44,7 +44,7 @@ public:
 
         // Zero pad phase history
         ComplexFunc phs_pad(c, "phs_pad");
-        phs_pad = pad_func(input, nsamples, npulses, N_fft, npulses);
+        phs_pad = pad_func(phs_filt, nsamples, npulses, N_fft, npulses);
 
         // shift
         ComplexFunc fftshift(c, "fftshift");
