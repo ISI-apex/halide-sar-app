@@ -26,4 +26,15 @@ inline ComplexFunc pad_func(ComplexFunc in, Expr in_x_len, Expr in_y_len, Expr o
     return pad;
 }
 
+// swap left and right halves, top and bottom halves (swapping quadrants)
+inline ComplexFunc fftshift_func(ComplexFunc in, Expr x_extent, Expr y_extent) {
+    Var x{"x"}, y{"y"}, c{"c"};
+    ComplexFunc fftshift(c, "fftshift");
+    // use the ceiling for midpoint computation
+    Expr x_mid = (x_extent / 2) + (x_extent % 2);
+    Expr y_mid = (y_extent / 2) + (y_extent % 2);
+    fftshift(x, y) = in((x + x_mid) % x_extent, (y + y_mid) % y_extent);
+    return fftshift;
+}
+
 #endif
