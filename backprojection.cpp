@@ -9,12 +9,12 @@
 using namespace Halide;
 
 #define TAYLOR_S_L 17
-#define UPSAMPLE 2
 
 class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator> {
 public:
     Input<Buffer<float>> phs {"phs", 3}; // complex 2d input  (Halide thinks this is 3d: [2, x, y])
     Input<Buffer<float>> k_r {"k_r", 1};
+    Input<int> N_fft {"N_fft"};
 
     Output<Buffer<float>> output_buffer{"output_packed", 3}; // complex 2d output (Halide thinks this is 3d: [2, x, y])
 
@@ -43,19 +43,23 @@ public:
         phs_filt(x, y) = input(x, y) * filt(x) * win(x, y);
 
         // Zero pad phase history
-        Expr N_fft("N_fft");
-        N_fft = ConciseCasts::i32(pow(2, ConciseCasts::i32(log2f_expr(nsamples  * UPSAMPLE)) + 1));
         ComplexFunc phs_pad(c, "phs_pad");
-        phs_pad = pad_func(phs_filt, nsamples, npulses, N_fft, npulses);
+        phs_pad = pad_func(input, nsamples, npulses, N_fft, npulses);
 
-        output_buffer(c, x, y) = phs_pad.inner(c, x, y);
+        // shift
+        ComplexFunc fftshift(c, "fftshift");
+        fftshift = fftshift_func(phs_pad, N_fft, npulses);
+
+        output_buffer(c, x, y) = fftshift.inner(c, x, y);
 
         phs_func.compute_root();
         win_x.compute_root();
         win_y.compute_root();
         win.compute_root();
         filt.compute_root();
+        phs_filt.inner.compute_root();
         phs_pad.inner.compute_root();
+        fftshift.inner.compute_root();
     }
 };
 

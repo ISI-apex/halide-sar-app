@@ -11,6 +11,8 @@ using Halide::Runtime::Buffer;
 
 // TODO: Are all these memcpy necessary?
 
+#define UPSAMPLE 2
+
 int main(int argc, char **argv) {
     if (argc < 3) {
         cerr << "Usage: " << argv[0] << " platform_dir img_plane_dir" << endl;
@@ -248,8 +250,10 @@ int main(int argc, char **argv) {
     double* pixel_locs = static_cast<double *>(malloc(3 * 512*512 * sizeof(double)));
     memcpy(pixel_locs, npydata.data<double>(), 3 * 512*512 * sizeof(double));
 
+    int N_fft = static_cast<int>(pow(2, static_cast<int>(log2(nsamples * UPSAMPLE)) + 1));
+
     // Copy input data
-    Buffer<float, 3> outbuf(2, 1024, npulses); // TODO: This is changing as we develop
+    Buffer<float, 3> outbuf(2, N_fft, npulses); // TODO: This is changing as we develop
     Buffer<float, 3> inbuf(2, nsamples, npulses);
     cout << "Width: " << inbuf.width() << endl;
     cout << "Height: " << inbuf.height() << endl;
@@ -263,7 +267,7 @@ int main(int argc, char **argv) {
     Buffer<float, 1> in_k_r(k_r, nsamples);
 
     // backprojection
-    int rv = backprojection(inbuf, in_k_r, outbuf);
+    int rv = backprojection(inbuf, in_k_r, N_fft, outbuf);
     printf("Halide kernel returned %d\n", rv);
 
     // write output
