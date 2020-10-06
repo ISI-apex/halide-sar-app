@@ -19,6 +19,14 @@ find_path(CNPY_INCLUDE_DIR cnpy.h
           REQUIRED)
 include_directories(${CNPY_INCLUDE_DIR})
 
+# Find pkg-config
+find_package(PkgConfig REQUIRED)
+
+# Find FFTW3 single precision
+pkg_check_modules(FFTWF fftw3f REQUIRED)
+link_directories(${FFTWF_LIBRARY_DIRS})
+include_directories(${FFTWF_INCLUDE_DIR})
+
 
 # Generators and Filters (libraries)
 
