@@ -99,6 +99,7 @@ int main(int argc, char **argv) {
     }
     float *k_r = static_cast<float *>(malloc(nsamples * sizeof(float)));
     memcpy(k_r, npydata.data<float>(), nsamples * sizeof(float));
+    Buffer<float, 1> in_k_r(k_r, nsamples);
 
     npydata = cnpy::npy_load(platform_dir + "/k_y.npy");
     if (npydata.shape.size() != 1 || npydata.shape[0] != npulses) {
@@ -141,6 +142,7 @@ int main(int argc, char **argv) {
     }
     float *pos = static_cast<float *>(malloc(npulses * 3 * sizeof(float)));
     memcpy(pos, npydata.data<float>(), npulses * 3 * sizeof(float));
+    Buffer<float, 1> in_pos(pos, 3, npulses);
 
     npydata = cnpy::npy_load(platform_dir + "/phs.npy");
     if (npydata.shape.size() != 2 || npydata.shape[0] != npulses || npydata.shape[1] != nsamples) {
@@ -214,6 +216,7 @@ int main(int argc, char **argv) {
     }
     double* u = static_cast<double *>(malloc(512 * sizeof(double)));
     memcpy(u, npydata.data<double>(), 512 * sizeof(double));
+    Buffer<double, 1> in_u(u, 512);
 
     npydata = cnpy::npy_load(img_plane_dir + "/u_hat.npy");
     if (npydata.shape.size() != 1 || npydata.shape[0] != 3) {
@@ -230,6 +233,7 @@ int main(int argc, char **argv) {
     }
     double* v = static_cast<double *>(malloc(512 * sizeof(double)));
     memcpy(v, npydata.data<double>(), 512 * sizeof(double));
+    Buffer<double, 1> in_v(v, 512);
 
     npydata = cnpy::npy_load(img_plane_dir + "/v_hat.npy");
     if (npydata.shape.size() != 1 || npydata.shape[0] != 3) {
@@ -266,7 +270,6 @@ int main(int argc, char **argv) {
             indata[x * nsamples + y] = phs[x * nsamples + y];
         }
     }
-    Buffer<float, 1> in_k_r(k_r, nsamples);
 
     // backprojection - pre-FFT
     int rv = backprojection_pre_fft(inbuf, in_k_r, N_fft, fftshift_buf);
@@ -285,7 +288,7 @@ int main(int argc, char **argv) {
     fftwf_destroy_plan(plan);
     // backprojection - post-FFT
     Buffer<float, 3> outbuf(2, N_fft, npulses); // TODO: This is changing as we develop
-    rv = backprojection_post_fft(fft_outbuf, nsamples, delta_r, outbuf);
+    rv = backprojection_post_fft(fft_outbuf, nsamples, delta_r, in_u, in_v, in_pos, outbuf);
     printf("Halide post-fft returned %d\n", rv);
 
     // write output

@@ -68,6 +68,9 @@ public:
     Input<Buffer<float>> in {"in", 3};
     Input<int> nsamples {"nsamples"};
     Input<double> delta_r {"delta_r"};
+    Input<Buffer<double>> u {"u", 1};
+    Input<Buffer<double>> v {"v", 1};
+    Input<Buffer<float>> pos {"pos", 2};
 
     Output<Buffer<float>> output_buffer{"output_packed", 3};
 
