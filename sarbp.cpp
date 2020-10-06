@@ -3,6 +3,7 @@
 
 #include <Halide.h>
 #include <cnpy.h>
+#include <fftw3.h>
 
 #include "backprojection.h"
 
@@ -253,7 +254,7 @@ int main(int argc, char **argv) {
     int N_fft = static_cast<int>(pow(2, static_cast<int>(log2(nsamples * UPSAMPLE)) + 1));
 
     // Copy input data
-    Buffer<float, 3> outbuf(2, N_fft, npulses); // TODO: This is changing as we develop
+    Buffer<float, 3> fftshift_buf(2, N_fft, npulses);
     Buffer<float, 3> inbuf(2, nsamples, npulses);
     cout << "Width: " << inbuf.width() << endl;
     cout << "Height: " << inbuf.height() << endl;
@@ -267,8 +268,17 @@ int main(int argc, char **argv) {
     Buffer<float, 1> in_k_r(k_r, nsamples);
 
     // backprojection
-    int rv = backprojection(inbuf, in_k_r, N_fft, outbuf);
+    Buffer<float, 3> outbuf(2, N_fft, npulses); // TODO: This is changing as we develop
+    int rv = backprojection(inbuf, in_k_r, N_fft, fftshift_buf);
     printf("Halide kernel returned %d\n", rv);
+    // FFT
+    fftwf_complex *fft_in = reinterpret_cast<fftwf_complex *>(fftshift_buf.begin());
+    fftwf_complex *fft_out = reinterpret_cast<fftwf_complex *>(outbuf.begin());
+    fftwf_plan plan = fftwf_plan_dft_1d(N_fft, fft_in, fft_out, FFTW_FORWARD, FFTW_ESTIMATE);
+    for (int i = 0; i < npulses; i++) {
+        fftwf_execute_dft(plan, &fft_in[i * N_fft], &fft_out[i * N_fft]);
+    }
+    fftwf_destroy_plan(plan);
 
     // write output
     vector<size_t> shape_out { static_cast<size_t>(outbuf.dim(2).extent()),

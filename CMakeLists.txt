@@ -57,4 +57,5 @@ add_executable(sarbp_test sarbp.cpp)
 target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
 target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          ${CNPY}
+                                         ${FFTWF_STATIC_LIBRARIES}
                                          backprojection)
