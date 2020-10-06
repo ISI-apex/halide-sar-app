@@ -66,6 +66,8 @@ public:
 class BackprojectionPostFFTGenerator : public Halide::Generator<BackprojectionPostFFTGenerator> {
 public:
     Input<Buffer<float>> in {"in", 3};
+    Input<int> nsamples {"nsamples"};
+    Input<double> delta_r {"delta_r"};
 
     Output<Buffer<float>> output_buffer{"output_packed", 3};
 
@@ -82,6 +84,10 @@ public:
         // shift
         ComplexFunc fftshift(c, "fftshift");
         fftshift = fftshift_func(input, N_fft, npulses);
+
+        RDom r(0, N_fft, "r");
+        Func dr("dr");
+        dr = linspace_func(-nsamples * delta_r / 2, nsamples * delta_r / 2, r);
 
         output_buffer(c, x, y) = fftshift.inner(c, x, y);
 
