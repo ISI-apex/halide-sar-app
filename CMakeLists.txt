@@ -38,9 +38,9 @@ add_executable(taylor.generator taylor.cpp)
 target_link_libraries(taylor.generator PRIVATE Halide::Generator)
 add_halide_library(taylor FROM taylor.generator)
 
-add_executable(backprojection.generator backprojection.cpp)
-target_link_libraries(backprojection.generator PRIVATE Halide::Generator)
-add_halide_library(backprojection FROM backprojection.generator)
+add_executable(backprojection_pre_fft.generator backprojection.cpp)
+target_link_libraries(backprojection_pre_fft.generator PRIVATE Halide::Generator)
+add_halide_library(backprojection_pre_fft FROM backprojection_pre_fft.generator)
 
 
 # Executables
@@ -58,4 +58,4 @@ target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleCla
 target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          ${CNPY}
                                          ${FFTWF_STATIC_LIBRARIES}
-                                         backprojection)
+                                         backprojection_pre_fft)

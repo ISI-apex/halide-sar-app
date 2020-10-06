@@ -10,7 +10,7 @@ using namespace Halide;
 
 #define TAYLOR_S_L 17
 
-class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator> {
+class BackprojectionPreFFTGenerator : public Halide::Generator<BackprojectionPreFFTGenerator> {
 public:
     Input<Buffer<float>> phs {"phs", 3}; // complex 2d input  (Halide thinks this is 3d: [2, x, y])
     Input<Buffer<float>> k_r {"k_r", 1};
@@ -63,4 +63,4 @@ public:
     }
 };
 
-HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)
+HALIDE_REGISTER_GENERATOR(BackprojectionPreFFTGenerator, backprojection_pre_fft)

@@ -5,7 +5,7 @@
 #include <cnpy.h>
 #include <fftw3.h>
 
-#include "backprojection.h"
+#include "backprojection_pre_fft.h"
 
 using namespace std;
 using Halide::Runtime::Buffer;
@@ -269,7 +269,7 @@ int main(int argc, char **argv) {
 
     // backprojection
     Buffer<float, 3> outbuf(2, N_fft, npulses); // TODO: This is changing as we develop
-    int rv = backprojection(inbuf, in_k_r, N_fft, fftshift_buf);
+    int rv = backprojection_pre_fft(inbuf, in_k_r, N_fft, fftshift_buf);
     printf("Halide kernel returned %d\n", rv);
     // FFT
     fftwf_complex *fft_in = reinterpret_cast<fftwf_complex *>(fftshift_buf.begin());
