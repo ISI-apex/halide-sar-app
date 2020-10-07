@@ -71,6 +71,7 @@ public:
     Input<Buffer<double>> u {"u", 1};
     Input<Buffer<double>> v {"v", 1};
     Input<Buffer<float>> pos {"pos", 2};
+    Input<Buffer<double>> r {"r", 2};
 
     Output<Buffer<float>> output_buffer{"output_packed", 3};
 
@@ -88,9 +89,9 @@ public:
         ComplexFunc fftshift(c, "fftshift");
         fftshift = fftshift_func(input, N_fft, npulses);
 
-        RDom r(0, N_fft, "r");
+        RDom rn(0, N_fft, "rn");
         Func dr("dr");
-        dr = linspace_func(-nsamples * delta_r / 2, nsamples * delta_r / 2, r);
+        dr = linspace_func(-nsamples * delta_r / 2, nsamples * delta_r / 2, rn);
 
         output_buffer(c, x, y) = fftshift.inner(c, x, y);
 

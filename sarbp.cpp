@@ -255,6 +255,7 @@ int main(int argc, char **argv) {
     }
     double* pixel_locs = static_cast<double *>(malloc(3 * 512*512 * sizeof(double)));
     memcpy(pixel_locs, npydata.data<double>(), 3 * 512*512 * sizeof(double));
+    Buffer<double, 2> in_pixel_locs(pixel_locs, 512*512, 3);
 
     int N_fft = static_cast<int>(pow(2, static_cast<int>(log2(nsamples * UPSAMPLE)) + 1));
 
@@ -288,7 +289,7 @@ int main(int argc, char **argv) {
     fftwf_destroy_plan(plan);
     // backprojection - post-FFT
     Buffer<float, 3> outbuf(2, N_fft, npulses); // TODO: This is changing as we develop
-    rv = backprojection_post_fft(fft_outbuf, nsamples, delta_r, in_u, in_v, in_pos, outbuf);
+    rv = backprojection_post_fft(fft_outbuf, nsamples, delta_r, in_u, in_v, in_pos, in_pixel_locs, outbuf);
     printf("Halide post-fft returned %d\n", rv);
 
     // write output
