@@ -89,14 +89,33 @@ public:
         ComplexFunc fftshift(c, "fftshift");
         fftshift = fftshift_func(input, N_fft, npulses);
 
+        // dr
         RDom rn(0, N_fft, "rn");
         Func dr("dr");
         dr = linspace_func(-nsamples * delta_r / 2, nsamples * delta_r / 2, rn);
 
-        output_buffer(c, x, y) = fftshift.inner(c, x, y);
+        Expr nu = u.dim(0).extent();
+        Expr nv = v.dim(0).extent();
+
+        // ri
+        ComplexFunc img(c, "img");
+        img(x) = ComplexExpr(c, 0.0f, 0.0f);
+        // RDom ri(0, nu * nv, "ri");
+        // img(ri) = ComplexExpr(c, 0.0f, 0.0f);
+
+        // TODO: actually compute img values
+
+        // reshape img
+        // y dim is determined by output_buffer, but still need 'nu' for offset
+        ComplexFunc img_rect(c, "img_rect");
+        img_rect(x, y) = img(nu * y + x);
+        output_buffer(c, x, y) = img_rect.inner(c, x, y);
 
         in_func.compute_root();
+        dr.compute_root();
         fftshift.inner.compute_root();
+        img.inner.compute_root();
+        img_rect.inner.compute_root();
     }
 };
 

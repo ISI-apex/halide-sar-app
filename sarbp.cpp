@@ -288,7 +288,7 @@ int main(int argc, char **argv) {
     }
     fftwf_destroy_plan(plan);
     // backprojection - post-FFT
-    Buffer<float, 3> outbuf(2, N_fft, npulses); // TODO: This is changing as we develop
+    Buffer<float, 3> outbuf(2, in_u.dim(0).extent(), in_v.dim(0).extent());
     rv = backprojection_post_fft(fft_outbuf, nsamples, delta_r, in_u, in_v, in_pos, in_pixel_locs, outbuf);
     printf("Halide post-fft returned %d\n", rv);
 
