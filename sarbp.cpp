@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
     }
     float *pos = static_cast<float *>(malloc(npulses * 3 * sizeof(float)));
     memcpy(pos, npydata.data<float>(), npulses * 3 * sizeof(float));
-    Buffer<float, 1> in_pos(pos, 3, npulses);
+    Buffer<float, 2> in_pos(pos, 3, npulses);
 
     npydata = cnpy::npy_load(platform_dir + "/phs.npy");
     if (npydata.shape.size() != 2 || npydata.shape[0] != npulses || npydata.shape[1] != nsamples) {
