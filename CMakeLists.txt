@@ -38,6 +38,10 @@ add_executable(taylor.generator taylor.cpp)
 target_link_libraries(taylor.generator PRIVATE Halide::Generator)
 add_halide_library(taylor FROM taylor.generator)
 
+add_executable(interp.generator interp.cpp)
+target_link_libraries(interp.generator PRIVATE Halide::Generator)
+add_halide_library(interp FROM interp.generator)
+
 add_executable(backprojection_pre_fft.generator backprojection.cpp)
 target_link_libraries(backprojection_pre_fft.generator PRIVATE Halide::Generator)
 add_halide_library(backprojection_pre_fft FROM backprojection_pre_fft.generator)
@@ -56,6 +60,10 @@ target_link_libraries(linspace_test PRIVATE Halide::Halide
 add_executable(taylor_test taylor_test.cpp)
 target_link_libraries(taylor_test PRIVATE Halide::Halide
                                           taylor)
+
+add_executable(interp_test interp_test.cpp)
+target_link_libraries(interp_test PRIVATE Halide::Halide
+                                          interp)
 
 add_executable(sarbp_test sarbp.cpp)
 target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
