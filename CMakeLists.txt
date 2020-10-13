@@ -38,6 +38,14 @@ add_executable(taylor.generator taylor.cpp)
 target_link_libraries(taylor.generator PRIVATE Halide::Generator)
 add_halide_library(taylor FROM taylor.generator)
 
+add_executable(norm1d.generator norm.cpp)
+target_link_libraries(norm1d.generator PRIVATE Halide::Generator)
+add_halide_library(norm1d FROM norm1d.generator)
+
+add_executable(norm2d.generator norm.cpp)
+target_link_libraries(norm2d.generator PRIVATE Halide::Generator)
+add_halide_library(norm2d FROM norm2d.generator)
+
 add_executable(interp.generator interp.cpp)
 target_link_libraries(interp.generator PRIVATE Halide::Generator)
 add_halide_library(interp FROM interp.generator)
@@ -60,6 +68,11 @@ target_link_libraries(linspace_test PRIVATE Halide::Halide
 add_executable(taylor_test taylor_test.cpp)
 target_link_libraries(taylor_test PRIVATE Halide::Halide
                                           taylor)
+
+add_executable(norm_test norm_test.cpp)
+target_link_libraries(norm_test PRIVATE Halide::Halide
+                                        norm1d
+                                        norm2d)
 
 add_executable(interp_test interp_test.cpp)
 target_link_libraries(interp_test PRIVATE Halide::Halide
