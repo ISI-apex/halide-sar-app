@@ -22,4 +22,8 @@ inline Expr log2f_expr(Expr x) {
     return log2;
 }
 
+inline Expr norm_expr(Expr in) {
+    return sqrt(sum(in * in));
+}
+
 #endif
