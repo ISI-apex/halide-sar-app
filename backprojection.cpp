@@ -113,10 +113,6 @@ public:
         Func in_func("in_func");
         in_func = in;
         ComplexFunc input(c, in_func, "input");
-        Func pos_func("pos_func");
-        pos_func = pos;
-        Func r_func("r_func");
-        r_func = r;
 
         // some extents and related RDoms
         Expr N_fft = in.dim(1).extent();
@@ -141,11 +137,11 @@ public:
 
         // norm(r0): produces shape {npulses}
         Func norm_r0("norm_r0");
-        norm_r0(x) = norm_expr(pos_func(rnd, x));
+        norm_r0(x) = norm_expr(pos(rnd, x));
 
         // r - r0: produces shape {nu*nv, nd, npulses}
         Func rr0("rr0");
-        rr0(x, y, z) = r_func(x, y) - pos_func(y, z);
+        rr0(x, y, z) = r(x, y) - pos(y, z);
 
         // norm(r - r0): produces shape {nu*nv, npulses}
         Func norm_rr0("norm_rr0");
@@ -178,8 +174,8 @@ public:
         output_buffer(c, x, y) = ConciseCasts::f32(img_rect.inner(c, x, y));
 
         in_func.compute_root();
-        dr.compute_root();
         Q.inner.compute_root();
+        dr.compute_root();
         norm_r0.compute_root();
         rr0.compute_root();
         norm_rr0.compute_root();
