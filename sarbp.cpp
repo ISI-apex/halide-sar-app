@@ -262,9 +262,9 @@ int main(int argc, char **argv) {
     // Copy input data
     Buffer<float, 3> fftshift_buf(2, N_fft, npulses);
     Buffer<float, 3> inbuf(2, nsamples, npulses);
-    cout << "Width: " << inbuf.width() << endl;
-    cout << "Height: " << inbuf.height() << endl;
-    cout << "Channels: " << inbuf.channels() << endl;
+    // cout << "Width: " << inbuf.width() << endl;
+    // cout << "Height: " << inbuf.height() << endl;
+    // cout << "Channels: " << inbuf.channels() << endl;
     complex<float> *indata = (complex<float> *)inbuf.begin();
     for (int x = 0; x < npulses; x++) {
         for (int y = 0; y < nsamples; y++) {
@@ -273,8 +273,9 @@ int main(int argc, char **argv) {
     }
 
     // backprojection - pre-FFT
+    cout <<"Halide pre-fft start" << endl;
     int rv = backprojection_pre_fft(inbuf, in_k_r, N_fft, fftshift_buf);
-    printf("Halide pre-fft returned %d\n", rv);
+    cout << "Halide pre-fft returned " << rv << endl;
     if (rv != 0) {
         return rv;
     }
@@ -283,14 +284,17 @@ int main(int argc, char **argv) {
     fftwf_complex *fft_in = reinterpret_cast<fftwf_complex *>(fftshift_buf.begin());
     fftwf_complex *fft_out = reinterpret_cast<fftwf_complex *>(fft_outbuf.begin());
     fftwf_plan plan = fftwf_plan_dft_1d(N_fft, fft_in, fft_out, FFTW_FORWARD, FFTW_ESTIMATE);
-    for (int i = 0; i < npulses; i++) {
+    cout << "FFTWF: processing " << fft_outbuf.dim(2).extent() << " DFTs" << endl;
+    for (int i = 0; i < fft_outbuf.dim(2).extent(); i++) {
         fftwf_execute_dft(plan, &fft_in[i * N_fft], &fft_out[i * N_fft]);
     }
+    cout << "FFTWF: finished" << endl;
     fftwf_destroy_plan(plan);
     // backprojection - post-FFT
     Buffer<float, 3> outbuf(2, in_u.dim(0).extent(), in_v.dim(0).extent());
-    rv = backprojection_post_fft(fft_outbuf, nsamples, delta_r, in_u, in_v, in_pos, in_pixel_locs, outbuf);
-    printf("Halide post-fft returned %d\n", rv);
+    cout <<"Halide post-fft start" << endl;
+    rv = backprojection_post_fft(fft_outbuf, nsamples, delta_r, in_k_r, in_u, in_v, in_pos, in_pixel_locs, outbuf);
+    cout << "Halide post-fft returned " << rv << endl;
 
     // write output
     vector<size_t> shape_out { static_cast<size_t>(outbuf.dim(2).extent()),
