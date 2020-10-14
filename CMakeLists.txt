@@ -52,11 +52,13 @@ add_halide_library(interp FROM interp.generator)
 
 add_executable(backprojection_pre_fft.generator backprojection.cpp)
 target_link_libraries(backprojection_pre_fft.generator PRIVATE Halide::Generator)
-add_halide_library(backprojection_pre_fft FROM backprojection_pre_fft.generator)
+add_halide_library(backprojection_pre_fft FROM backprojection_pre_fft.generator
+                                          FEATURES large_buffers)
 
 add_executable(backprojection_post_fft.generator backprojection.cpp)
 target_link_libraries(backprojection_post_fft.generator PRIVATE Halide::Generator)
-add_halide_library(backprojection_post_fft FROM backprojection_post_fft.generator)
+add_halide_library(backprojection_post_fft FROM backprojection_post_fft.generator
+                                           FEATURES large_buffers)
 
 
 # Executables
