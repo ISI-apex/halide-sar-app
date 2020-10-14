@@ -196,6 +196,19 @@ ComplexExpr &ComplexExpr::operator=(ComplexExpr rvalue) {
     return *this;
 }
 
+inline ComplexExpr sum(const ComplexExpr &z, const std::string &s = "sum") {
+    return ComplexExpr(z.element,
+                       Halide::sum(z.real, s + "_real"),
+                       Halide::sum(z.imag, s + "_imag"));
+}
+
+inline ComplexExpr exp(const ComplexExpr &z) {
+    Halide::Expr a = Halide::exp(z.real);
+    return ComplexExpr(z.element,
+                       a * Halide::cos(z.imag),
+                       a * Halide::sin(z.imag));
+}
+
 inline ComplexExpr select(const Halide::Var &element, Halide::Expr c, ComplexExpr t, ComplexExpr f) {
     return ComplexExpr(element,
                        Halide::select(c, t.real, f.real),
