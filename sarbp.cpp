@@ -11,6 +11,18 @@
 using namespace std;
 using Halide::Runtime::Buffer;
 
+#define DEBUG_Q 0
+#define DEBUG_DR 0
+#define DEBUG_NORM_R0 0
+#define DEBUG_RR0 0
+#define DEBUG_NORM_RR0 0
+#define DEBUG_DR_I 0
+#define DEBUG_Q_REAL 0
+#define DEBUG_Q_IMAG 0
+#define DEBUG_Q_HAT 0
+#define DEBUG_IMG 0
+#define DEBUG_FIMG 0
+
 // TODO: Are all these memcpy necessary?
 
 #define UPSAMPLE 2
@@ -291,12 +303,143 @@ int main(int argc, char **argv) {
     cout << "FFTWF: finished" << endl;
     fftwf_destroy_plan(plan);
     // backprojection - post-FFT
+#if DEBUG_Q
+    Buffer<float, 3> out_q(2, N_fft, fft_outbuf.dim(2).extent());
+#endif
+#if DEBUG_DR
+    Buffer<double, 1> out_dr(N_fft);
+#endif
+#if DEBUG_NORM_R0
+    Buffer<float, 1> out_norm_r0(fft_outbuf.dim(2).extent());
+#endif
+#if DEBUG_RR0
+    Buffer<double, 3> out_rr0(in_u.dim(0).extent() * in_v.dim(0).extent(),
+                              in_pos.dim(0).extent(),
+                              fft_outbuf.dim(2).extent());
+#endif
+#if DEBUG_NORM_RR0
+    Buffer<double, 2> out_norm_rr0(in_u.dim(0).extent() * in_v.dim(0).extent(),
+                                   fft_outbuf.dim(2).extent());
+#endif
+#if DEBUG_DR_I
+    Buffer<double, 2> out_dr_i(in_u.dim(0).extent() * in_v.dim(0).extent(),
+                               fft_outbuf.dim(2).extent());
+#endif
+#if DEBUG_Q_REAL
+    Buffer<double, 2> out_q_real(in_u.dim(0).extent() * in_v.dim(0).extent(),
+                                 fft_outbuf.dim(2).extent());
+#endif
+#if DEBUG_Q_IMAG
+    Buffer<double, 2> out_q_imag(in_u.dim(0).extent() * in_v.dim(0).extent(),
+                                 fft_outbuf.dim(2).extent());
+#endif
+#if DEBUG_Q_HAT
+    Buffer<double, 3> out_q_hat(2,
+                                in_u.dim(0).extent() * in_v.dim(0).extent(),
+                                fft_outbuf.dim(2).extent());
+#endif
+#if DEBUG_IMG
+    Buffer<double, 2> out_img(2, in_u.dim(0).extent() * in_v.dim(0).extent());
+#endif
+#if DEBUG_FIMG
+    Buffer<double, 2> out_fimg(2, in_u.dim(0).extent() * in_v.dim(0).extent());
+#endif
     Buffer<float, 3> outbuf(2, in_u.dim(0).extent(), in_v.dim(0).extent());
     cout <<"Halide post-fft start" << endl;
-    rv = backprojection_post_fft(fft_outbuf, nsamples, delta_r, in_k_r, in_u, in_v, in_pos, in_pixel_locs, outbuf);
+    rv = backprojection_post_fft(fft_outbuf, nsamples, delta_r, in_k_r, in_u, in_v, in_pos, in_pixel_locs,
+#if DEBUG_Q
+        out_q,
+#endif
+#if DEBUG_DR
+        out_dr,
+#endif
+#if DEBUG_NORM_R0
+        out_norm_r0,
+#endif
+#if DEBUG_RR0
+        out_rr0,
+#endif
+#if DEBUG_NORM_RR0
+        out_norm_rr0,
+#endif
+#if DEBUG_DR_I
+        out_dr_i,
+#endif
+#if DEBUG_Q_REAL
+        out_q_real,
+#endif
+#if DEBUG_Q_IMAG
+        out_q_imag,
+#endif
+#if DEBUG_Q_HAT
+        out_q_hat,
+#endif
+#if DEBUG_IMG
+        out_img,
+#endif
+#if DEBUG_FIMG
+        out_fimg,
+#endif
+        outbuf);
     cout << "Halide post-fft returned " << rv << endl;
 
     // write output
+#if DEBUG_Q
+    vector<size_t> shape_q { static_cast<size_t>(out_q.dim(2).extent()),
+                             static_cast<size_t>(out_q.dim(1).extent()),
+                             static_cast<size_t>(out_q.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-Q.npy", (float *)out_q.begin(), shape_q);
+#endif
+#if DEBUG_DR
+    vector<size_t> shape_dr { static_cast<size_t>(out_dr.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-dr.npy", (double *)out_dr.begin(), shape_dr);
+#endif
+#if DEBUG_NORM_R0
+    vector<size_t> shape_norm_r0 { static_cast<size_t>(out_norm_r0.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-norm_r0.npy", (float *)out_norm_r0.begin(), shape_norm_r0);
+#endif
+#if DEBUG_RR0
+    vector<size_t> shape_rr0 { static_cast<size_t>(out_rr0.dim(2).extent()),
+                               static_cast<size_t>(out_rr0.dim(1).extent()),
+                               static_cast<size_t>(out_rr0.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-rr0.npy", (double *)out_rr0.begin(), shape_rr0);
+#endif
+#if DEBUG_NORM_RR0
+    vector<size_t> shape_norm_rr0 { static_cast<size_t>(out_norm_rr0.dim(1).extent()),
+                                    static_cast<size_t>(out_norm_rr0.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-norm_rr0.npy", (double *)out_norm_rr0.begin(), shape_norm_rr0);
+#endif
+#if DEBUG_DR_I
+    vector<size_t> shape_dr_i { static_cast<size_t>(out_dr_i.dim(1).extent()),
+                                static_cast<size_t>(out_dr_i.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-dr_i.npy", (double *)out_dr_i.begin(), shape_dr_i);
+#endif
+#if DEBUG_Q_REAL
+    vector<size_t> shape_q_real { static_cast<size_t>(out_q_real.dim(1).extent()),
+                                  static_cast<size_t>(out_q_real.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-q_real.npy", (double *)out_q_real.begin(), shape_q_real);
+#endif
+#if DEBUG_Q_IMAG
+    vector<size_t> shape_q_imag { static_cast<size_t>(out_q_imag.dim(1).extent()),
+                                  static_cast<size_t>(out_q_imag.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-q_imag.npy", (double *)out_q_imag.begin(), shape_q_imag);
+#endif
+#if DEBUG_Q_HAT
+    vector<size_t> shape_q_hat { static_cast<size_t>(out_q_hat.dim(2).extent()),
+                                 static_cast<size_t>(out_q_hat.dim(1).extent()),
+                                 static_cast<size_t>(out_q_hat.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-q_hat.npy", (double *)out_q_hat.begin(), shape_q_hat);
+#endif
+#if DEBUG_IMG
+    vector<size_t> shape_img { static_cast<size_t>(out_img.dim(1).extent()),
+                               static_cast<size_t>(out_img.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-img.npy", (double *)out_img.begin(), shape_img);
+#endif
+#if DEBUG_FIMG
+    vector<size_t> shape_fimg { static_cast<size_t>(out_fimg.dim(1).extent()),
+                                static_cast<size_t>(out_fimg.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-fimg.npy", (double *)out_fimg.begin(), shape_fimg);
+#endif
     vector<size_t> shape_out { static_cast<size_t>(outbuf.dim(2).extent()),
                                static_cast<size_t>(outbuf.dim(1).extent()) };
     cnpy::npy_save("sarbp_test.npy", (complex<float> *)outbuf.begin(), shape_out);

@@ -9,6 +9,18 @@
 
 using namespace Halide;
 
+#define DEBUG_Q 0
+#define DEBUG_DR 0
+#define DEBUG_NORM_R0 0
+#define DEBUG_RR0 0
+#define DEBUG_NORM_RR0 0
+#define DEBUG_DR_I 0
+#define DEBUG_Q_REAL 0
+#define DEBUG_Q_IMAG 0
+#define DEBUG_Q_HAT 0
+#define DEBUG_IMG 0
+#define DEBUG_FIMG 0
+
 #define TAYLOR_S_L 17
 
 class BackprojectionPreFFTGenerator : public Halide::Generator<BackprojectionPreFFTGenerator> {
@@ -75,6 +87,40 @@ public:
     Input<Buffer<float>> pos {"pos", 2};
     Input<Buffer<double>> r {"r", 2};
 
+#if DEBUG_Q
+    Output<Buffer<float>> out_Q{"out_Q", 3};
+#endif
+#if DEBUG_DR
+    Output<Buffer<double>> out_dr{"out_dr", 1};
+#endif
+#if DEBUG_NORM_R0
+    Output<Buffer<float>> out_norm_r0{"out_norm_r0", 1};
+#endif
+#if DEBUG_RR0
+    Output<Buffer<double>> out_rr0{"out_rr0", 3};
+#endif
+#if DEBUG_NORM_RR0
+    Output<Buffer<double>> out_norm_rr0{"out_norm_rr0", 2};
+#endif
+#if DEBUG_DR_I
+    Output<Buffer<double>> out_dr_i{"out_dr_i", 2};
+#endif
+#if DEBUG_Q_REAL
+    Output<Buffer<double>> out_q_real{"out_q_real", 2};
+#endif
+#if DEBUG_Q_IMAG
+    Output<Buffer<double>> out_q_imag{"out_q_imag", 2};
+#endif
+#if DEBUG_Q_HAT
+    Output<Buffer<double>> out_q_hat{"out_q_hat", 3};
+#endif
+#if DEBUG_IMG
+    Output<Buffer<double>> out_img{"out_img", 2};
+#endif
+#if DEBUG_FIMG
+    Output<Buffer<double>> out_fimg{"out_fimg", 2};
+#endif
+
     Output<Buffer<float>> output_buffer{"output_packed", 3};
 
     Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
@@ -130,44 +176,78 @@ public:
         // Q: produces shape {N_fft, npulses}
         ComplexFunc Q(c, "Q");
         Q = fftshift_func(input, N_fft, npulses);
+#if DEBUG_Q
+        out_Q(c, x, y) = Q.inner(c, x, y);
+#endif
 
         // dr: produces shape {N_fft}
         Func dr("dr");
         dr = linspace_func(floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), rnfft);
+#if DEBUG_DR
+        out_dr(x) = dr(x);
+#endif
 
         // norm(r0): produces shape {npulses}
         Func norm_r0("norm_r0");
         norm_r0(x) = norm_expr(pos(rnd, x));
+#if DEBUG_NORM_R0
+        out_norm_r0(x) = norm_r0(x);
+#endif
 
         // r - r0: produces shape {nu*nv, nd, npulses}
         Func rr0("rr0");
         rr0(x, y, z) = r(x, y) - pos(y, z);
+#if DEBUG_RR0
+        out_rr0(x, y, z) = rr0(x, y, z);
+#endif
 
         // norm(r - r0): produces shape {nu*nv, npulses}
         Func norm_rr0("norm_rr0");
         norm_rr0(x, y) = norm_expr(rr0(x, rnd, y));
+#if DEBUG_NORM_RR0
+        out_norm_rr0(x, y) = norm_rr0(x, y);
+#endif
 
         // dr_i: produces shape {nu*nv, npulses}
         Func dr_i("dr_i");
         dr_i(x, y) = norm_r0(y) - norm_rr0(x, y);
+#if DEBUG_DR_I
+        out_dr_i(x, y) = dr_i(x, y);
+#endif
 
         // Q_{real,imag,hat}: produce shape {nu*nv, npulses}
         Func Q_real("Q_real");
         Func Q_imag("Q_imag");
         ComplexFunc Q_hat(c, "Q_hat");
         Q_real(x, y) = interp(dr_i, dr, Q, 0, N_fft);
+#if DEBUG_Q_REAL
+        out_q_real(x, y) = Q_real(x, y);
+#endif
+        // Q_real.trace_stores();
         Q_imag(x, y) = interp(dr_i, dr, Q, 1, N_fft);
+#if DEBUG_Q_IMAG
+        out_q_imag(x, y) = Q_imag(x, y);
+#endif
         Q_hat(x, y) = ComplexExpr(c, Q_real(x, y), Q_imag(x, y));
+#if DEBUG_Q_HAT
+        out_q_hat(c, x, y) = Q_hat.inner(c, x, y);
+#endif
 
         // img: produces shape {nu*nv}
         ComplexFunc img(c, "img");
         img(x) = ComplexExpr(c, Expr(0.0), Expr(0.0));
         img(x) += Q_hat(x, rnpulses) * exp(k_c_im * dr_i(x, rnpulses));
+#if DEBUG_IMG
+        out_img(c, x) = img.inner(c, x);
+#endif
 
         // finally...
         Expr fdr_i = norm_r0(npulses / 2) - norm_rr0(x, npulses / 2);
         ComplexFunc fimg(c, "fimg");
         fimg(x) = img(x) * exp(k_c_im * fdr_i);
+#if DEBUG_FIMG
+        out_fimg(c, x) = fimg.inner(c, x);
+#endif
 
         // img_rect: produce shape {nu, nv}, but reverse row order
         ComplexFunc img_rect(c, "img_rect");
