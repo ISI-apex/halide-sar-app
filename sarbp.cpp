@@ -388,7 +388,7 @@ int main(int argc, char **argv) {
     vector<size_t> shape_q { static_cast<size_t>(out_q.dim(2).extent()),
                              static_cast<size_t>(out_q.dim(1).extent()),
                              static_cast<size_t>(out_q.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-Q.npy", (float *)out_q.begin(), shape_q);
+    cnpy::npy_save("sarbp_debug-q.npy", (float *)out_q.begin(), shape_q);
 #endif
 #if DEBUG_DR
     vector<size_t> shape_dr { static_cast<size_t>(out_dr.dim(0).extent()) };
@@ -426,19 +426,16 @@ int main(int argc, char **argv) {
 #endif
 #if DEBUG_Q_HAT
     vector<size_t> shape_q_hat { static_cast<size_t>(out_q_hat.dim(2).extent()),
-                                 static_cast<size_t>(out_q_hat.dim(1).extent()),
-                                 static_cast<size_t>(out_q_hat.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-q_hat.npy", (double *)out_q_hat.begin(), shape_q_hat);
+                                 static_cast<size_t>(out_q_hat.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-q_hat.npy", (complex<double> *)out_q_hat.begin(), shape_q_hat);
 #endif
 #if DEBUG_IMG
-    vector<size_t> shape_img { static_cast<size_t>(out_img.dim(1).extent()),
-                               static_cast<size_t>(out_img.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-img.npy", (double *)out_img.begin(), shape_img);
+    vector<size_t> shape_img { static_cast<size_t>(out_img.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-img.npy", (complex<double> *)out_img.begin(), shape_img);
 #endif
 #if DEBUG_FIMG
-    vector<size_t> shape_fimg { static_cast<size_t>(out_fimg.dim(1).extent()),
-                                static_cast<size_t>(out_fimg.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-fimg.npy", (double *)out_fimg.begin(), shape_fimg);
+    vector<size_t> shape_fimg { static_cast<size_t>(out_fimg.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-fimg.npy", (complex<double> *)out_fimg.begin(), shape_fimg);
 #endif
     vector<size_t> shape_out { static_cast<size_t>(outbuf.dim(2).extent()),
                                static_cast<size_t>(outbuf.dim(1).extent()) };
