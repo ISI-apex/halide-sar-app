@@ -1,10 +1,11 @@
-#ifndef _COMPLEXFUNC_H
-#define _COMPLEXFUNC_H
+// This is a wrapper around Func, handling Complex values by adding an extra dimension of size 2.
+// There is a similar wrapper class in the FFT example, that one stores Complex numbers as tuples.
 
-#include <vector>
+#ifndef _HALIDE_COMPLEXFUNC_H
+#define _HALIDE_COMPLEXFUNC_H
+
 #include <Halide.h>
-
-using std::string;
+#include <vector>
 
 class ComplexExpr;
 /*
@@ -15,18 +16,17 @@ class ComplexExpr;
  */
 class ComplexFunc {
 public:
-    string name;
+    std::string name;
     Halide::Func inner;
     Halide::Var element;
 
-    ComplexFunc(Halide::Var &element, string name);
-    ComplexFunc(Halide::Var &element, Halide::Func &inner, string name);
+    ComplexFunc(Halide::Var &element, std::string name);
+    ComplexFunc(Halide::Var &element, Halide::Func &inner, std::string name);
     ComplexExpr operator()(std::vector<Halide::Expr>);
     ComplexExpr operator()(Halide::Expr idx1);
     ComplexExpr operator()(Halide::Expr idx1, Halide::Expr idx2);
     ComplexExpr operator()(Halide::Expr idx1, Halide::Expr idx2, Halide::Expr idx3);
 };
-
 
 /*
  * ComplexExpr represents a Complex value.  It uses operator overloading to
@@ -41,35 +41,30 @@ public:
  */
 class ComplexExpr {
 public:
-
     Halide::Var element;
-    Halide::Expr real;
-    Halide::Expr imag;
-    Halide::Expr pair; // this is a mux expression
-    const ComplexFunc *func; // Func that writes are passed through to
-    std::vector<Halide::Expr> pair_idx; // saved index for writes
+    Halide::Expr real;                   // index contains an explicit 0
+    Halide::Expr imag;                   // index contains an explicit 1
+    Halide::Expr pair;                   // this is a mux expression
+    const ComplexFunc *func;             // Func that writes are passed through to
+    std::vector<Halide::Expr> pair_idx;  // saved index for writes
 
     bool can_read;
     bool can_write;
 
-    inline ComplexExpr(const ComplexFunc *func, const std::vector<Halide::Expr> &idx);              // lvalue constructor
-    inline ComplexExpr(const Halide::Var &element, const Halide::Expr &v1, const Halide::Expr &v2); // rvalue constructor
-
-    // read ops
-    ComplexExpr operator-();                      // negation
-    ComplexExpr operator+(Halide::Expr other);    // addition (of real element)
-    ComplexExpr operator-(Halide::Expr other);    // subtraction (of real element)
-    ComplexExpr operator*(Halide::Expr other);    // scalar multiplication
-    ComplexExpr operator/(Halide::Expr other);    // scalar division
-    ComplexExpr operator+(ComplexExpr other); // addition
-    ComplexExpr operator-(ComplexExpr other); // subtraction
-    ComplexExpr operator*(ComplexExpr other); // multiplication
-    ComplexExpr operator/(ComplexExpr other); // division
+    inline ComplexExpr(const ComplexFunc *func, const std::vector<Halide::Expr> &idx);               // lvalue constructor
+    inline ComplexExpr(const Halide::Var &element, const Halide::Expr &v1, const Halide::Expr &v2);  // rvalue constructor
 
     // write ops
     ComplexExpr &operator=(ComplexExpr rvalue);
+    ComplexExpr operator+=(ComplexExpr b);
+    ComplexExpr &operator-=(const ComplexExpr &b);
+    ComplexExpr &operator*=(const ComplexExpr &b);
+    ComplexExpr &operator/=(const ComplexExpr &b);
+    ComplexExpr &operator+=(const Halide::Expr &b);
+    ComplexExpr &operator-=(const Halide::Expr &b);
+    ComplexExpr &operator*=(const Halide::Expr &b);
+    ComplexExpr &operator/=(const Halide::Expr &b);
 };
-
 
 /*
  * Create a ComplexExpr that represents an element of a ComplexFunc.  This
@@ -78,7 +73,8 @@ public:
  * can also be used as an rvalue, or as an element in a larger mathematical
  * expression.
  */
-inline ComplexExpr::ComplexExpr(const ComplexFunc *func, const std::vector<Halide::Expr> &idx) :func(func) {
+inline ComplexExpr::ComplexExpr(const ComplexFunc *func, const std::vector<Halide::Expr> &idx)
+    : func(func) {
     element = func->element;
     std::vector<Halide::Expr> real_idx({Halide::Expr(0)});
     std::vector<Halide::Expr> imag_idx({Halide::Expr(1)});
@@ -91,7 +87,7 @@ inline ComplexExpr::ComplexExpr(const ComplexFunc *func, const std::vector<Halid
     copy(idx.begin(), idx.end(), back_inserter(pair_idx));
     can_write = true;
     can_read = func->inner.defined();
-    if(can_read) {
+    if (can_read) {
         real = func->inner(real_idx);
         imag = func->inner(imag_idx);
         pair = func->inner(pair_idx);
@@ -112,80 +108,94 @@ inline ComplexExpr::ComplexExpr(const Halide::Var &element, const Halide::Expr &
     pair = Halide::mux(element, {v1, v2});
 }
 
-
 // negation
-ComplexExpr ComplexExpr::operator-() {
-    if(can_read == false)
+inline ComplexExpr operator-(const ComplexExpr &a) {
+    if (a.can_read == false)
         throw;
-    return ComplexExpr(element, -real, -imag);
+    return ComplexExpr(a.element, -a.pair, -a.pair);
 }
 
-// addition of complex and real
-ComplexExpr ComplexExpr::operator+(Halide::Expr other) {
-    if(can_read == false)
+// addition
+inline ComplexExpr operator+(const ComplexExpr &a, const ComplexExpr &b) {
+    if (a.can_read == false || b.can_read == false)
         throw;
-    return ComplexExpr(element, real + other, imag);
+    return ComplexExpr(a.element, a.pair + b.real, a.pair + b.imag);
+}
+inline ComplexExpr operator+(const ComplexExpr &a, const Halide::Expr &b) {
+    if (a.can_read == false)
+        throw;
+    return ComplexExpr(a.element, a.real + b, a.imag);
+}
+inline ComplexExpr operator+(const Halide::Expr &b, const ComplexExpr &a) {
+    return a + b;
 }
 
-// addition of 2 complex
-ComplexExpr ComplexExpr::operator+(ComplexExpr other) {
-    if(can_read == false || other.can_read == false)
+// subtraction
+inline ComplexExpr operator-(const ComplexExpr &a, const ComplexExpr &b) {
+    if (a.can_read == false || b.can_read == false)
         throw;
-    return ComplexExpr(element, real + other.real, imag + other.imag);
+    return ComplexExpr(a.element, a.pair - b.real, a.pair - b.imag);
+}
+inline ComplexExpr operator-(const ComplexExpr &a, const Halide::Expr &b) {
+    if (a.can_read == false)
+        throw;
+    return ComplexExpr(a.element, a.real - b, a.imag);
+}
+inline ComplexExpr operator-(const Halide::Expr &b, const ComplexExpr &a) {
+    return -a + b;
 }
 
-
-// subtraction of complex and real
-ComplexExpr ComplexExpr::operator-(Halide::Expr other) {
-    if(can_read == false)
+// multiplication
+inline ComplexExpr operator*(const ComplexExpr &a, const ComplexExpr &b) {
+    if (a.can_read == false || b.can_read == false)
         throw;
-    return ComplexExpr(element, real - other, imag);
+    return ComplexExpr(a.element, a.real * b.real - a.imag * b.imag, a.real * b.imag + a.imag * b.real);
+}
+inline ComplexExpr operator*(const ComplexExpr &a, const Halide::Expr &b) {
+    if (a.can_read == false)
+        throw;
+    return ComplexExpr(a.element, a.real * b, a.imag * b);
+}
+inline ComplexExpr operator*(const Halide::Expr &b, const ComplexExpr &a) {
+    return a * b;
 }
 
-// subtraction of 2 complex
-ComplexExpr ComplexExpr::operator-(ComplexExpr other) {
-    if(can_read == false || other.can_read == false)
-        throw;
-    return ComplexExpr(element, real - other.real, imag - other.imag);
+// conjugation
+inline ComplexExpr conj(const ComplexExpr &z) {
+    return ComplexExpr(z.element, z.real, -z.imag);
 }
 
-
-// multiplication of complex and real
-ComplexExpr ComplexExpr::operator*(Halide::Expr other) {
-    if(can_read == false)
+// division
+inline ComplexExpr operator/(const ComplexExpr &a, const ComplexExpr &b) {
+    if (a.can_read == false || b.can_read == false)
         throw;
-    return ComplexExpr(element, real * other, imag * other);
+    ComplexExpr conjugate = conj(b);
+    ComplexExpr numerator = a * conjugate;
+    ComplexExpr denominator = b * conjugate;
+    return ComplexExpr(a.element, numerator.real / denominator.real, numerator.imag / denominator.real);
+}
+inline ComplexExpr operator/(const ComplexExpr &a, const Halide::Expr &b) {
+    if (a.can_read == false)
+        throw;
+    return ComplexExpr(a.element, a.real / b, a.imag / b);
+}
+inline ComplexExpr operator/(const Halide::Expr &b, const ComplexExpr &a) {
+    ComplexExpr numerator = b * conj(a);
+    ComplexExpr denominator = a * conj(a);
+    return ComplexExpr(a.element, numerator.real / denominator.real, numerator.imag / denominator.real);
 }
 
-// multiplication of 2 complex
-ComplexExpr ComplexExpr::operator*(ComplexExpr other) {
-    if(can_read == false || other.can_read == false)
-        throw;
-    return ComplexExpr(element, real * other.real - imag * other.imag, real * other.imag + imag * other.real);
+// exponential
+inline ComplexExpr exp(const ComplexExpr &z) {
+    return ComplexExpr(z.element, Halide::exp(z.real) * Halide::cos(z.imag), Halide::exp(z.real) * Halide::sin(z.imag));
 }
-
-
-// division of complex and real
-ComplexExpr ComplexExpr::operator/(Halide::Expr other) {
-    if(can_read == false)
-        throw;
-    return ComplexExpr(element, real / other, imag / other);
-}
-
-// division of 2 complex
-ComplexExpr ComplexExpr::operator/(ComplexExpr other) {
-    if(can_read == false || other.can_read == false)
-        throw;
-    ComplexExpr conjugate = other;
-    conjugate.imag = -conjugate.imag;
-    ComplexExpr numerator   = *this * conjugate;
-    ComplexExpr denominator = other * conjugate;
-    return ComplexExpr(element, numerator.real / denominator.real, numerator.imag / denominator.real);
+inline ComplexExpr expj(const Halide::Var &element, const Halide::Expr &x) {
+    return ComplexExpr(element, Halide::cos(x), Halide::sin(x));
 }
 
 // assignment
 ComplexExpr &ComplexExpr::operator=(ComplexExpr rvalue) {
-    if(rvalue.can_read == false)
+    if (rvalue.can_read == false)
         throw;
     Halide::FuncRef funcref = func->inner(pair_idx);
     funcref = rvalue.pair;
@@ -196,19 +206,84 @@ ComplexExpr &ComplexExpr::operator=(ComplexExpr rvalue) {
     return *this;
 }
 
+// updates
+ComplexExpr ComplexExpr::operator+=(ComplexExpr b) {
+    if (can_read == false || b.can_read == false)
+        throw;
+    ComplexExpr rvalue = *this + b;
+    Halide::FuncRef funcref = func->inner(pair_idx);
+    funcref = rvalue.pair;
+    return *this;
+}
+ComplexExpr &ComplexExpr::operator+=(const Halide::Expr &b) {
+    if (can_read == false)
+        throw;
+    ComplexExpr rvalue = *this + b;
+    Halide::FuncRef funcref = func->inner(pair_idx);
+    funcref = rvalue.pair;
+    return *this;
+}
+ComplexExpr &ComplexExpr::operator-=(const ComplexExpr &b) {
+    if (can_read == false || b.can_read == false)
+        throw;
+    ComplexExpr rvalue = *this - b;
+    Halide::FuncRef funcref = func->inner(pair_idx);
+    funcref = rvalue.pair;
+    return *this;
+}
+ComplexExpr &ComplexExpr::operator-=(const Halide::Expr &b) {
+    if (can_read == false)
+        throw;
+    ComplexExpr rvalue = *this - b;
+    Halide::FuncRef funcref = func->inner(pair_idx);
+    funcref = rvalue.pair;
+    return *this;
+}
+ComplexExpr &ComplexExpr::operator*=(const ComplexExpr &b) {
+    if (can_read == false || b.can_read == false)
+        throw;
+    Halide::FuncRef funcref = func->inner(pair_idx);
+    ComplexExpr rvalue = *this * b;
+    funcref = rvalue.pair;
+    return *this;
+}
+ComplexExpr &ComplexExpr::operator*=(const Halide::Expr &b) {
+    if (can_read == false)
+        throw;
+    Halide::FuncRef funcref = func->inner(pair_idx);
+    funcref *= select(func->element, b, Halide::Expr(1.0));
+    return *this;
+}
+ComplexExpr &ComplexExpr::operator/=(const ComplexExpr &b) {
+    if (can_read == false || b.can_read == false)
+        throw;
+    Halide::FuncRef funcref = func->inner(pair_idx);
+    funcref /= b.pair;
+    return *this;
+}
+ComplexExpr &ComplexExpr::operator/=(const Halide::Expr &b) {
+    if (can_read == false)
+        throw;
+    Halide::FuncRef funcref = func->inner(pair_idx);
+    funcref /= select(func->element, b, Halide::Expr(1.0));
+    return *this;
+}
+
+// other helper functions
+
+// stringification
+inline std::ostream &operator<<(std::ostream &os, const ComplexExpr &a) {
+    os << "<ComplexExpr " << a.real << ", " << a.imag << ">";
+    return os;
+}
+
+// summation
 inline ComplexExpr sum(const ComplexExpr &z, const std::string &s = "sum") {
     return ComplexExpr(z.element,
                        Halide::sum(z.real, s + "_real"),
                        Halide::sum(z.imag, s + "_imag"));
 }
-
-inline ComplexExpr exp(const ComplexExpr &z) {
-    Halide::Expr a = Halide::exp(z.real);
-    return ComplexExpr(z.element,
-                       a * Halide::cos(z.imag),
-                       a * Halide::sin(z.imag));
-}
-
+// selection
 inline ComplexExpr select(const Halide::Var &element, Halide::Expr c, ComplexExpr t, ComplexExpr f) {
     return ComplexExpr(element,
                        Halide::select(c, t.real, f.real),
@@ -226,11 +301,13 @@ inline ComplexExpr select(const Halide::Var &element,
 
 // ComplexFunc methods
 
-ComplexFunc::ComplexFunc(Halide::Var &element, string name) :name(name), element(element) {
-    inner(name+"_inner");
+ComplexFunc::ComplexFunc(Halide::Var &element, std::string name)
+    : name(name), element(element) {
+    inner(name + "_inner");
 }
 
-ComplexFunc::ComplexFunc(Halide::Var &element, Halide::Func &inner, string name) :name(name), inner(inner), element(element) {
+ComplexFunc::ComplexFunc(Halide::Var &element, Halide::Func &inner, std::string name)
+    : name(name), inner(inner), element(element) {
 }
 
 ComplexExpr ComplexFunc::operator()(std::vector<Halide::Expr> idx) {
@@ -250,4 +327,4 @@ ComplexExpr ComplexFunc::operator()(Halide::Expr idx1, Halide::Expr idx2, Halide
     return (*this)(idx);
 }
 
-#endif /* _COMPLEXFUNC_H */
+#endif /* _HALIDE_COMPLEXFUNC_H */
