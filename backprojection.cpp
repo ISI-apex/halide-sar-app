@@ -161,7 +161,8 @@ public:
 
         // img: produces shape {nu*nv}
         ComplexFunc img(c, "img");
-        img(x) = sum(Q_hat(x, rnpulses) * exp(k_c_im * dr_i(x, rnpulses)));
+        img(x) = ComplexExpr(c, Expr(0.0), Expr(0.0));
+        img(x) += Q_hat(x, rnpulses) * exp(k_c_im * dr_i(x, rnpulses));
 
         // finally...
         Expr fdr_i = norm_r0(npulses / 2) - norm_rr0(x, npulses / 2);
@@ -180,12 +181,14 @@ public:
         rr0.compute_root();
         norm_rr0.compute_root();
         dr_i.compute_root();
-        Q_real.compute_root();
-        Q_imag.compute_root();
+        Q_real.compute_root().parallel(y);
+        Q_imag.compute_root().parallel(y);
         Q_hat.inner.compute_root();
         img.inner.compute_root();
+        img.inner.update(0).parallel(x, 32);
         fimg.inner.compute_root();
         img_rect.inner.compute_root();
+        //output_buffer.print_loop_nest();
     }
 };
 
