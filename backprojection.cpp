@@ -170,8 +170,8 @@ public:
         RDom rnpulses(0, npulses, "rnpulses");
         RDom rnd(0, nd, "rnd");
 
-        // k_c_im: produces scalar
-        ComplexExpr k_c_im(c, Expr(0.0f), k_r(nsamples / 2));
+        // k_c: produces scalar
+        Expr k_c = k_r(nsamples / 2);
 
         // Q: produces shape {N_fft, npulses}
         ComplexFunc Q(c, "Q");
@@ -236,7 +236,7 @@ public:
         // img: produces shape {nu*nv}
         ComplexFunc img(c, "img");
         img(x) = ComplexExpr(c, Expr(0.0), Expr(0.0));
-        img(x) += Q_hat(x, rnpulses) * exp(-k_c_im * dr_i(x, rnpulses));
+        img(x) += Q_hat(x, rnpulses) * exp(ComplexExpr(c, Expr(0.0), Expr(-1.0)) * k_c * dr_i(x, rnpulses));
 #if DEBUG_IMG
         out_img(c, x) = img.inner(c, x);
 #endif
@@ -244,7 +244,7 @@ public:
         // finally...
         Expr fdr_i = norm_r0(npulses / 2) - norm_rr0(x, npulses / 2);
         ComplexFunc fimg(c, "fimg");
-        fimg(x) = img(x) * exp(k_c_im * fdr_i);
+        fimg(x) = img(x) * exp(ComplexExpr(c, Expr(0.0), Expr(1.0)) * k_c * fdr_i);
 #if DEBUG_FIMG
         out_fimg(c, x) = fimg.inner(c, x);
 #endif
