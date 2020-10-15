@@ -17,7 +17,9 @@ find_path(CNPY_INCLUDE_DIR cnpy.h
           HINTS ${CMAKE_PREFIX_PATH}
           PATH_SUFFIXES include
           REQUIRED)
-include_directories(${CNPY_INCLUDE_DIR})
+
+# Find zlib - public dependency of cnpy and we need its header
+find_package(ZLIB REQUIRED)
 
 # Find pkg-config
 find_package(PkgConfig REQUIRED)
@@ -25,7 +27,6 @@ find_package(PkgConfig REQUIRED)
 # Find FFTW3 single precision
 pkg_check_modules(FFTWF fftw3f REQUIRED)
 link_directories(${FFTWF_LIBRARY_DIRS})
-include_directories(${FFTWF_INCLUDE_DIR})
 
 
 # Generators and Filters (libraries)
@@ -82,6 +83,9 @@ target_link_libraries(interp_test PRIVATE Halide::Halide
 
 add_executable(sarbp_test sarbp.cpp)
 target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
+target_include_directories(sarbp_test PRIVATE ${CNPY_INCLUDE_DIR}
+                                              ${ZLIB_INCLUDE_DIRS}
+                                              ${FFTWF_INCLUDE_DIRS})
 target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          ${CNPY}
                                          ${FFTWF_STATIC_LIBRARIES}
