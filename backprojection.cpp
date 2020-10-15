@@ -236,7 +236,7 @@ public:
         // img: produces shape {nu*nv}
         ComplexFunc img(c, "img");
         img(x) = ComplexExpr(c, Expr(0.0), Expr(0.0));
-        img(x) += Q_hat(x, rnpulses) * exp(k_c_im * dr_i(x, rnpulses));
+        img(x) += Q_hat(x, rnpulses) * exp(-k_c_im * dr_i(x, rnpulses));
 #if DEBUG_IMG
         out_img(c, x) = img.inner(c, x);
 #endif
