@@ -35,6 +35,10 @@ add_executable(linspace.generator linspace.cpp)
 target_link_libraries(linspace.generator PRIVATE Halide::Generator)
 add_halide_library(linspace FROM linspace.generator)
 
+add_executable(arange.generator arange.cpp)
+target_link_libraries(arange.generator PRIVATE Halide::Generator)
+add_halide_library(arange FROM arange.generator)
+
 add_executable(taylor.generator taylor.cpp)
 target_link_libraries(taylor.generator PRIVATE Halide::Generator)
 add_halide_library(taylor FROM taylor.generator)
@@ -67,6 +71,10 @@ add_halide_library(backprojection_post_fft FROM backprojection_post_fft.generato
 add_executable(linspace_test linspace_test.cpp)
 target_link_libraries(linspace_test PRIVATE Halide::Halide
                                             linspace)
+
+add_executable(arange_test arange_test.cpp)
+target_link_libraries(arange_test PRIVATE Halide::Halide
+                                          arange)
 
 add_executable(taylor_test taylor_test.cpp)
 target_link_libraries(taylor_test PRIVATE Halide::Halide
