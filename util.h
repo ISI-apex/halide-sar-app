@@ -28,6 +28,20 @@ inline Func arange_func(Expr start, Expr stop, Expr step) {
     return arange;
 }
 
+// a and b are assumed to be vectors of length 3
+inline Func cross3_func(Func a, Func b) {
+    Var x{"x"};
+    Func cross("cross");
+    // // c_x = a_y * b_z − a_z * b_y
+    // cross(0) = a(1) * b(2) - a(2) * b(1);
+    // // c_y = a_z * b_x − a_x * b_z
+    // cross(1) = a(2) * b(0) - a(0) * b(2);
+    // // c_z = a_x * b_y − a_y * b_x
+    // cross(2) = a(0) * b(1) - a(1) * b(0);
+    cross(x) = a((x + 1) % 3) * b((x + 2) % 3) - a((x + 2) % 3) * b((x + 1) % 3);
+    return cross;
+}
+
 inline Expr log2f_expr(Expr x) {
     Expr log2 = log(x) / log(Expr(2.0f));
     return log2;

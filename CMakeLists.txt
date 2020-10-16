@@ -39,6 +39,10 @@ add_executable(arange.generator arange.cpp)
 target_link_libraries(arange.generator PRIVATE Halide::Generator)
 add_halide_library(arange FROM arange.generator)
 
+add_executable(cross.generator cross.cpp)
+target_link_libraries(cross.generator PRIVATE Halide::Generator)
+add_halide_library(cross FROM cross.generator)
+
 add_executable(taylor.generator taylor.cpp)
 target_link_libraries(taylor.generator PRIVATE Halide::Generator)
 add_halide_library(taylor FROM taylor.generator)
@@ -75,6 +79,10 @@ target_link_libraries(linspace_test PRIVATE Halide::Halide
 add_executable(arange_test arange_test.cpp)
 target_link_libraries(arange_test PRIVATE Halide::Halide
                                           arange)
+
+add_executable(cross_test cross_test.cpp)
+target_link_libraries(cross_test PRIVATE Halide::Halide
+                                         cross)
 
 add_executable(taylor_test taylor_test.cpp)
 target_link_libraries(taylor_test PRIVATE Halide::Halide
