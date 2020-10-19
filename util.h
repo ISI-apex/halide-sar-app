@@ -103,4 +103,15 @@ inline Expr norm_expr(Expr in) {
     return sqrt(sum(in * in));
 }
 
+inline Expr repeat1_expr(Func a, Expr extent_a, Var x) {
+    return a(x % extent_a);
+}
+
+inline Func repeat1_func(Func a, Expr extent_a, const std::string &name = "repeat1") {
+    Var x{"x"};
+    Func f(name);
+    f(x) = repeat1_expr(a, extent_a, x);
+    return f;
+}
+
 #endif

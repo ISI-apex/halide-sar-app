@@ -75,6 +75,10 @@ add_executable(interp.generator interp.cpp)
 target_link_libraries(interp.generator PRIVATE Halide::Generator)
 add_halide_library(interp FROM interp.generator)
 
+add_executable(repeat1.generator repeat.cpp)
+target_link_libraries(repeat1.generator PRIVATE Halide::Generator)
+add_halide_library(repeat1 FROM repeat1.generator)
+
 add_executable(backprojection_pre_fft.generator backprojection.cpp)
 target_link_libraries(backprojection_pre_fft.generator PRIVATE Halide::Generator)
 add_halide_library(backprojection_pre_fft FROM backprojection_pre_fft.generator
@@ -132,6 +136,11 @@ add_executable(linspace_test linspace_test.cpp)
 target_link_libraries(linspace_test PRIVATE Halide::Halide
                                             linspace)
 add_test(linspace linspace_test)
+
+add_executable(repeat_test repeat_test.cpp)
+target_link_libraries(repeat_test PRIVATE Halide::Halide
+                                          repeat1)
+add_test(repeat repeat_test)
 
 add_executable(stack_test stack_test.cpp)
 target_link_libraries(stack_test PRIVATE Halide::Halide
