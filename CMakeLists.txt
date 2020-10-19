@@ -88,10 +88,6 @@ add_halide_library(backprojection_post_fft FROM backprojection_post_fft.generato
 
 # Executables
 
-add_executable(linspace_test linspace_test.cpp)
-target_link_libraries(linspace_test PRIVATE Halide::Halide
-                                            linspace)
-
 add_executable(arange_test arange_test.cpp)
 target_link_libraries(arange_test PRIVATE Halide::Halide
                                           arange)
@@ -130,6 +126,11 @@ add_executable(interp_test interp_test.cpp)
 target_link_libraries(interp_test PRIVATE Halide::Halide
                                           interp)
 add_test(interp interp_test)
+
+add_executable(linspace_test linspace_test.cpp)
+target_link_libraries(linspace_test PRIVATE Halide::Halide
+                                            linspace)
+add_test(linspace linspace_test)
 
 add_executable(stack_test stack_test.cpp)
 target_link_libraries(stack_test PRIVATE Halide::Halide
