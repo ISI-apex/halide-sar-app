@@ -43,6 +43,22 @@ add_executable(cross.generator cross.cpp)
 target_link_libraries(cross.generator PRIVATE Halide::Generator)
 add_halide_library(cross FROM cross.generator)
 
+add_executable(hstack1.generator stack.cpp)
+target_link_libraries(hstack1.generator PRIVATE Halide::Generator)
+add_halide_library(hstack1 FROM hstack1.generator)
+
+add_executable(hstack2.generator stack.cpp)
+target_link_libraries(hstack2.generator PRIVATE Halide::Generator)
+add_halide_library(hstack2 FROM hstack2.generator)
+
+add_executable(vstack1.generator stack.cpp)
+target_link_libraries(vstack1.generator PRIVATE Halide::Generator)
+add_halide_library(vstack1 FROM vstack1.generator)
+
+add_executable(vstack2.generator stack.cpp)
+target_link_libraries(vstack2.generator PRIVATE Halide::Generator)
+add_halide_library(vstack2 FROM vstack2.generator)
+
 add_executable(taylor.generator taylor.cpp)
 target_link_libraries(taylor.generator PRIVATE Halide::Generator)
 add_halide_library(taylor FROM taylor.generator)
@@ -83,6 +99,13 @@ target_link_libraries(arange_test PRIVATE Halide::Halide
 add_executable(cross_test cross_test.cpp)
 target_link_libraries(cross_test PRIVATE Halide::Halide
                                          cross)
+
+add_executable(stack_test stack_test.cpp)
+target_link_libraries(stack_test PRIVATE Halide::Halide
+                                         hstack1
+                                         hstack2
+                                         vstack1
+                                         vstack2)
 
 add_executable(taylor_test taylor_test.cpp)
 target_link_libraries(taylor_test PRIVATE Halide::Halide

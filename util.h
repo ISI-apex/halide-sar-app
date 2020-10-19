@@ -42,6 +42,58 @@ inline Func cross3_func(Func a, Func b) {
     return cross;
 }
 
+inline Expr hstack1_expr(Func a, Func b, Expr extent, Var x) {
+    return select(x < extent,
+                  a(clamp(x, 0, extent - 1)),
+                  b(clamp(x - extent, 0, extent - 1)));
+}
+
+inline Func hstack1_func(Func a, Func b, Expr extent, const std::string &name = "hstack1") {
+    Var x{"x"};
+    Func f(name);
+    f(x) = hstack1_expr(a, b, extent, x);
+    return f;
+}
+
+inline Expr hstack2_expr(Func a, Func b, Expr x_extent, Var x, Var y) {
+    return select(x < x_extent,
+                  a(clamp(x, 0, x_extent - 1), y),
+                  b(clamp(x - x_extent, 0, x_extent - 1), y));
+}
+
+inline Func hstack2_func(Func a, Func b, Expr x_extent, const std::string &name = "hstack2") {
+    Var x{"x"}, y{"y"};
+    Func f(name);
+    f(x, y) = hstack2_expr(a, b, x_extent, x, y);
+    return f;
+}
+
+inline Expr vstack1_expr(Func a, Func b, Expr extent, Var x, Var y) {
+    return select(y == 0,
+                  a(clamp(x, 0, extent - 1)),
+                  b(clamp(x, 0, extent - 1)));
+}
+
+inline Func vstack1_func(Func a, Func b, Expr extent, const std::string &name = "vstack1") {
+    Var x{"x"}, y{"y"};
+    Func f(name);
+    f(x, y) = vstack1_expr(a, b, extent, x, y);
+    return f;
+}
+
+inline Expr vstack2_expr(Func a, Func b, Expr y_extent, Var x, Var y) {
+    return select(y < y_extent,
+                  a(x, clamp(y, 0, y_extent - 1)),
+                  b(x, clamp(y - y_extent, 0, y_extent - 1)));
+}
+
+inline Func vstack2_func(Func a, Func b, Expr y_extent, const std::string &name = "vstack2") {
+    Var x{"x"}, y{"y"};
+    Func f(name);
+    f(x, y) = vstack2_expr(a, b, y_extent, x, y);
+    return f;
+}
+
 inline Expr log2f_expr(Expr x) {
     Expr log2 = log(x) / log(Expr(2.0f));
     return log2;
