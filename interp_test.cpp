@@ -3,6 +3,7 @@
 #include <Halide.h>
 
 #include "interp.h"
+#include "test.h"
 
 using namespace std;
 using Halide::Runtime::Buffer;
@@ -23,12 +24,24 @@ int main(int argc, char **argv) {
 
     // output should be: [ 0, 0, 2.5, 5, 7.5, 10, 15, 20, 25, 30, 30 ]
     if (!rv) {
+        print_1d(out);
         float *obuf = out.begin();
-        cout << "[ " << obuf[0];
-        for (size_t i = 1; i < XS_LEN; i++) {
-            cout << ", " << obuf[i];
+        for (size_t i = 1; i < out.number_of_elements() - 2; i++) {
+            float exp;
+            if (i == 0) {
+                exp = 0.0;
+            } else if (i < XS_LEN / 2) {
+                exp = (i - 1) * 2.5;
+            } else if (i < XS_LEN - 1) {
+                exp = (i - 3) * 5.0;
+            } else {
+                exp = 30.0;
+            }
+            if (abs(exp - obuf[i]) >= 0.01f) {
+                cerr << "Verification failed at index " << i << endl;
+                return -1;
+            }
         }
-        cout << " ]" << endl;
     }
 
     return rv;
