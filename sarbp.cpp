@@ -12,7 +12,6 @@ using namespace std;
 using Halide::Runtime::Buffer;
 
 #define DEBUG_Q 0
-#define DEBUG_DR 0
 #define DEBUG_NORM_R0 0
 #define DEBUG_RR0 0
 #define DEBUG_NORM_RR0 0
@@ -306,9 +305,6 @@ int main(int argc, char **argv) {
 #if DEBUG_Q
     Buffer<float, 3> out_q(2, N_fft, fft_outbuf.dim(2).extent());
 #endif
-#if DEBUG_DR
-    Buffer<double, 1> out_dr(N_fft);
-#endif
 #if DEBUG_NORM_R0
     Buffer<float, 1> out_norm_r0(fft_outbuf.dim(2).extent());
 #endif
@@ -350,9 +346,6 @@ int main(int argc, char **argv) {
 #if DEBUG_Q
         out_q,
 #endif
-#if DEBUG_DR
-        out_dr,
-#endif
 #if DEBUG_NORM_R0
         out_norm_r0,
 #endif
@@ -389,10 +382,6 @@ int main(int argc, char **argv) {
                              static_cast<size_t>(out_q.dim(1).extent()),
                              static_cast<size_t>(out_q.dim(0).extent()) };
     cnpy::npy_save("sarbp_debug-q.npy", (float *)out_q.begin(), shape_q);
-#endif
-#if DEBUG_DR
-    vector<size_t> shape_dr { static_cast<size_t>(out_dr.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-dr.npy", (double *)out_dr.begin(), shape_dr);
 #endif
 #if DEBUG_NORM_R0
     vector<size_t> shape_norm_r0 { static_cast<size_t>(out_norm_r0.dim(0).extent()) };

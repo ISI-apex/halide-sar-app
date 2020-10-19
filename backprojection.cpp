@@ -90,9 +90,6 @@ public:
 #if DEBUG_Q
     Output<Buffer<float>> out_Q{"out_Q", 3};
 #endif
-#if DEBUG_DR
-    Output<Buffer<double>> out_dr{"out_dr", 1};
-#endif
 #if DEBUG_NORM_R0
     Output<Buffer<float>> out_norm_r0{"out_norm_r0", 1};
 #endif
@@ -126,32 +123,25 @@ public:
     Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
 
     // xs: {nu*nv, npulses}
-    // xp: {N_fft}
+    // lsa, lsb, lsn: implicit linspace parameters (min, max, count)
     // fp: {N_fft, npulses}
     // output: {nu*nv, npulses}
-    inline Expr interp(Func xs, Func xp, ComplexFunc fp, Expr c, Expr extent) {
-        RDom r(0, extent, "r");
-        // index lookups into xp
-        Expr lutl("lutl"); // lower index
-        Expr lutu("lutu"); // upper index
-        // last index in xp where xp(r) < xs(x, y): shape = {extent}
-        lutl = max(argmax(r, xp(r) >= xs(x, y))[0] - 1, 0);
-        // first index in xp where xp(r) >= xs(x, y): shape = {extent}
-        lutu = argmax(r, xp(r) >= xs(x, y))[0];
-        // Halide complains if we don't clamp
-        Expr cll = clamp(lutl, 0, extent - 1);
-        Expr clu = clamp(lutu, 0, extent - 1);
-        Expr interp("interp");
-        // Can avoid these first two selects if we enforce that xs values are in xp's value range
-        interp =
-            select(xs(x, y) < xp(0), ConciseCasts::f64(fp.inner(c, 0, y)),
-                   select(xs(x, y) > xp(extent - 1), ConciseCasts::f64(fp.inner(c, extent - 1, y)),
-                          select(cll == clu,
-                                 ConciseCasts::f64(fp.inner(c, cll, y)),
-                                 lerp(ConciseCasts::f64(fp.inner(c, cll, y)),
-                                      ConciseCasts::f64(fp.inner(c, clu, y)),
-                                      ConciseCasts::f64((xs(x, y) - xp(cll)) / (xp(clu) - xp(cll)))))));
-        return interp;
+    inline Expr interp(Func xs, Expr lsa, Expr lsb, Expr lsn, ComplexFunc fp, Expr c) {
+        Expr lsr = (lsb-lsa) / (lsn-1);             // linspace rate of increase
+        Expr luts = (xs(x, y) - lsa) / lsr;         // input value scaled to linspace
+        Expr lutl = ConciseCasts::i32(floor(luts)); // lower index
+        Expr lutu = lutl + 1;                       // upper index
+        Expr luto = luts - lutl;                    // offset within lower-upper span
+
+        // clamps to ensure fp accesses occur within the expected range, even if the input is crazy
+        Expr cll = clamp(lutl, 0, lsn - 1);
+        Expr clu = clamp(lutu, 0, lsn - 1);
+        Expr pos = clamp(luto, Expr(0.0), Expr(1.0));
+
+        Expr rv = lerp(
+            ConciseCasts::f64(fp.inner(c, cll, y)),
+            ConciseCasts::f64(fp.inner(c, clu, y)), pos);
+        return rv;
     }
 
     void generate() {
@@ -166,7 +156,6 @@ public:
         Expr nu = u.dim(0).extent();
         Expr nv = v.dim(0).extent();
         Expr nd = pos.dim(0).extent(); // nd = 3 (spatial dimensions)
-        RDom rnfft(0, N_fft, "rnfft");
         RDom rnpulses(0, npulses, "rnpulses");
         RDom rnd(0, nd, "rnd");
 
@@ -178,13 +167,6 @@ public:
         Q = fftshift_func(input, N_fft, npulses);
 #if DEBUG_Q
         out_Q(c, x, y) = Q.inner(c, x, y);
-#endif
-
-        // dr: produces shape {N_fft}
-        Func dr("dr");
-        dr = linspace_func(floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), rnfft);
-#if DEBUG_DR
-        out_dr(x) = dr(x);
 #endif
 
         // norm(r0): produces shape {npulses}
@@ -219,15 +201,17 @@ public:
         Func Q_real("Q_real");
         Func Q_imag("Q_imag");
         ComplexFunc Q_hat(c, "Q_hat");
-        Q_real(x, y) = interp(dr_i, dr, Q, 0, N_fft);
+        Q_real(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 0);
 #if DEBUG_Q_REAL
         out_q_real(x, y) = Q_real(x, y);
 #endif
         // Q_real.trace_stores();
-        Q_imag(x, y) = interp(dr_i, dr, Q, 1, N_fft);
+        Q_imag(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 1);
 #if DEBUG_Q_IMAG
         out_q_imag(x, y) = Q_imag(x, y);
 #endif
+        // NOTE: it is possible to do this, directly
+        //Q_hat(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, c);
         Q_hat(x, y) = ComplexExpr(c, Q_real(x, y), Q_imag(x, y));
 #if DEBUG_Q_HAT
         out_q_hat(c, x, y) = Q_hat.inner(c, x, y);
@@ -256,7 +240,6 @@ public:
 
         in_func.compute_root();
         Q.inner.compute_root();
-        dr.compute_root();
         norm_r0.compute_root();
         rr0.compute_root();
         norm_rr0.compute_root();
