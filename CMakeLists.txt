@@ -100,13 +100,6 @@ add_executable(cross_test cross_test.cpp)
 target_link_libraries(cross_test PRIVATE Halide::Halide
                                          cross)
 
-add_executable(stack_test stack_test.cpp)
-target_link_libraries(stack_test PRIVATE Halide::Halide
-                                         hstack1
-                                         hstack2
-                                         vstack1
-                                         vstack2)
-
 add_executable(taylor_test taylor_test.cpp)
 target_link_libraries(taylor_test PRIVATE Halide::Halide
                                           taylor)
@@ -115,10 +108,6 @@ add_executable(norm_test norm_test.cpp)
 target_link_libraries(norm_test PRIVATE Halide::Halide
                                         norm1d
                                         norm2d)
-
-add_executable(interp_test interp_test.cpp)
-target_link_libraries(interp_test PRIVATE Halide::Halide
-                                          interp)
 
 add_executable(sarbp_test sarbp.cpp)
 target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
@@ -130,3 +119,21 @@ target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          ${FFTWF_STATIC_LIBRARIES}
                                          backprojection_pre_fft
                                          backprojection_post_fft)
+
+
+# Tests
+
+enable_testing()
+
+add_executable(interp_test interp_test.cpp)
+target_link_libraries(interp_test PRIVATE Halide::Halide
+                                          interp)
+add_test(interp interp_test)
+
+add_executable(stack_test stack_test.cpp)
+target_link_libraries(stack_test PRIVATE Halide::Halide
+                                         hstack1
+                                         hstack2
+                                         vstack1
+                                         vstack2)
+add_test(stack stack_test)
