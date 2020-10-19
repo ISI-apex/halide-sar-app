@@ -3,6 +3,7 @@
 #include <Halide.h>
 
 #include "cross.h"
+#include "test.h"
 
 using namespace std;
 using Halide::Runtime::Buffer;
@@ -18,14 +19,16 @@ int main(int argc, char **argv) {
     Buffer<float, 1> out(N);
     int rv = cross(in_a, in_b, out);
 
-    // output should be: [ -3, 6, 3 ]
+    // output should be: [ -3, 6, -3 ]
     if (!rv) {
+        print_1d(out);
         float *obuf = out.begin();
-        cout << "[ " << obuf[0];
-        for (size_t i = 1; i < (size_t)N; i++) {
-            cout << ", " << obuf[i];
+        if (abs(obuf[0] + 3) >= 0.01f ||
+            abs(obuf[1] - 6) >= 0.01f ||
+            abs(obuf[2] + 3) >= 0.01f) {
+            cerr << "Verification failed" << endl;
+            return -1;
         }
-        cout << " ]" << endl;
     }
 
     return rv;

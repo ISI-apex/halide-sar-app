@@ -96,10 +96,6 @@ add_executable(arange_test arange_test.cpp)
 target_link_libraries(arange_test PRIVATE Halide::Halide
                                           arange)
 
-add_executable(cross_test cross_test.cpp)
-target_link_libraries(cross_test PRIVATE Halide::Halide
-                                         cross)
-
 add_executable(taylor_test taylor_test.cpp)
 target_link_libraries(taylor_test PRIVATE Halide::Halide
                                           taylor)
@@ -124,6 +120,11 @@ target_link_libraries(sarbp_test PRIVATE Halide::Halide
 # Tests
 
 enable_testing()
+
+add_executable(cross_test cross_test.cpp)
+target_link_libraries(cross_test PRIVATE Halide::Halide
+                                         cross)
+add_test(cross cross_test)
 
 add_executable(interp_test interp_test.cpp)
 target_link_libraries(interp_test PRIVATE Halide::Halide
