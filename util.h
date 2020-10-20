@@ -29,16 +29,21 @@ inline Func arange_func(Expr start, Expr stop, Expr step) {
 }
 
 // a and b are assumed to be vectors of length 3
-inline Func cross3_func(Func a, Func b) {
-    Var x{"x"};
-    Func cross("cross");
+inline Expr cross3_expr(Func a, Func b, Var x) {
     // // c_x = a_y * b_z − a_z * b_y
     // cross(0) = a(1) * b(2) - a(2) * b(1);
     // // c_y = a_z * b_x − a_x * b_z
     // cross(1) = a(2) * b(0) - a(0) * b(2);
     // // c_z = a_x * b_y − a_y * b_x
     // cross(2) = a(0) * b(1) - a(1) * b(0);
-    cross(x) = a((x + 1) % 3) * b((x + 2) % 3) - a((x + 2) % 3) * b((x + 1) % 3);
+    return a((x + 1) % 3) * b((x + 2) % 3) - a((x + 2) % 3) * b((x + 1) % 3);
+}
+
+// a and b are assumed to be vectors of length 3
+inline Func cross3_func(Func a, Func b, const std::string &name = "cross3") {
+    Var x{"x"};
+    Func cross(name);
+    cross(x) = cross3_expr(a, b, x);
     return cross;
 }
 
