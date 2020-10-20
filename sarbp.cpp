@@ -5,6 +5,11 @@
 #include <cnpy.h>
 #include <fftw3.h>
 
+#include "img_plane.h"
+#include "ip_uv.h"
+#include "ip_k.h"
+#include "ip_v_hat.h"
+#include "ip_u_hat.h"
 #include "backprojection_pre_fft.h"
 #include "backprojection_post_fft.h"
 
@@ -25,6 +30,8 @@ using Halide::Runtime::Buffer;
 // TODO: Are all these memcpy necessary?
 
 #define UPSAMPLE 2
+#define RES_FACTOR 1.0
+#define ASPECT 1.0
 
 int main(int argc, char **argv) {
     if (argc < 3) {
@@ -128,6 +135,7 @@ int main(int argc, char **argv) {
     }
     float *R_c = static_cast<float *>(malloc(3 * sizeof(float)));
     memcpy(R_c, npydata.data<float>(), 3 * sizeof(float));
+    Buffer<float, 1> buf_R_c(R_c, 3);
 
     npydata = cnpy::npy_load(platform_dir + "/t.npy");
     if (npydata.shape.size() != 1 || npydata.shape[0] != nsamples) {
@@ -163,96 +171,37 @@ int main(int argc, char **argv) {
     complex<float> *phs = static_cast<complex<float> *>(malloc(npulses * nsamples * sizeof(complex<float>)));
     memcpy(phs, npydata.data<complex<float>>(), npulses * nsamples * sizeof(complex<float>));
 
-    // Load primitives
-    // du: <class 'numpy.float64'>
-    // dv: <class 'numpy.float64'>
+    // Img plane variables
 
-    npydata = cnpy::npy_load(img_plane_dir + "/du.npy");
-    ptr_dbl = npydata.data<double>();
-    // double delta_r = 0.24085;
-    double d_u = *ptr_dbl;
-    printf("d_u: %lf\n", d_u);
+    double nu = ip_upsample(nsamples);
+    cout << "nu: " << nu << endl;
+    double nv = ip_upsample(npulses);
+    cout << "nv: " << nv << endl;
 
-    npydata = cnpy::npy_load(img_plane_dir + "/dv.npy");
-    ptr_dbl = npydata.data<double>();
-    // double delta_r = 0.24085;
-    double d_v = *ptr_dbl;
-    printf("d_v: %lf\n", d_v);
+    double d_u = ip_du(delta_r, RES_FACTOR, nsamples, nu);
+    cout << "d_u: " << d_u << endl;
+    double d_v = ip_dv(ASPECT, d_u);
+    cout << "d_v: " << d_v << endl;
 
-    // Load arrays
-    // k_u: <class 'numpy.ndarray'>
-    // k_u[0]: <class 'numpy.float64'>
-    // k_v: <class 'numpy.ndarray'>
-    // k_v[0]: <class 'numpy.float64'>
-    // n_hat: <class 'numpy.ndarray'>
-    // n_hat[0]: <class 'numpy.int64'>
-    // u: <class 'numpy.ndarray'>
-    // u[0]: <class 'numpy.float64'>
-    // u_hat: <class 'numpy.ndarray'>
-    // u_hat[0]: <class 'numpy.float64'>
-    // v: <class 'numpy.ndarray'>
-    // v[0]: <class 'numpy.float64'>
-    // v_hat: <class 'numpy.ndarray'>
-    // v_hat[0]: <class 'numpy.float64'>
+    Buffer<double, 1> in_u(nu);
+    ip_uv(nu, d_u, in_u);
 
-    // TODO: 512 is magic number?
-    npydata = cnpy::npy_load(img_plane_dir + "/k_u.npy");
-    if (npydata.shape.size() != 1 || npydata.shape[0] != 512) {
-        cerr << "Bad shape!" << endl;
-        return 1;
-    }
-    double* k_u = static_cast<double *>(malloc(512 * sizeof(double)));
-    memcpy(k_u, npydata.data<double>(), 512 * sizeof(double));
+    Buffer<double, 1> in_v(nv);
+    ip_uv(nv, d_v, in_v);
 
-    npydata = cnpy::npy_load(img_plane_dir + "/k_v.npy");
-    if (npydata.shape.size() != 1 || npydata.shape[0] != 512) {
-        cerr << "Bad shape!" << endl;
-        return 1;
-    }
-    double* k_v = static_cast<double *>(malloc(512 * sizeof(double)));
-    memcpy(k_v, npydata.data<double>(), 512 * sizeof(double));
+    Buffer<double, 1> buf_k_u(nu);
+    ip_k(nu, d_u, buf_k_u);
 
-    npydata = cnpy::npy_load(img_plane_dir + "/n_hat.npy");
-    if (npydata.shape.size() != 1 || npydata.shape[0] != 3) {
-        cerr << "Bad shape!" << endl;
-        return 1;
-    }
-    int64_t* n_hat = static_cast<int64_t *>(malloc(3 * sizeof(int64_t)));
-    memcpy(n_hat, npydata.data<int64_t>(), 3 * sizeof(int64_t));
+    Buffer<double, 1> buf_k_v(nv);
+    ip_k(nv, d_v, buf_k_v);
 
-    npydata = cnpy::npy_load(img_plane_dir + "/u.npy");
-    if (npydata.shape.size() != 1 || npydata.shape[0] != 512) {
-        cerr << "Bad shape!" << endl;
-        return 1;
-    }
-    double* u = static_cast<double *>(malloc(512 * sizeof(double)));
-    memcpy(u, npydata.data<double>(), 512 * sizeof(double));
-    Buffer<double, 1> in_u(u, 512);
+    Buffer<const int, 1> buf_n_hat(&N_HAT[0], 3);
 
-    npydata = cnpy::npy_load(img_plane_dir + "/u_hat.npy");
-    if (npydata.shape.size() != 1 || npydata.shape[0] != 3) {
-        cerr << "Bad shape!" << endl;
-        return 1;
-    }
-    double* u_hat = static_cast<double *>(malloc(3 * sizeof(double)));
-    memcpy(u_hat, npydata.data<double>(), 3 * sizeof(double));
+    Buffer<double, 3> buf_v_hat(3);
+    ip_v_hat(buf_n_hat, buf_R_c, buf_v_hat);
 
-    npydata = cnpy::npy_load(img_plane_dir + "/v.npy");
-    if (npydata.shape.size() != 1 || npydata.shape[0] != 512) {
-        cerr << "Bad shape!" << endl;
-        return 1;
-    }
-    double* v = static_cast<double *>(malloc(512 * sizeof(double)));
-    memcpy(v, npydata.data<double>(), 512 * sizeof(double));
-    Buffer<double, 1> in_v(v, 512);
-
-    npydata = cnpy::npy_load(img_plane_dir + "/v_hat.npy");
-    if (npydata.shape.size() != 1 || npydata.shape[0] != 3) {
-        cerr << "Bad shape!" << endl;
-        return 1;
-    }
-    double* v_hat = static_cast<double *>(malloc(3 * sizeof(double)));
-    memcpy(v_hat, npydata.data<double>(), 3 * sizeof(double));
+    Buffer<double, 3> buf_u_hat(3);
+    ip_u_hat(buf_v_hat, buf_n_hat, buf_u_hat);
 
     // Now do something with the data
     // pixel_locs: <class 'numpy.ndarray'>

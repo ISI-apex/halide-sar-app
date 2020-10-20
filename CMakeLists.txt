@@ -79,6 +79,22 @@ add_executable(repeat1.generator repeat.cpp)
 target_link_libraries(repeat1.generator PRIVATE Halide::Generator)
 add_halide_library(repeat1 FROM repeat1.generator)
 
+add_executable(ip_uv.generator img_plane.cpp)
+target_link_libraries(ip_uv.generator PRIVATE Halide::Generator)
+add_halide_library(ip_uv FROM ip_uv.generator)
+
+add_executable(ip_k.generator img_plane.cpp)
+target_link_libraries(ip_k.generator PRIVATE Halide::Generator)
+add_halide_library(ip_k FROM ip_k.generator)
+
+add_executable(ip_v_hat.generator img_plane.cpp)
+target_link_libraries(ip_v_hat.generator PRIVATE Halide::Generator)
+add_halide_library(ip_v_hat FROM ip_v_hat.generator)
+
+add_executable(ip_u_hat.generator img_plane.cpp)
+target_link_libraries(ip_u_hat.generator PRIVATE Halide::Generator)
+add_halide_library(ip_u_hat FROM ip_u_hat.generator)
+
 add_executable(backprojection_pre_fft.generator backprojection.cpp)
 target_link_libraries(backprojection_pre_fft.generator PRIVATE Halide::Generator)
 add_halide_library(backprojection_pre_fft FROM backprojection_pre_fft.generator
@@ -109,6 +125,10 @@ target_include_directories(sarbp_test PRIVATE ${CNPY_INCLUDE_DIR}
 target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          ${CNPY}
                                          ${FFTWF_STATIC_LIBRARIES}
+                                         ip_uv
+                                         ip_k
+                                         ip_v_hat
+                                         ip_u_hat
                                          backprojection_pre_fft
                                          backprojection_post_fft)
 
