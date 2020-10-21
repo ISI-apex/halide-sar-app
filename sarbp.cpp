@@ -280,6 +280,7 @@ int main(int argc, char **argv) {
     Buffer<double, 2> out_fimg(2, in_u.dim(0).extent() * in_v.dim(0).extent());
 #endif
     Buffer<double, 3> outbuf(2, in_u.dim(0).extent(), in_v.dim(0).extent());
+    Buffer<double, 2> outbuf_dB(in_u.dim(0).extent(), in_v.dim(0).extent());
     cout <<"Halide post-fft start" << endl;
     rv = backprojection_post_fft(fft_outbuf, nsamples, delta_r, in_k_r, in_u, in_v, in_pos, in_pixel_locs,
 #if DEBUG_Q
@@ -312,7 +313,7 @@ int main(int argc, char **argv) {
 #if DEBUG_FIMG
         out_fimg,
 #endif
-        outbuf);
+        outbuf, outbuf_dB);
     cout << "Halide post-fft returned " << rv << endl;
 
     // write output
@@ -368,6 +369,7 @@ int main(int argc, char **argv) {
     vector<size_t> shape_out { static_cast<size_t>(outbuf.dim(2).extent()),
                                static_cast<size_t>(outbuf.dim(1).extent()) };
     cnpy::npy_save("sarbp_test.npy", (complex<double> *)outbuf.begin(), shape_out);
+    cnpy::npy_save("sarbp_test_dB.npy", (double *)outbuf_dB.begin(), shape_out);
 
     return rv;
 }

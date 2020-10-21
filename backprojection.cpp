@@ -119,6 +119,7 @@ public:
 #endif
 
     Output<Buffer<double>> output_buffer{"output_packed", 3};
+    Output<Buffer<double>> out_dB{"out_dB", 2};
 
     Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
 
@@ -205,7 +206,6 @@ public:
 #if DEBUG_Q_REAL
         out_q_real(x, y) = Q_real(x, y);
 #endif
-        // Q_real.trace_stores();
         Q_imag(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 1);
 #if DEBUG_Q_IMAG
         out_q_imag(x, y) = Q_imag(x, y);
@@ -237,6 +237,7 @@ public:
         ComplexFunc img_rect(c, "img_rect");
         img_rect(x, y) = fimg((nu * (nv - y - 1)) + x);
         output_buffer(c, x, y) = img_rect.inner(c, x, y);
+        out_dB(x, y) = to_dB(img_rect, nu, nv, x, y);
 
         in_func.compute_root();
         Q.inner.compute_root();
