@@ -10,6 +10,7 @@
 #include "ip_k.h"
 #include "ip_v_hat.h"
 #include "ip_u_hat.h"
+#include "ip_pixel_locs.h"
 #include "backprojection_pre_fft.h"
 #include "backprojection_post_fft.h"
 
@@ -34,12 +35,11 @@ using Halide::Runtime::Buffer;
 #define ASPECT 1.0
 
 int main(int argc, char **argv) {
-    if (argc < 3) {
-        cerr << "Usage: " << argv[0] << " platform_dir img_plane_dir" << endl;
+    if (argc < 2) {
+        cerr << "Usage: " << argv[0] << " platform_dir" << endl;
         return 1;
     }
     string platform_dir = string(argv[1]);
-    string img_plane_dir = string(argv[2]);
 
     // Load primitives
     // B_IF: <class 'numpy.float32'>
@@ -173,9 +173,9 @@ int main(int argc, char **argv) {
 
     // Img plane variables
 
-    double nu = ip_upsample(nsamples);
+    int nu = ip_upsample(nsamples);
     cout << "nu: " << nu << endl;
-    double nv = ip_upsample(npulses);
+    int nv = ip_upsample(npulses);
     cout << "nv: " << nv << endl;
 
     double d_u = ip_du(delta_r, RES_FACTOR, nsamples, nu);
@@ -197,26 +197,16 @@ int main(int argc, char **argv) {
 
     Buffer<const int, 1> buf_n_hat(&N_HAT[0], 3);
 
-    Buffer<double, 3> buf_v_hat(3);
+    Buffer<double, 1> buf_v_hat(3);
     ip_v_hat(buf_n_hat, buf_R_c, buf_v_hat);
 
-    Buffer<double, 3> buf_u_hat(3);
+    Buffer<double, 1> buf_u_hat(3);
     ip_u_hat(buf_v_hat, buf_n_hat, buf_u_hat);
 
-    // Now do something with the data
-    // pixel_locs: <class 'numpy.ndarray'>
-    // pixel_locs[0]: <class 'numpy.ndarray'>
-    // pixel_locs[0][0]: <class 'numpy.float64'>
+    Buffer<double, 2> in_pixel_locs(nu*nv, 3);
+    ip_pixel_locs(in_u, in_v, buf_u_hat, buf_v_hat, in_pixel_locs);
 
-    npydata = cnpy::npy_load(img_plane_dir + "/pixel_locs.npy");
-    if (npydata.shape.size() != 2 || npydata.shape[0] != 3 || npydata.shape[1] != 512*512) {
-        cerr << "Bad shape!" << endl;
-        return 1;
-    }
-    double* pixel_locs = static_cast<double *>(malloc(3 * 512*512 * sizeof(double)));
-    memcpy(pixel_locs, npydata.data<double>(), 3 * 512*512 * sizeof(double));
-    Buffer<double, 2> in_pixel_locs(pixel_locs, 512*512, 3);
-
+    // Compute FFT width (power of 2)
     int N_fft = static_cast<int>(pow(2, static_cast<int>(log2(nsamples * UPSAMPLE)) + 1));
 
     // Copy input data
