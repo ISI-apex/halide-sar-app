@@ -118,7 +118,7 @@ public:
     Output<Buffer<double>> out_fimg{"out_fimg", 2};
 #endif
 
-    Output<Buffer<float>> output_buffer{"output_packed", 3};
+    Output<Buffer<double>> output_buffer{"output_packed", 3};
 
     Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
 
@@ -236,7 +236,7 @@ public:
         // img_rect: produce shape {nu, nv}, but reverse row order
         ComplexFunc img_rect(c, "img_rect");
         img_rect(x, y) = fimg((nu * (nv - y - 1)) + x);
-        output_buffer(c, x, y) = ConciseCasts::f32(img_rect.inner(c, x, y));
+        output_buffer(c, x, y) = img_rect.inner(c, x, y);
 
         in_func.compute_root();
         Q.inner.compute_root();
