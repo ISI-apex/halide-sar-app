@@ -78,7 +78,36 @@ public:
     }
 };
 
+class ImgPlanePixelLocsGenerator : public Halide::Generator<ImgPlanePixelLocsGenerator> {
+public:
+    Input<Buffer<double>> u {"u", 1};
+    Input<Buffer<double>> v {"v", 1};
+    Input<Buffer<double>> u_hat {"u_hat", 1};
+    Input<Buffer<double>> v_hat {"v_hat", 1};
+    Output<Buffer<double>> pixel_locs {"pixel_locs", 2};
+
+    void generate() {
+        Var x{"x"}, y{"y"};
+        Expr u_extent = u.dim(0).extent();
+        Expr v_extent = v.dim(0).extent();
+        Expr uv_extent = u_extent * v_extent;
+
+        // produces shape {2, 3}
+        Func A("A");
+        A(x, y) = select(x % 2 == 0, u_hat(y), v_hat(y));
+
+        // produces shape {uv_extent, 2}
+        Func b("b");
+        b(x, y) = select(y == 0, u(x % u_extent), v(x / v_extent));
+
+        // produces shapes {uv_extent, 3}
+        RDom r(0, 2, "r");
+        pixel_locs(x, y) = sum(A(r, y) * b(x, r));
+    }
+};
+
 HALIDE_REGISTER_GENERATOR(ImgPlaneUVGenerator, ip_uv)
 HALIDE_REGISTER_GENERATOR(ImgPlaneKGenerator, ip_k)
 HALIDE_REGISTER_GENERATOR(ImgPlaneVHatGenerator, ip_v_hat)
 HALIDE_REGISTER_GENERATOR(ImgPlaneUHatGenerator, ip_u_hat)
+HALIDE_REGISTER_GENERATOR(ImgPlanePixelLocsGenerator, ip_pixel_locs)
