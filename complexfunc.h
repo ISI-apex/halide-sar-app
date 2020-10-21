@@ -277,6 +277,11 @@ inline std::ostream &operator<<(std::ostream &os, const ComplexExpr &a) {
     return os;
 }
 
+// absolute value
+inline Halide::Expr abs(ComplexExpr a) {
+    return sqrt(a.real * a.real + a.imag * a.imag);
+}
+
 // summation
 inline ComplexExpr sum(const ComplexExpr &z, const std::string &s = "sum") {
     return ComplexExpr(z.element,
