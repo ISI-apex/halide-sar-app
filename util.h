@@ -5,6 +5,12 @@
 
 using namespace Halide;
 
+// normalize to value between 0 and 1, so probably not good for integer types...
+// first clamps val, then rescales.
+inline Expr normalize(Expr val, Expr min, Expr max) {
+    return (clamp(val, min, max) - min) / (max - min);
+}
+
 inline Func linspace_func(Expr start, Expr stop, RDom r) {
     Var x{"x"};
     Expr step("step");
