@@ -7,7 +7,7 @@
 
 using namespace Halide;
 
-inline Func taylor_func(Expr num, Expr S_L = Expr(43)) {
+inline Func taylor_func(Expr num, Expr S_L = Expr(43), const std::string &name = "taylor") {
     // need to define our domain
     RDom n(0, num, "n");
     Func xi("xi");
@@ -36,7 +36,7 @@ inline Func taylor_func(Expr num, Expr S_L = Expr(43)) {
     w(x) += F_m(r) * cos(Expr(2 * (float)M_PI) * (r + 1) * xi(x));
 
     // separate iteration domain (RDom) to get maximum
-    Func out;
+    Func out(name);
     out(x) = w(x) / maximum(w(n));
     return out;
 }
