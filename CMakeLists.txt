@@ -139,6 +139,7 @@ target_include_directories(sarbp_test PRIVATE ${CNPY_INCLUDE_DIR}
                                               ${ZLIB_INCLUDE_DIRS}
                                               ${FFTWF_INCLUDE_DIRS})
 target_link_libraries(sarbp_test PRIVATE Halide::Halide
+                                         Halide::ImageIO
                                          ${CNPY}
                                          ${FFTWF_STATIC_LIBRARIES}
                                          ip_uv
@@ -147,7 +148,8 @@ target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          ip_u_hat
                                          ip_pixel_locs
                                          backprojection_pre_fft
-                                         backprojection_post_fft)
+                                         backprojection_post_fft
+                                         img_output_u8)
 
 
 # Tests

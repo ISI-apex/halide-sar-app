@@ -29,5 +29,5 @@ make -j
 To run the backprojection test:
 
 ```sh
-./sarbp_test ../data/AFRL/pass1/HH_npy
+./sarbp_test ../data/AFRL/pass1/HH_npy output.png
 ```

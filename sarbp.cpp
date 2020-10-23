@@ -2,6 +2,8 @@
 #include <stdio.h>
 
 #include <Halide.h>
+#include <halide_image_io.h>
+
 #include <cnpy.h>
 #include <fftw3.h>
 
@@ -13,6 +15,7 @@
 #include "ip_pixel_locs.h"
 #include "backprojection_pre_fft.h"
 #include "backprojection_post_fft.h"
+#include "img_output_u8.h"
 
 using namespace std;
 using Halide::Runtime::Buffer;
@@ -35,11 +38,12 @@ using Halide::Runtime::Buffer;
 #define ASPECT 1.0
 
 int main(int argc, char **argv) {
-    if (argc < 2) {
-        cerr << "Usage: " << argv[0] << " platform_dir" << endl;
+    if (argc < 3) {
+        cerr << "Usage: " << argv[0] << " <platform_dir> <output_png>" << endl;
         return 1;
     }
     string platform_dir = string(argv[1]);
+    string output_png = string(argv[2]);
 
     // Load primitives
     // B_IF: <class 'numpy.float32'>
@@ -370,6 +374,10 @@ int main(int argc, char **argv) {
                                static_cast<size_t>(outbuf.dim(1).extent()) };
     cnpy::npy_save("sarbp_test.npy", (complex<double> *)outbuf.begin(), shape_out);
     cnpy::npy_save("sarbp_test_dB.npy", (double *)outbuf_dB.begin(), shape_out);
+
+    Buffer<uint8_t, 2> outbuf_u8(outbuf_dB.dim(0).extent(), outbuf_dB.dim(1).extent());
+    img_output_u8(outbuf_dB, -30, 0, outbuf_u8);
+    Halide::Tools::convert_and_save_image(outbuf_u8, output_png);
 
     return rv;
 }
