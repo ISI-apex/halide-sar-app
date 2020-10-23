@@ -109,6 +109,10 @@ target_link_libraries(backprojection_post_fft.generator PRIVATE Halide::Generato
 add_halide_library(backprojection_post_fft FROM backprojection_post_fft.generator
                                            FEATURES large_buffers)
 
+add_executable(img_output_u8.generator img_output.cpp)
+target_link_libraries(img_output_u8.generator PRIVATE Halide::Generator)
+add_halide_library(img_output_u8 FROM img_output_u8.generator)
+
 
 # Executables
 
@@ -120,6 +124,14 @@ add_executable(norm_test norm_test.cpp)
 target_link_libraries(norm_test PRIVATE Halide::Halide
                                         norm1d
                                         norm2d)
+
+add_executable(img_output_u8_test img_output_u8_test.cpp)
+target_include_directories(img_output_u8_test PRIVATE ${CNPY_INCLUDE_DIR}
+                                                      ${ZLIB_INCLUDE_DIRS})
+target_link_libraries(img_output_u8_test PRIVATE Halide::Halide
+                                                 Halide::ImageIO
+                                                 ${CNPY}
+                                                 img_output_u8)
 
 add_executable(sarbp_test sarbp.cpp)
 target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
