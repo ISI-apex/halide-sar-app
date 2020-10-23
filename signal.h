@@ -41,4 +41,10 @@ inline Func taylor_func(Expr num, Expr S_L = Expr(43), const std::string &name =
     return out;
 }
 
+// Normalizes dB between 0 and 1, then scales by Type t's max (e.g., UInt(8) or UInt(16))
+// Return type depends on dB, but can then be safely cast to Type t
+inline Expr dB_scale(Expr dB, Expr min_dB, Expr max_dB, Type t) {
+    return clamp(normalize(dB, min_dB, max_dB) * t.max(), 0, t.max());
+}
+
 #endif
