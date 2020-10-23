@@ -31,11 +31,13 @@ using Halide::Runtime::Buffer;
 #define DEBUG_IMG 0
 #define DEBUG_FIMG 0
 
-// TODO: Are all these memcpy necessary?
-
 #define UPSAMPLE 2
 #define RES_FACTOR 1.0
 #define ASPECT 1.0
+
+// TODO: These values should depend on the dataset and/or platform?
+#define DB_MIN -30
+#define DB_MAX 0
 
 int main(int argc, char **argv) {
     if (argc < 3) {
@@ -132,7 +134,6 @@ int main(int argc, char **argv) {
     memcpy(k_y, npydata.data<double>(), npulses * sizeof(double));
 
     npydata = cnpy::npy_load(platform_dir + "/R_c.npy");
-    // TODO: 3 is magic number?
     if (npydata.shape.size() != 1 || npydata.shape[0] != 3) {
         cerr << "Bad shape!" << endl;
         return 1;
@@ -158,7 +159,6 @@ int main(int argc, char **argv) {
     // phs[0][0]: <class 'numpy.complex64'>
     
     npydata = cnpy::npy_load(platform_dir + "/pos.npy");
-    // TODO: 3 is magic number?
     if (npydata.shape.size() != 2 || npydata.shape[0] != npulses || npydata.shape[1] != 3) {
         cerr << "Bad shape!" << endl;
         return 1;
@@ -285,7 +285,7 @@ int main(int argc, char **argv) {
 #endif
     Buffer<double, 3> outbuf(2, in_u.dim(0).extent(), in_v.dim(0).extent());
     Buffer<double, 2> outbuf_dB(in_u.dim(0).extent(), in_v.dim(0).extent());
-    cout <<"Halide post-fft start" << endl;
+    cout << "Halide post-fft start" << endl;
     rv = backprojection_post_fft(fft_outbuf, nsamples, delta_r, in_k_r, in_u, in_v, in_pos, in_pixel_locs,
 #if DEBUG_Q
         out_q,
@@ -319,6 +319,9 @@ int main(int argc, char **argv) {
 #endif
         outbuf, outbuf_dB);
     cout << "Halide post-fft returned " << rv << endl;
+    if (rv != 0) {
+        return rv;
+    }
 
     // write output
 #if DEBUG_Q
@@ -375,8 +378,14 @@ int main(int argc, char **argv) {
     cnpy::npy_save("sarbp_test.npy", (complex<double> *)outbuf.begin(), shape_out);
     cnpy::npy_save("sarbp_test_dB.npy", (double *)outbuf_dB.begin(), shape_out);
 
+    // Produce output image
     Buffer<uint8_t, 2> outbuf_u8(outbuf_dB.dim(0).extent(), outbuf_dB.dim(1).extent());
-    img_output_u8(outbuf_dB, -30, 0, outbuf_u8);
+    cout << "Halide PNG production start" << endl;
+    rv = img_output_u8(outbuf_dB, DB_MIN, DB_MAX, outbuf_u8);
+    cout << "Halide PNG production returned " << rv << endl;
+    if (rv != 0) {
+        return rv;
+    }
     Halide::Tools::convert_and_save_image(outbuf_u8, output_png);
 
     return rv;
