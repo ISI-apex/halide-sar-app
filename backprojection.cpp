@@ -9,6 +9,13 @@
 
 using namespace Halide;
 
+// pre-fft
+#define DEBUG_WIN 0
+#define DEBUG_FILT 0
+#define DEBUG_PHS_FILT 0
+#define DEBUG_PHS_PAD 0
+
+// post-fft
 #define DEBUG_Q 0
 #define DEBUG_DR 0
 #define DEBUG_NORM_R0 0
@@ -29,6 +36,19 @@ public:
     Input<Buffer<float>> k_r {"k_r", 1};
     Input<int> N_fft {"N_fft"};
 
+#if DEBUG_WIN
+    Output<Buffer<double>> out_win{"out_win", 2};
+#endif
+#if DEBUG_FILT
+    Output<Buffer<float>> out_filt{"out_filt", 1};
+#endif
+#if DEBUG_PHS_FILT
+    Output<Buffer<double>> out_phs_filt{"out_phs_filt", 3}; // complex
+#endif
+#if DEBUG_PHS_PAD
+    Output<Buffer<double>> out_phs_pad{"out_phs_pad", 3}; // complex
+#endif
+
     Output<Buffer<double>> output_buffer{"output_packed", 3}; // complex 2d output (Halide thinks this is 3d: [2, x, y])
 
     Var c{"c"}, x{"x"}, y{"y"};
@@ -48,16 +68,29 @@ public:
         win_y = taylor_func(npulses, TAYLOR_S_L);
         Func win("win");
         win(x, y) = win_x(x) * win_y(y);
+#if DEBUG_WIN
+        out_win(x, y) = win(x, y);
+#endif
 
         // Filter phase history
         Func filt("filt");
         filt(x) = abs(k_r(x));
+#if DEBUG_FILT
+        out_filt(x) = filt(x);
+#endif
+
         ComplexFunc phs_filt(c, "phs_filt");
         phs_filt(x, y) = input(x, y) * filt(x) * win(x, y);
+#if DEBUG_PHS_FILT
+        out_phs_filt(c, x, y) = phs_filt.inner(c, x, y);
+#endif
 
         // Zero pad phase history
         ComplexFunc phs_pad(c, "phs_pad");
         phs_pad = pad_func(phs_filt, nsamples, npulses, N_fft, npulses);
+#if DEBUG_PHS_PAD
+        out_phs_pad(c, x, y) = phs_pad.inner(c, x, y);
+#endif
 
         // shift
         ComplexFunc fftshift(c, "fftshift");
