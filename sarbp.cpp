@@ -63,37 +63,31 @@ int main(int argc, char **argv) {
 
     npydata = cnpy::npy_load(platform_dir + "/B_IF.npy");
     ptr_flt = npydata.data<float>();
-    // int B_IF = 622360576;
     float B_IF = *ptr_flt;
     printf("B_IF: %f\n", B_IF);
 
     npydata = cnpy::npy_load(platform_dir + "/delta_r.npy");
     ptr_dbl = npydata.data<double>();
-    // double delta_r = 0.24085;
     double delta_r = *ptr_dbl;
     printf("delta_r: %lf\n", delta_r);
 
     npydata = cnpy::npy_load(platform_dir + "/chirprate.npy");
     ptr_dbl = npydata.data<double>();
-    // double chirprate = 913520151990310.75;
     double chirprate = *ptr_dbl;
     printf("chirprate: %lf\n", chirprate);
 
     npydata = cnpy::npy_load(platform_dir + "/f_0.npy");
     ptr_dbl = npydata.data<double>();
-    // uint64_t f_0 = 9599260672;
     double f_0 = *ptr_dbl;
     printf("f_0: %lf\n", f_0);
 
     npydata = cnpy::npy_load(platform_dir + "/nsamples.npy");
     ptr_int = npydata.data<int>();
-    // int nsamples = 424;
     int nsamples = *ptr_int;
     printf("nsamples: %d\n", nsamples);
 
     npydata = cnpy::npy_load(platform_dir + "/npulses.npy");
     ptr_int = npydata.data<int>();
-    // int npulses = 469;
     int npulses = *ptr_int;
     printf("npulses: %d\n", npulses);
 
@@ -217,9 +211,6 @@ int main(int argc, char **argv) {
     // Copy input data
     Buffer<float, 3> fftshift_buf(2, N_fft, npulses);
     Buffer<float, 3> inbuf(2, nsamples, npulses);
-    // cout << "Width: " << inbuf.width() << endl;
-    // cout << "Height: " << inbuf.height() << endl;
-    // cout << "Channels: " << inbuf.channels() << endl;
     complex<float> *indata = (complex<float> *)inbuf.begin();
     for (int x = 0; x < npulses; x++) {
         for (int y = 0; y < nsamples; y++) {
