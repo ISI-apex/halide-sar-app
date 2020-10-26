@@ -24,9 +24,9 @@ find_package(ZLIB REQUIRED)
 # Find pkg-config
 find_package(PkgConfig REQUIRED)
 
-# Find FFTW3 single precision
-pkg_check_modules(FFTWF fftw3f REQUIRED)
-link_directories(${FFTWF_LIBRARY_DIRS})
+# Find FFTW3 double precision
+pkg_check_modules(FFTW fftw3 REQUIRED)
+link_directories(${FFTW_LIBRARY_DIRS})
 
 
 # Generators and Filters (libraries)
@@ -141,11 +141,11 @@ add_executable(sarbp_test sarbp.cpp)
 target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
 target_include_directories(sarbp_test PRIVATE ${CNPY_INCLUDE_DIR}
                                               ${ZLIB_INCLUDE_DIRS}
-                                              ${FFTWF_INCLUDE_DIRS})
+                                              ${FFTW_INCLUDE_DIRS})
 target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          Halide::ImageIO
                                          ${CNPY}
-                                         ${FFTWF_STATIC_LIBRARIES}
+                                         ${FFTW_STATIC_LIBRARIES}
                                          ip_uv
                                          ip_k
                                          ip_v_hat

@@ -209,7 +209,7 @@ int main(int argc, char **argv) {
     int N_fft = static_cast<int>(pow(2, static_cast<int>(log2(nsamples * UPSAMPLE)) + 1));
 
     // Copy input data
-    Buffer<float, 3> fftshift_buf(2, N_fft, npulses);
+    Buffer<double, 3> fftshift_buf(2, N_fft, npulses);
     Buffer<float, 3> inbuf(2, nsamples, npulses);
     complex<float> *indata = (complex<float> *)inbuf.begin();
     for (int x = 0; x < npulses; x++) {
@@ -226,19 +226,19 @@ int main(int argc, char **argv) {
         return rv;
     }
     // FFT
-    Buffer<float, 3> fft_outbuf(2, N_fft, npulses);
-    fftwf_complex *fft_in = reinterpret_cast<fftwf_complex *>(fftshift_buf.begin());
-    fftwf_complex *fft_out = reinterpret_cast<fftwf_complex *>(fft_outbuf.begin());
-    fftwf_plan plan = fftwf_plan_dft_1d(N_fft, fft_in, fft_out, FFTW_FORWARD, FFTW_ESTIMATE);
-    cout << "FFTWF: processing " << fft_outbuf.dim(2).extent() << " DFTs" << endl;
+    Buffer<double, 3> fft_outbuf(2, N_fft, npulses);
+    fftw_complex *fft_in = reinterpret_cast<fftw_complex *>(fftshift_buf.begin());
+    fftw_complex *fft_out = reinterpret_cast<fftw_complex *>(fft_outbuf.begin());
+    fftw_plan plan = fftw_plan_dft_1d(N_fft, fft_in, fft_out, FFTW_FORWARD, FFTW_ESTIMATE);
+    cout << "FFTW: processing " << fft_outbuf.dim(2).extent() << " DFTs" << endl;
     for (int i = 0; i < fft_outbuf.dim(2).extent(); i++) {
-        fftwf_execute_dft(plan, &fft_in[i * N_fft], &fft_out[i * N_fft]);
+        fftw_execute_dft(plan, &fft_in[i * N_fft], &fft_out[i * N_fft]);
     }
-    cout << "FFTWF: finished" << endl;
-    fftwf_destroy_plan(plan);
+    cout << "FFTW: finished" << endl;
+    fftw_destroy_plan(plan);
     // backprojection - post-FFT
 #if DEBUG_Q
-    Buffer<float, 3> out_q(2, N_fft, fft_outbuf.dim(2).extent());
+    Buffer<double, 3> out_q(2, N_fft, fft_outbuf.dim(2).extent());
 #endif
 #if DEBUG_NORM_R0
     Buffer<float, 1> out_norm_r0(fft_outbuf.dim(2).extent());
@@ -319,7 +319,7 @@ int main(int argc, char **argv) {
     vector<size_t> shape_q { static_cast<size_t>(out_q.dim(2).extent()),
                              static_cast<size_t>(out_q.dim(1).extent()),
                              static_cast<size_t>(out_q.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-q.npy", (float *)out_q.begin(), shape_q);
+    cnpy::npy_save("sarbp_debug-q.npy", (double *)out_q.begin(), shape_q);
 #endif
 #if DEBUG_NORM_R0
     vector<size_t> shape_norm_r0 { static_cast<size_t>(out_norm_r0.dim(0).extent()) };

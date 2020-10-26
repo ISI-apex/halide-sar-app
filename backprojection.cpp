@@ -29,7 +29,7 @@ public:
     Input<Buffer<float>> k_r {"k_r", 1};
     Input<int> N_fft {"N_fft"};
 
-    Output<Buffer<float>> output_buffer{"output_packed", 3}; // complex 2d output (Halide thinks this is 3d: [2, x, y])
+    Output<Buffer<double>> output_buffer{"output_packed", 3}; // complex 2d output (Halide thinks this is 3d: [2, x, y])
 
     Var c{"c"}, x{"x"}, y{"y"};
 
@@ -78,7 +78,7 @@ public:
 
 class BackprojectionPostFFTGenerator : public Halide::Generator<BackprojectionPostFFTGenerator> {
 public:
-    Input<Buffer<float>> in {"in", 3};
+    Input<Buffer<double>> in {"in", 3};
     Input<int> nsamples {"nsamples"};
     Input<double> delta_r {"delta_r"};
     Input<Buffer<float>> k_r {"k_r", 1};
@@ -88,7 +88,7 @@ public:
     Input<Buffer<double>> r {"r", 2};
 
 #if DEBUG_Q
-    Output<Buffer<float>> out_Q{"out_Q", 3};
+    Output<Buffer<double>> out_Q{"out_Q", 3};
 #endif
 #if DEBUG_NORM_R0
     Output<Buffer<float>> out_norm_r0{"out_norm_r0", 1};

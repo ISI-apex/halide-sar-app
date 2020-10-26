@@ -10,11 +10,11 @@ using Halide::Runtime::Buffer;
 #define INPUT_NUM 424
 
 int main(int argc, char **argv) {
-    Buffer<float> out(INPUT_NUM);
+    Buffer<double> out(INPUT_NUM);
     int rv = taylor(INPUT_NUM, 17, out);
 
     if (!rv) {
-        float *obuf = out.begin();
+        double *obuf = out.begin();
         cout << "[ " << obuf[0];
         for (size_t i = 1; i < INPUT_NUM; i++) {
             cout << ", " << obuf[i];

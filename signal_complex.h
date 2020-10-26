@@ -17,12 +17,12 @@ inline ComplexFunc pad_func(ComplexFunc in, Expr in_x_len, Expr in_y_len, Expr o
     Expr y_pad("y_pad");
     y_pad = (out_y_len - in_y_len) / 2;
     ComplexFunc pad(c, name);
-    pad(x, y) = ComplexExpr(c, 0.0f, 0.0f);
+    pad(x, y) = ComplexExpr(c, Expr(0.0), Expr(0.0));
     // The clamp works around a bounds-related compile issue when lengths are non-trivially computed
     pad(r.x, r.y) =
         select(c,
                r.x < x_pad || r.x >= in_x_len + x_pad || r.y < y_pad || r.y >= in_y_len + y_pad,
-               ComplexExpr(c, 0.0f, 0.0f),
+               ComplexExpr(c, Expr(0.0), Expr(0.0)),
                in(clamp(r.x - x_pad, 0, in_x_len - 1), clamp(r.y - y_pad, 0, in_y_len - 1)));
     return pad;
 }
