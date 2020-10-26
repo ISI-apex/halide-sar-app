@@ -109,6 +109,10 @@ target_link_libraries(backprojection_post_fft.generator PRIVATE Halide::Generato
 add_halide_library(backprojection_post_fft FROM backprojection_post_fft.generator
                                            FEATURES large_buffers)
 
+add_executable(img_output_to_dB.generator img_output.cpp)
+target_link_libraries(img_output_to_dB.generator PRIVATE Halide::Generator)
+add_halide_library(img_output_to_dB FROM img_output_to_dB.generator)
+
 add_executable(img_output_u8.generator img_output.cpp)
 target_link_libraries(img_output_u8.generator PRIVATE Halide::Generator)
 add_halide_library(img_output_u8 FROM img_output_u8.generator)
