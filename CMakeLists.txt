@@ -153,7 +153,8 @@ target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          ip_pixel_locs
                                          backprojection_pre_fft
                                          backprojection_post_fft
-                                         img_output_u8)
+                                         img_output_u8
+                                         img_output_to_dB)
 
 
 # Tests

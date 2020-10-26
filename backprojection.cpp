@@ -119,7 +119,6 @@ public:
 #endif
 
     Output<Buffer<double>> output_buffer{"output_packed", 3};
-    Output<Buffer<double>> out_dB{"out_dB", 2};
 
     Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
 
@@ -237,7 +236,6 @@ public:
         ComplexFunc img_rect(c, "img_rect");
         img_rect(x, y) = fimg((nu * (nv - y - 1)) + x);
         output_buffer(c, x, y) = img_rect.inner(c, x, y);
-        out_dB(x, y) = to_dB(img_rect, nu, nv, x, y);
 
         in_func.compute_root();
         Q.inner.compute_root();
