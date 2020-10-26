@@ -39,9 +39,4 @@ inline ComplexFunc fftshift_func(ComplexFunc in, Expr x_extent, Expr y_extent,
     return fftshift;
 }
 
-inline Expr to_dB(ComplexFunc img, Expr x_extent, Expr y_extent, Var x, Var y) {
-    RDom r(0, x_extent, 0, y_extent);
-    return Expr(10) * log(abs(img(x, y)) / maximum(abs(img(r.x, r.y))));
-}
-
 #endif
