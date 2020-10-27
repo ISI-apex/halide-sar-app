@@ -371,9 +371,8 @@ int main(int argc, char **argv) {
     // write output
 #if DEBUG_Q
     vector<size_t> shape_q { static_cast<size_t>(out_q.dim(2).extent()),
-                             static_cast<size_t>(out_q.dim(1).extent()),
-                             static_cast<size_t>(out_q.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-q.npy", (double *)out_q.begin(), shape_q);
+                             static_cast<size_t>(out_q.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-q.npy", (complex<double> *)out_q.begin(), shape_q);
 #endif
 #if DEBUG_NORM_R0
     vector<size_t> shape_norm_r0 { static_cast<size_t>(out_norm_r0.dim(0).extent()) };
