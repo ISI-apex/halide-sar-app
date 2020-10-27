@@ -171,10 +171,7 @@ public:
         Expr clu = clamp(lutu, 0, lsn - 1);
         Expr pos = clamp(luto, Expr(0.0), Expr(1.0));
 
-        Expr rv = lerp(
-            ConciseCasts::f64(fp.inner(c, cll, y)),
-            ConciseCasts::f64(fp.inner(c, clu, y)), pos);
-        return rv;
+        return lerp(fp.inner(c, cll, y), fp.inner(c, clu, y), pos);
     }
 
     void generate() {
