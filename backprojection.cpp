@@ -267,19 +267,22 @@ public:
         img_rect(x, y) = fimg((nu * (nv - y - 1)) + x);
         output_buffer(c, x, y) = img_rect.inner(c, x, y);
 
+        int vectorsize = 16;
+        int blocksize = 64;
         in_func.compute_root();
         Q.inner.compute_root();
         norm_r0.compute_root();
-        rr0.compute_root();
-        norm_rr0.compute_root();
-        dr_i.compute_root();
-        Q_real.compute_root().parallel(y);
-        Q_imag.compute_root().parallel(y);
-        Q_hat.inner.compute_root();
+        rr0.compute_root().parallel(z).vectorize(x, vectorsize);
+        norm_rr0.compute_root().parallel(y).vectorize(x, vectorsize);
+        dr_i.in(Q_real).compute_inline();
+        dr_i.in(Q_imag).compute_inline();
+        Q_real.in(Q_hat.inner).compute_inline();
+        Q_imag.in(Q_hat.inner).compute_inline();
+        Q_hat.inner.compute_root().unroll(c).reorder(x,y).vectorize(x, vectorsize).parallel(y);
         img.inner.compute_root();
-        img.inner.update(0).parallel(x, 32);
-        fimg.inner.compute_root();
-        img_rect.inner.compute_root();
+        img.inner.update(0).parallel(x, blocksize);
+        fimg.inner.in(img_rect.inner).compute_inline();
+        img_rect.inner.compute_root().parallel(y).vectorize(x, vectorsize);
         //output_buffer.print_loop_nest();
     }
 };
