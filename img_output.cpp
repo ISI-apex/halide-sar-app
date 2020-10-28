@@ -14,9 +14,9 @@ public:
     void generate() {
         Var x{"x"}, y{"y"}, c{"c"};
 
-        Func img_func("img_func");
+        Func img_func("cimg");
         img_func = img;
-        ComplexFunc cimg(c, img_func, "input");
+        ComplexFunc cimg(c, img_func);
 
         RDom r(0, img.dim(1).extent(), 0, img.dim(2).extent(), "r");
         Func m("m");
