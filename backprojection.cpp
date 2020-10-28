@@ -59,7 +59,7 @@ public:
         Expr npulses("npulses");
         npulses = phs.dim(2).extent();
         Func phs_func = phs;
-        ComplexFunc input(c, phs_func, "input");
+        ComplexFunc input(c, phs_func);
 
         // Create window
         Func win_x("win_x");
@@ -178,7 +178,7 @@ public:
         // inputs as functions
         Func in_func("in_func");
         in_func = in;
-        ComplexFunc input(c, in_func, "input");
+        ComplexFunc input(c, in_func);
 
         // some extents and related RDoms
         Expr N_fft = in.dim(1).extent();

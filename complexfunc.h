@@ -16,12 +16,11 @@ class ComplexExpr;
  */
 class ComplexFunc {
 public:
-    std::string name;
     Halide::Func inner;
     Halide::Var element;
 
-    ComplexFunc(Halide::Var &element, std::string name);
-    ComplexFunc(Halide::Var &element, Halide::Func &inner, std::string name);
+    ComplexFunc(Halide::Var &element, std::string name = "");
+    ComplexFunc(Halide::Var &element, Halide::Func &inner);
     ComplexExpr operator()(std::vector<Halide::Expr>);
     ComplexExpr operator()(Halide::Expr idx1);
     ComplexExpr operator()(Halide::Expr idx1, Halide::Expr idx2);
@@ -307,12 +306,16 @@ inline ComplexExpr select(const Halide::Var &element,
 // ComplexFunc methods
 
 ComplexFunc::ComplexFunc(Halide::Var &element, std::string name)
-    : name(name), element(element) {
-    inner(name + "_inner");
+    : element(element) {
+    if(name == "") {
+        inner = Halide::Func();
+    } else {
+        inner = Halide::Func(name);
+    }
 }
 
-ComplexFunc::ComplexFunc(Halide::Var &element, Halide::Func &inner, std::string name)
-    : name(name), inner(inner), element(element) {
+ComplexFunc::ComplexFunc(Halide::Var &element, Halide::Func &inner)
+    : inner(inner), element(element) {
 }
 
 ComplexExpr ComplexFunc::operator()(std::vector<Halide::Expr> idx) {
