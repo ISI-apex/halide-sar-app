@@ -8,13 +8,9 @@
 #include <fftw3.h>
 
 #include "PlatformData.h"
-#include "img_plane.h"
+#include "ImgPlane.h"
 
-#include "ip_uv.h"
-#include "ip_k.h"
-#include "ip_v_hat.h"
-#include "ip_u_hat.h"
-#include "ip_pixel_locs.h"
+// Halide generators
 #include "backprojection_pre_fft.h"
 #include "backprojection_post_fft.h"
 #include "img_output_u8.h"
@@ -47,8 +43,6 @@ using Halide::Runtime::Buffer;
 #define DEBUG_BP_DB 0
 
 #define UPSAMPLE 2
-#define RES_FACTOR 1.0
-#define ASPECT 1.0
 
 // TODO: These values should depend on the dataset and/or platform?
 #define DB_MIN -30
@@ -67,40 +61,10 @@ int main(int argc, char **argv) {
     cout << "Number of pulses: " << pd.npulses << endl;
     cout << "Pulse sample size: " << pd.nsamples << endl;
 
-    // Img plane variables
-
-    int nu = ip_upsample(pd.nsamples);
-    int nv = ip_upsample(pd.npulses);
-
-    double d_u = ip_du(pd.delta_r, RES_FACTOR, pd.nsamples, nu);
-    double d_v = ip_dv(ASPECT, d_u);
-
-    Buffer<double, 1> buf_u(nu);
-    ip_uv(nu, d_u, buf_u);
-
-    Buffer<double, 1> buf_v(nv);
-    ip_uv(nv, d_v, buf_v);
-
-    Buffer<double, 1> buf_k_u(nu);
-    ip_k(nu, d_u, buf_k_u);
-
-    Buffer<double, 1> buf_k_v(nv);
-    ip_k(nv, d_v, buf_k_v);
-
-    Buffer<const int, 1> buf_n_hat(&N_HAT[0], 3);
-
-    Buffer<double, 1> buf_v_hat(3);
-    ip_v_hat(buf_n_hat, pd.R_c, buf_v_hat);
-
-    Buffer<double, 1> buf_u_hat(3);
-    ip_u_hat(buf_v_hat, buf_n_hat, buf_u_hat);
-
-    Buffer<double, 2> buf_pixel_locs(nu*nv, 3);
-    ip_pixel_locs(buf_u, buf_v, buf_u_hat, buf_v_hat, buf_pixel_locs);
-
+    ImgPlane ip = img_plane_create(pd);
     cout << "Computed image plane parameters" << endl;
-    cout << "X length: " << nu << endl;
-    cout << "Y length: " << nv << endl;
+    cout << "X length: " << ip.nu << endl;
+    cout << "Y length: " << ip.nv << endl;
 
     // Compute FFT width (power of 2)
     int N_fft = static_cast<int>(pow(2, static_cast<int>(log2(pd.nsamples * UPSAMPLE)) + 1));
@@ -190,40 +154,40 @@ int main(int argc, char **argv) {
     Buffer<float, 1> buf_norm_r0(buf_post_fft.dim(2).extent());
 #endif
 #if DEBUG_RR0
-    Buffer<double, 3> buf_rr0(buf_u.dim(0).extent() * buf_v.dim(0).extent(),
+    Buffer<double, 3> buf_rr0(ip.u.dim(0).extent() * ip.v.dim(0).extent(),
                               pd.pos.dim(0).extent(),
                               buf_post_fft.dim(2).extent());
 #endif
 #if DEBUG_NORM_RR0
-    Buffer<double, 2> buf_norm_rr0(buf_u.dim(0).extent() * buf_v.dim(0).extent(),
+    Buffer<double, 2> buf_norm_rr0(ip.u.dim(0).extent() * ip.v.dim(0).extent(),
                                    buf_post_fft.dim(2).extent());
 #endif
 #if DEBUG_DR_I
-    Buffer<double, 2> buf_dr_i(buf_u.dim(0).extent() * buf_v.dim(0).extent(),
+    Buffer<double, 2> buf_dr_i(ip.u.dim(0).extent() * ip.v.dim(0).extent(),
                                buf_post_fft.dim(2).extent());
 #endif
 #if DEBUG_Q_REAL
-    Buffer<double, 2> buf_q_real(buf_u.dim(0).extent() * buf_v.dim(0).extent(),
+    Buffer<double, 2> buf_q_real(ip.u.dim(0).extent() * ip.v.dim(0).extent(),
                                  buf_post_fft.dim(2).extent());
 #endif
 #if DEBUG_Q_IMAG
-    Buffer<double, 2> buf_q_imag(buf_u.dim(0).extent() * buf_v.dim(0).extent(),
+    Buffer<double, 2> buf_q_imag(ip.u.dim(0).extent() * ip.v.dim(0).extent(),
                                  buf_post_fft.dim(2).extent());
 #endif
 #if DEBUG_Q_HAT
     Buffer<double, 3> buf_q_hat(2,
-                                buf_u.dim(0).extent() * buf_v.dim(0).extent(),
+                                ip.u.dim(0).extent() * ip.v.dim(0).extent(),
                                 buf_post_fft.dim(2).extent());
 #endif
 #if DEBUG_IMG
-    Buffer<double, 2> buf_img(2, buf_u.dim(0).extent() * buf_v.dim(0).extent());
+    Buffer<double, 2> buf_img(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
 #endif
 #if DEBUG_FIMG
-    Buffer<double, 2> buf_fimg(2, buf_u.dim(0).extent() * buf_v.dim(0).extent());
+    Buffer<double, 2> buf_fimg(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
 #endif
-    Buffer<double, 3> buf_bp(2, buf_u.dim(0).extent(), buf_v.dim(0).extent());
+    Buffer<double, 3> buf_bp(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
     cout << "Halide post-fft start" << endl;
-    rv = backprojection_post_fft(buf_post_fft, pd.nsamples, pd.delta_r, pd.k_r, buf_u, buf_v, pd.pos, buf_pixel_locs,
+    rv = backprojection_post_fft(buf_post_fft, pd.nsamples, pd.delta_r, pd.k_r, ip.u, ip.v, pd.pos, ip.pixel_locs,
 #if DEBUG_Q
         buf_q,
 #endif
@@ -316,7 +280,7 @@ int main(int argc, char **argv) {
 #endif
 
     // Convert to dB
-    Buffer<double, 2> buf_bp_dB(buf_u.dim(0).extent(), buf_v.dim(0).extent());
+    Buffer<double, 2> buf_bp_dB(ip.u.dim(0).extent(), ip.v.dim(0).extent());
     cout << "Halide dB conversion start" << endl;
     rv = img_output_to_dB(buf_bp, buf_bp_dB);
     cout << "Halide dB conversion returned " << rv << endl;
