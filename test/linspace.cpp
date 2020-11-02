@@ -1,6 +1,6 @@
 #include <Halide.h>
 
-#include "util.h"
+#include "util_func.h"
 
 using namespace Halide;
 
