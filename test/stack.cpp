@@ -11,7 +11,8 @@ public:
     Output<Buffer<float>> out{"out", 1};
 
     void generate() {
-        out = hstack1_func(input_a, input_b, input_a.dim(0).extent());
+        Var x{"x"};
+        out(x) = hstack1(input_a, input_b, input_a.dim(0).extent(), x);
     }
 };
 
@@ -22,7 +23,8 @@ public:
     Output<Buffer<float>> out{"out", 2};
 
     void generate() {
-        out = hstack2_func(input_a, input_b, input_a.dim(0).extent());
+        Var x{"x"}, y{"y"};
+        out(x, y) = hstack2(input_a, input_b, input_a.dim(0).extent(), x, y);
     }
 };
 
@@ -34,7 +36,8 @@ public:
     Output<Buffer<float>> out{"out", 2};
 
     void generate() {
-        out = vstack1_func(input_a, input_b, input_a.dim(0).extent());
+        Var x{"x"}, y{"y"};
+        out(x, y) = vstack1(input_a, input_b, input_a.dim(0).extent(), x, y);
     }
 };
 
@@ -45,7 +48,8 @@ public:
     Output<Buffer<float>> out{"out", 2};
 
     void generate() {
-        out = vstack2_func(input_a, input_b, input_a.dim(1).extent());
+        Var x{"x"}, y{"y"};
+        out(x, y) = vstack2(input_a, input_b, input_a.dim(1).extent(), x, y);
     }
 };
 

@@ -10,7 +10,8 @@ public:
     Output<Buffer<float>> output_buffer{"output_buffer", 1};
 
     void generate() {
-        output_buffer = repeat1_func(input_a, input_a.dim(0).extent());
+        Var x{"x"};
+        output_buffer(x) = repeat1(input_a, input_a.dim(0).extent(), x);
     }
 };
 
