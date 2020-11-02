@@ -61,127 +61,77 @@ int main(int argc, char **argv) {
     string output_png = string(argv[2]);
 
     // Load primitives
-    // B_IF: <class 'numpy.float32'>
-    // chirprate: <class 'numpy.float64'>
-    // delta_r: <class 'numpy.float64'>
-    // f_0: <class 'numpy.float64'>
-    // nsamples: <class 'int'>
-    // npulses: <class 'int'>
 
-    cnpy::NpyArray npydata;
-    float *ptr_flt;
-    double *ptr_dbl;
-    int *ptr_int;
+    cnpy::NpyArray npy_B_IF = cnpy::npy_load(platform_dir + "/B_IF.npy");
+    float B_IF = *npy_B_IF.data<float>();
 
-    npydata = cnpy::npy_load(platform_dir + "/B_IF.npy");
-    ptr_flt = npydata.data<float>();
-    float B_IF = *ptr_flt;
+    cnpy::NpyArray npy_delta_r = cnpy::npy_load(platform_dir + "/delta_r.npy");
+    double delta_r = *npy_delta_r.data<double>();
 
-    npydata = cnpy::npy_load(platform_dir + "/delta_r.npy");
-    ptr_dbl = npydata.data<double>();
-    double delta_r = *ptr_dbl;
+    cnpy::NpyArray npy_chirprate = cnpy::npy_load(platform_dir + "/chirprate.npy");
+    double chirprate = *npy_chirprate.data<double>();
 
-    npydata = cnpy::npy_load(platform_dir + "/chirprate.npy");
-    ptr_dbl = npydata.data<double>();
-    double chirprate = *ptr_dbl;
+    cnpy::NpyArray npy_f_0 = cnpy::npy_load(platform_dir + "/f_0.npy");
+    double f_0 = *npy_f_0.data<double>();
 
-    npydata = cnpy::npy_load(platform_dir + "/f_0.npy");
-    ptr_dbl = npydata.data<double>();
-    double f_0 = *ptr_dbl;
+    cnpy::NpyArray npy_nsamples = cnpy::npy_load(platform_dir + "/nsamples.npy");
+    int nsamples = *npy_nsamples.data<int>();
 
-    npydata = cnpy::npy_load(platform_dir + "/nsamples.npy");
-    ptr_int = npydata.data<int>();
-    int nsamples = *ptr_int;
-
-    npydata = cnpy::npy_load(platform_dir + "/npulses.npy");
-    ptr_int = npydata.data<int>();
-    int npulses = *ptr_int;
+    cnpy::NpyArray npy_npulses = cnpy::npy_load(platform_dir + "/npulses.npy");
+    int npulses = *npy_npulses.data<int>();
 
     // Load arrays
-    // freq: <class 'numpy.ndarray'>
-    // freq[0]: <class 'numpy.float32'>
-    // k_r: <class 'numpy.ndarray'>
-    // k_r[0]: <class 'numpy.float32'>
-    // k_y: <class 'numpy.ndarray'>
-    // k_y[0]: <class 'numpy.float64'>
-    // R_c: <class 'numpy.ndarray'>
-    // R_c[0]: <class 'numpy.float32'>
-    // t: <class 'numpy.ndarray'>
-    // t[0]: <class 'numpy.float64'>
 
-    npydata = cnpy::npy_load(platform_dir + "/freq.npy");
-    if (npydata.shape.size() != 1 || npydata.shape[0] != nsamples) {
-        cerr << "Bad shape!" << endl;
+    cnpy::NpyArray npy_freq = cnpy::npy_load(platform_dir + "/freq.npy");
+    if (npy_freq.shape.size() != 1 || npy_freq.shape[0] != nsamples) {
+        cerr << "Bad shape: freq" << endl;
         return 1;
     }
-    float* freq = static_cast<float *>(malloc(nsamples * sizeof(float)));
-    memcpy(freq, npydata.data<float>(), nsamples * sizeof(float));
+    float* freq = npy_freq.data<float>();
 
-    npydata = cnpy::npy_load(platform_dir + "/k_r.npy");
-    if (npydata.shape.size() != 1 || npydata.shape[0] != nsamples) {
-        cerr << "Bad shape!" << endl;
+    cnpy::NpyArray npy_k_r = cnpy::npy_load(platform_dir + "/k_r.npy");
+    if (npy_k_r.shape.size() != 1 || npy_k_r.shape[0] != nsamples) {
+        cerr << "Bad shape: k_r" << endl;
         return 1;
     }
-    float *k_r = static_cast<float *>(malloc(nsamples * sizeof(float)));
-    memcpy(k_r, npydata.data<float>(), nsamples * sizeof(float));
-    Buffer<float, 1> buf_k_r(k_r, nsamples);
+    Buffer<float, 1> buf_k_r(npy_k_r.data<float>(), nsamples);
 
-    npydata = cnpy::npy_load(platform_dir + "/k_y.npy");
-    if (npydata.shape.size() != 1 || npydata.shape[0] != npulses) {
-        cerr << "Bad shape!" << endl;
+    cnpy::NpyArray npy_k_y = cnpy::npy_load(platform_dir + "/k_y.npy");
+    if (npy_k_y.shape.size() != 1 || npy_k_y.shape[0] != npulses) {
+        cerr << "Bad shape: k_y" << endl;
         return 1;
     }
-    double *k_y = static_cast<double *>(malloc(npulses * sizeof(double)));
-    memcpy(k_y, npydata.data<double>(), npulses * sizeof(double));
+    double *k_y = npy_k_y.data<double>();
 
-    npydata = cnpy::npy_load(platform_dir + "/R_c.npy");
-    if (npydata.shape.size() != 1 || npydata.shape[0] != 3) {
-        cerr << "Bad shape!" << endl;
+    cnpy::NpyArray npy_R_c = cnpy::npy_load(platform_dir + "/R_c.npy");
+    if (npy_R_c.shape.size() != 1 || npy_R_c.shape[0] != 3) {
+        cerr << "Bad shape: R_c" << endl;
         return 1;
     }
-    float *R_c = static_cast<float *>(malloc(3 * sizeof(float)));
-    memcpy(R_c, npydata.data<float>(), 3 * sizeof(float));
-    Buffer<float, 1> buf_R_c(R_c, 3);
+    Buffer<float, 1> buf_R_c(npy_R_c.data<float>(), 3);
 
-    npydata = cnpy::npy_load(platform_dir + "/t.npy");
-    if (npydata.shape.size() != 1 || npydata.shape[0] != nsamples) {
-        cerr << "Bad shape!" << endl;
+    cnpy::NpyArray npy_t = cnpy::npy_load(platform_dir + "/t.npy");
+    if (npy_t.shape.size() != 1 || npy_t.shape[0] != nsamples) {
+        cerr << "Bad shape: t" << endl;
         return 1;
     }
-    double *t = static_cast<double *>(malloc(nsamples * sizeof(double)));
-    memcpy(t, npydata.data<double>(), nsamples * sizeof(double));
+    double *t = npy_t.data<double>();
 
     // Load matrices
-    // pos: <class 'numpy.ndarray'>
-    // pos[0]: <class 'numpy.ndarray'>
-    // pos[0][0]: <class 'numpy.float32'>
-    // phs: <class 'numpy.ndarray'>
-    // phs[0]: <class 'numpy.ndarray'>
-    // phs[0][0]: <class 'numpy.complex64'>
     
-    npydata = cnpy::npy_load(platform_dir + "/pos.npy");
-    if (npydata.shape.size() != 2 || npydata.shape[0] != npulses || npydata.shape[1] != 3) {
-        cerr << "Bad shape!" << endl;
+    cnpy::NpyArray npy_pos = cnpy::npy_load(platform_dir + "/pos.npy");
+    if (npy_pos.shape.size() != 2 || npy_pos.shape[0] != npulses || npy_pos.shape[1] != 3) {
+        cerr << "Bad shape: pos" << endl;
         return 1;
     }
-    float *pos = static_cast<float *>(malloc(npulses * 3 * sizeof(float)));
-    memcpy(pos, npydata.data<float>(), npulses * 3 * sizeof(float));
-    Buffer<float, 2> buf_pos(pos, 3, npulses);
+    Buffer<float, 2> buf_pos(npy_pos.data<float>(), 3, npulses);
 
-    npydata = cnpy::npy_load(platform_dir + "/phs.npy");
-    if (npydata.shape.size() != 2 || npydata.shape[0] != npulses || npydata.shape[1] != nsamples) {
-        cerr << "Bad shape!" << endl;
+    cnpy::NpyArray npy_phs = cnpy::npy_load(platform_dir + "/phs.npy");
+    if (npy_phs.shape.size() != 2 || npy_phs.shape[0] != npulses || npy_phs.shape[1] != nsamples) {
+        cerr << "Bad shape: phs" << endl;
         return 1;
     }
-    complex<float> *phs = static_cast<complex<float> *>(malloc(npulses * nsamples * sizeof(complex<float>)));
-    memcpy(phs, npydata.data<complex<float>>(), npulses * nsamples * sizeof(complex<float>));
-    Buffer<float, 3> buf_phs(2, nsamples, npulses);
-    complex<float> *buf_phs_data = (complex<float> *)buf_phs.begin();
-    for (int y = 0; y < npulses; y++) {
-        for (int x = 0; x < nsamples; x++) {
-            buf_phs_data[y * nsamples + x] = phs[y * nsamples + x];
-        }
-    }
+    Buffer<float, 3> buf_phs(reinterpret_cast<float *>(npy_phs.data<complex<float>>()), 2, nsamples, npulses);
 
     cout << "Loaded platform data" << endl;
     cout << "Number of pulses: " << npulses << endl;
@@ -239,7 +189,7 @@ int main(int argc, char **argv) {
     Buffer<double, 3> buf_phs_pad(2, N_fft, buf_phs.dim(2).extent());
 #endif
     Buffer<double, 3> buf_pre_fft(2, N_fft, npulses);
-    cout <<"Halide pre-fft start" << endl;
+    cout << "Halide pre-fft start" << endl;
     int rv = backprojection_pre_fft(buf_phs, buf_k_r, N_fft,
 #if DEBUG_WIN
         buf_win,
