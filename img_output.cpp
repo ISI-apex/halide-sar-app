@@ -22,7 +22,7 @@ public:
         Func m("m");
         m() = maximum(abs(cimg(r.x, r.y)));
 
-        out(x, y) = Expr(10) * log(abs(cimg(x, y)) / m());
+        out(x, y) = Expr(10) * log10(abs(cimg(x, y)) / m());
 
         m.compute_root();
     }
