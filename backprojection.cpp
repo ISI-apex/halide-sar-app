@@ -93,10 +93,10 @@ public:
 #endif
 
         // shift
-        ComplexFunc fftshift(c, "fftshift");
-        fftshift = fftshift_func(phs_pad, N_fft, npulses);
+        ComplexFunc fftsh(c, "fftshift");
+        fftsh(x, y) = fftshift(phs_pad, N_fft, npulses, x, y);
 
-        output_buffer(c, x, y) = fftshift.inner(c, x, y);
+        output_buffer(c, x, y) = fftsh.inner(c, x, y);
 
         phs_func.compute_root();
         win_x.compute_root();
@@ -105,7 +105,7 @@ public:
         filt.compute_root();
         phs_filt.inner.compute_root();
         phs_pad.inner.compute_root();
-        fftshift.inner.compute_root();
+        fftsh.inner.compute_root();
     }
 };
 
@@ -194,7 +194,7 @@ public:
 
         // Q: produces shape {N_fft, npulses}
         ComplexFunc Q(c, "Q");
-        Q = fftshift_func(input, N_fft, npulses);
+        Q(x, y) = fftshift(input, N_fft, npulses, x, y);
 #if DEBUG_Q
         out_Q(c, x, y) = Q.inner(c, x, y);
 #endif
