@@ -51,9 +51,8 @@ public:
 
     Output<Buffer<double>> output_buffer{"output_packed", 3}; // complex 2d output (Halide thinks this is 3d: [2, x, y])
 
-    Var c{"c"}, x{"x"}, y{"y"};
-
     void generate() {
+        Var c{"c"}, x{"x"}, y{"y"};
         Expr nsamples("nsamples");
         nsamples = phs.dim(1).extent();
         Expr npulses("npulses");
@@ -156,13 +155,11 @@ public:
 
     Output<Buffer<double>> output_buffer{"output_packed", 3};
 
-    Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
-
     // xs: {nu*nv, npulses}
     // lsa, lsb, lsn: implicit linspace parameters (min, max, count)
     // fp: {N_fft, npulses}
     // output: {nu*nv, npulses}
-    inline Expr interp(Func xs, Expr lsa, Expr lsb, Expr lsn, ComplexFunc fp, Expr c) {
+    inline Expr interp(Func xs, Expr lsa, Expr lsb, Expr lsn, ComplexFunc fp, Expr c, Var x, Var y) {
         Expr lsr = (lsb-lsa) / (lsn-1);             // linspace rate of increase
         Expr luts = (xs(x, y) - lsa) / lsr;         // input value scaled to linspace
         Expr lutl = ConciseCasts::i32(floor(luts)); // lower index
@@ -178,6 +175,7 @@ public:
     }
 
     void generate() {
+        Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
         // inputs as functions
         Func in_func("in_func");
         in_func = in;
@@ -234,11 +232,11 @@ public:
         Func Q_real("Q_real");
         Func Q_imag("Q_imag");
         ComplexFunc Q_hat(c, "Q_hat");
-        Q_real(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 0);
+        Q_real(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 0, x, y);
 #if DEBUG_Q_REAL
         out_q_real(x, y) = Q_real(x, y);
 #endif
-        Q_imag(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 1);
+        Q_imag(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 1, x, y);
 #if DEBUG_Q_IMAG
         out_q_imag(x, y) = Q_imag(x, y);
 #endif
