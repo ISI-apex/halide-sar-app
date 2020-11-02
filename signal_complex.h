@@ -7,16 +7,17 @@
 
 using namespace Halide;
 
-inline ComplexExpr pad(ComplexFunc in, Var c, Expr in_x_len, Expr in_y_len,
-                       ComplexExpr pad_val, RDom r) {
+inline ComplexExpr pad(ComplexFunc in, Expr in_x_len, Expr in_y_len,
+                       ComplexExpr pad_val,
+                       Expr out_x_len, Expr out_y_len, Var c, Var x, Var y) {
     // leading pad entries (trailing entries are of equal size or +1 larger if length difference is odd)
-    Expr x_pad = (r.x.extent() - in_x_len) / 2;
-    Expr y_pad = (r.y.extent() - in_y_len) / 2;
+    Expr x_pad = (out_x_len - in_x_len) / 2;
+    Expr y_pad = (out_y_len - in_y_len) / 2;
     // The clamp works around a bounds-related compile issue when lengths are non-trivially computed
     return select(c,
-                  r.x < x_pad || r.x >= in_x_len + x_pad || r.y < y_pad || r.y >= in_y_len + y_pad,
+                  x < x_pad || x >= in_x_len + x_pad || y < y_pad || y >= in_y_len + y_pad,
                   pad_val,
-                  in(clamp(r.x - x_pad, 0, in_x_len - 1), clamp(r.y - y_pad, 0, in_y_len - 1)));
+                  in(clamp(x - x_pad, 0, in_x_len - 1), clamp(y - y_pad, 0, in_y_len - 1)));
 }
 
 // swap left and right halves, top and bottom halves (swapping quadrants)

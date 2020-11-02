@@ -87,10 +87,9 @@ public:
 
         // Zero pad phase history
         ComplexFunc phs_pad(c, "phs_pad");
-        RDom rpad(0, N_fft, 0, npulses, "rpad");
-        phs_pad(x, y) = ComplexExpr(c, Expr(0.0), Expr(0.0));
-        phs_pad(rpad.x, rpad.y) = pad(phs_filt, c, nsamples, npulses,
-                                      ComplexExpr(c, Expr(0.0), Expr(0.0)), rpad);
+        phs_pad(x, y) = pad(phs_filt, nsamples, npulses,
+                            ComplexExpr(c, Expr(0.0), Expr(0.0)),
+                            N_fft, npulses, c, x, y);
 #if DEBUG_PHS_PAD
         out_phs_pad(c, x, y) = phs_pad.inner(c, x, y);
 #endif
