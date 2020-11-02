@@ -39,6 +39,9 @@ using Halide::Runtime::Buffer;
 #define DEBUG_IMG 0
 #define DEBUG_FIMG 0
 
+#define DEBUG_BP 0
+#define DEBUG_BP_DB 0
+
 #define UPSAMPLE 2
 #define RES_FACTOR 1.0
 #define ASPECT 1.0
@@ -413,9 +416,11 @@ int main(int argc, char **argv) {
     vector<size_t> shape_fimg { static_cast<size_t>(buf_fimg.dim(1).extent()) };
     cnpy::npy_save("sarbp_debug-fimg.npy", (complex<double> *)buf_fimg.begin(), shape_fimg);
 #endif
+#if DEBUG_BP
     vector<size_t> shape_bp { static_cast<size_t>(buf_bp.dim(2).extent()),
-                               static_cast<size_t>(buf_bp.dim(1).extent()) };
-    cnpy::npy_save("sarbp_test.npy", (complex<double> *)buf_bp.begin(), shape_bp);
+                              static_cast<size_t>(buf_bp.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-bp.npy", (complex<double> *)buf_bp.begin(), shape_bp);
+#endif
 
     // Convert to dB
     Buffer<double, 2> buf_bp_dB(buf_u.dim(0).extent(), buf_v.dim(0).extent());
@@ -425,7 +430,11 @@ int main(int argc, char **argv) {
     if (rv != 0) {
         return rv;
     }
-    cnpy::npy_save("sarbp_test_dB.npy", (double *)buf_bp_dB.begin(), shape_bp);
+#if DEBUG_BP_DB
+    vector<size_t> shape_bp_dB { static_cast<size_t>(buf_bp_dB.dim(1).extent()),
+                                 static_cast<size_t>(buf_bp_dB.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-bp_dB.npy", (double *)buf_bp_dB.begin(), shape_bp_dB);
+#endif
 
     // Produce output image
     Buffer<uint8_t, 2> buf_bp_u8(buf_bp_dB.dim(0).extent(), buf_bp_dB.dim(1).extent());
