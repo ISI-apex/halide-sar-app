@@ -45,14 +45,6 @@ inline Expr cross3(Func a, Func b, Var x) {
     return a((x + 1) % 3) * b((x + 2) % 3) - a((x + 2) % 3) * b((x + 1) % 3);
 }
 
-// a and b are assumed to be vectors of length 3
-inline Func cross3_func(Func a, Func b, const std::string &name = "cross3") {
-    Var x{"x"};
-    Func cross(name);
-    cross(x) = cross3(a, b, x);
-    return cross;
-}
-
 inline Expr hstack1(Func a, Func b, Expr extent, Var x) {
     return select(x < extent,
                   a(clamp(x, 0, extent - 1)),

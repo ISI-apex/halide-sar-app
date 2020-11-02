@@ -11,7 +11,8 @@ public:
     Output<Buffer<float>> out{"out", 1};
 
     void generate() {
-        out = cross3_func(input_a, input_b);
+    	Var x{"x"};
+        out(x) = cross3(input_a, input_b, x);
     }
 };
 

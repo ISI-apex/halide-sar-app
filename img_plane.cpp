@@ -27,7 +27,8 @@ Expr ip_k(Expr n, Expr d, Var x) {
 // v_hat and u_hat
 Expr ip_hat(Func a, Func b, Expr extent, Var x) {
     RDom r(0, extent);
-    Func cross = cross3_func(a, b);
+    Func cross("cross");
+    cross(x) = cross3(a, b, x);
     return cross(x) / norm(cross(r));
 }
 
