@@ -84,7 +84,7 @@ target_link_libraries(img_output_u8_test PRIVATE Halide::Halide
                                                  ${CNPY}
                                                  img_output_u8)
 
-add_executable(sarbp_test sarbp.cpp)
+add_executable(sarbp_test sarbp.cpp PlatformData.cpp)
 target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
 target_include_directories(sarbp_test PRIVATE ${CNPY_INCLUDE_DIR}
                                               ${ZLIB_INCLUDE_DIRS}

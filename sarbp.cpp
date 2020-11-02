@@ -7,7 +7,9 @@
 #include <cnpy.h>
 #include <fftw3.h>
 
+#include "PlatformData.h"
 #include "img_plane.h"
+
 #include "ip_uv.h"
 #include "ip_k.h"
 #include "ip_v_hat.h"
@@ -60,89 +62,17 @@ int main(int argc, char **argv) {
     string platform_dir = string(argv[1]);
     string output_png = string(argv[2]);
 
-    // Load primitives
-
-    cnpy::NpyArray npy_B_IF = cnpy::npy_load(platform_dir + "/B_IF.npy");
-    float B_IF = *npy_B_IF.data<float>();
-
-    cnpy::NpyArray npy_delta_r = cnpy::npy_load(platform_dir + "/delta_r.npy");
-    double delta_r = *npy_delta_r.data<double>();
-
-    cnpy::NpyArray npy_chirprate = cnpy::npy_load(platform_dir + "/chirprate.npy");
-    double chirprate = *npy_chirprate.data<double>();
-
-    cnpy::NpyArray npy_f_0 = cnpy::npy_load(platform_dir + "/f_0.npy");
-    double f_0 = *npy_f_0.data<double>();
-
-    cnpy::NpyArray npy_nsamples = cnpy::npy_load(platform_dir + "/nsamples.npy");
-    int nsamples = *npy_nsamples.data<int>();
-
-    cnpy::NpyArray npy_npulses = cnpy::npy_load(platform_dir + "/npulses.npy");
-    int npulses = *npy_npulses.data<int>();
-
-    // Load arrays
-
-    cnpy::NpyArray npy_freq = cnpy::npy_load(platform_dir + "/freq.npy");
-    if (npy_freq.shape.size() != 1 || npy_freq.shape[0] != nsamples) {
-        cerr << "Bad shape: freq" << endl;
-        return 1;
-    }
-    float* freq = npy_freq.data<float>();
-
-    cnpy::NpyArray npy_k_r = cnpy::npy_load(platform_dir + "/k_r.npy");
-    if (npy_k_r.shape.size() != 1 || npy_k_r.shape[0] != nsamples) {
-        cerr << "Bad shape: k_r" << endl;
-        return 1;
-    }
-    Buffer<float, 1> buf_k_r(npy_k_r.data<float>(), nsamples);
-
-    cnpy::NpyArray npy_k_y = cnpy::npy_load(platform_dir + "/k_y.npy");
-    if (npy_k_y.shape.size() != 1 || npy_k_y.shape[0] != npulses) {
-        cerr << "Bad shape: k_y" << endl;
-        return 1;
-    }
-    double *k_y = npy_k_y.data<double>();
-
-    cnpy::NpyArray npy_R_c = cnpy::npy_load(platform_dir + "/R_c.npy");
-    if (npy_R_c.shape.size() != 1 || npy_R_c.shape[0] != 3) {
-        cerr << "Bad shape: R_c" << endl;
-        return 1;
-    }
-    Buffer<float, 1> buf_R_c(npy_R_c.data<float>(), 3);
-
-    cnpy::NpyArray npy_t = cnpy::npy_load(platform_dir + "/t.npy");
-    if (npy_t.shape.size() != 1 || npy_t.shape[0] != nsamples) {
-        cerr << "Bad shape: t" << endl;
-        return 1;
-    }
-    double *t = npy_t.data<double>();
-
-    // Load matrices
-    
-    cnpy::NpyArray npy_pos = cnpy::npy_load(platform_dir + "/pos.npy");
-    if (npy_pos.shape.size() != 2 || npy_pos.shape[0] != npulses || npy_pos.shape[1] != 3) {
-        cerr << "Bad shape: pos" << endl;
-        return 1;
-    }
-    Buffer<float, 2> buf_pos(npy_pos.data<float>(), 3, npulses);
-
-    cnpy::NpyArray npy_phs = cnpy::npy_load(platform_dir + "/phs.npy");
-    if (npy_phs.shape.size() != 2 || npy_phs.shape[0] != npulses || npy_phs.shape[1] != nsamples) {
-        cerr << "Bad shape: phs" << endl;
-        return 1;
-    }
-    Buffer<float, 3> buf_phs(reinterpret_cast<float *>(npy_phs.data<complex<float>>()), 2, nsamples, npulses);
-
+    PlatformData pd = platform_load(platform_dir);
     cout << "Loaded platform data" << endl;
-    cout << "Number of pulses: " << npulses << endl;
-    cout << "Pulse sample size: " << nsamples << endl;
+    cout << "Number of pulses: " << pd.npulses << endl;
+    cout << "Pulse sample size: " << pd.nsamples << endl;
 
     // Img plane variables
 
-    int nu = ip_upsample(nsamples);
-    int nv = ip_upsample(npulses);
+    int nu = ip_upsample(pd.nsamples);
+    int nv = ip_upsample(pd.npulses);
 
-    double d_u = ip_du(delta_r, RES_FACTOR, nsamples, nu);
+    double d_u = ip_du(pd.delta_r, RES_FACTOR, pd.nsamples, nu);
     double d_v = ip_dv(ASPECT, d_u);
 
     Buffer<double, 1> buf_u(nu);
@@ -160,7 +90,7 @@ int main(int argc, char **argv) {
     Buffer<const int, 1> buf_n_hat(&N_HAT[0], 3);
 
     Buffer<double, 1> buf_v_hat(3);
-    ip_v_hat(buf_n_hat, buf_R_c, buf_v_hat);
+    ip_v_hat(buf_n_hat, pd.R_c, buf_v_hat);
 
     Buffer<double, 1> buf_u_hat(3);
     ip_u_hat(buf_v_hat, buf_n_hat, buf_u_hat);
@@ -173,24 +103,24 @@ int main(int argc, char **argv) {
     cout << "Y length: " << nv << endl;
 
     // Compute FFT width (power of 2)
-    int N_fft = static_cast<int>(pow(2, static_cast<int>(log2(nsamples * UPSAMPLE)) + 1));
+    int N_fft = static_cast<int>(pow(2, static_cast<int>(log2(pd.nsamples * UPSAMPLE)) + 1));
 
     // backprojection - pre-FFT
 #if DEBUG_WIN
-    Buffer<double, 2> buf_win(buf_phs.dim(1).extent(), buf_phs.dim(2).extent());
+    Buffer<double, 2> buf_win(pd.phs.dim(1).extent(), pd.phs.dim(2).extent());
 #endif
 #if DEBUG_FILT
-    Buffer<float, 1> buf_filt(buf_phs.dim(1).extent());
+    Buffer<float, 1> buf_filt(pd.phs.dim(1).extent());
 #endif
 #if DEBUG_PHS_FILT
-    Buffer<double, 3> buf_phs_filt(2, buf_phs.dim(1).extent(), buf_phs.dim(2).extent());
+    Buffer<double, 3> buf_phs_filt(2, pd.phs.dim(1).extent(), pd.phs.dim(2).extent());
 #endif
 #if DEBUG_PHS_PAD
-    Buffer<double, 3> buf_phs_pad(2, N_fft, buf_phs.dim(2).extent());
+    Buffer<double, 3> buf_phs_pad(2, N_fft, pd.phs.dim(2).extent());
 #endif
-    Buffer<double, 3> buf_pre_fft(2, N_fft, npulses);
+    Buffer<double, 3> buf_pre_fft(2, N_fft, pd.npulses);
     cout << "Halide pre-fft start" << endl;
-    int rv = backprojection_pre_fft(buf_phs, buf_k_r, N_fft,
+    int rv = backprojection_pre_fft(pd.phs, pd.k_r, N_fft,
 #if DEBUG_WIN
         buf_win,
 #endif
@@ -235,7 +165,7 @@ int main(int argc, char **argv) {
 #endif
 
     // FFT
-    Buffer<double, 3> buf_post_fft(2, N_fft, npulses);
+    Buffer<double, 3> buf_post_fft(2, N_fft, pd.npulses);
     fftw_complex *fft_in = reinterpret_cast<fftw_complex *>(buf_pre_fft.begin());
     fftw_complex *fft_out = reinterpret_cast<fftw_complex *>(buf_post_fft.begin());
     fftw_plan plan = fftw_plan_dft_1d(N_fft, fft_in, fft_out, FFTW_FORWARD, FFTW_ESTIMATE);
@@ -261,7 +191,7 @@ int main(int argc, char **argv) {
 #endif
 #if DEBUG_RR0
     Buffer<double, 3> buf_rr0(buf_u.dim(0).extent() * buf_v.dim(0).extent(),
-                              buf_pos.dim(0).extent(),
+                              pd.pos.dim(0).extent(),
                               buf_post_fft.dim(2).extent());
 #endif
 #if DEBUG_NORM_RR0
@@ -293,7 +223,7 @@ int main(int argc, char **argv) {
 #endif
     Buffer<double, 3> buf_bp(2, buf_u.dim(0).extent(), buf_v.dim(0).extent());
     cout << "Halide post-fft start" << endl;
-    rv = backprojection_post_fft(buf_post_fft, nsamples, delta_r, buf_k_r, buf_u, buf_v, buf_pos, buf_pixel_locs,
+    rv = backprojection_post_fft(buf_post_fft, pd.nsamples, pd.delta_r, pd.k_r, buf_u, buf_v, pd.pos, buf_pixel_locs,
 #if DEBUG_Q
         buf_q,
 #endif
