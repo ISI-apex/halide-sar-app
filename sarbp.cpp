@@ -39,6 +39,8 @@ using Halide::Runtime::Buffer;
 #define DEBUG_IMG 0
 #define DEBUG_FIMG 0
 
+#define DEBUG_PRE_FFT 0
+#define DEBUG_POST_FFT 0
 #define DEBUG_BP 0
 #define DEBUG_BP_DB 0
 
@@ -273,8 +275,13 @@ int main(int argc, char **argv) {
 #endif
 #if DEBUG_PHS_PAD
     vector<size_t> shape_phs_pad { static_cast<size_t>(buf_phs_pad.dim(2).extent()),
-                                   static_cast<size_t>(buf_phs_pad.dim(1).extent()),};
+                                   static_cast<size_t>(buf_phs_pad.dim(1).extent()) };
     cnpy::npy_save("sarbp_debug-phs_pad.npy", (complex<double> *)buf_phs_pad.begin(), shape_phs_pad);
+#endif
+#if DEBUG_PRE_FFT
+    vector<size_t> shape_pre_fft { static_cast<size_t>(buf_pre_fft.dim(2).extent()),
+                                   static_cast<size_t>(buf_pre_fft.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-pre_fft.npy", (complex<double> *)buf_pre_fft.begin(), shape_pre_fft);
 #endif
 
     // FFT
@@ -288,6 +295,12 @@ int main(int argc, char **argv) {
     }
     cout << "FFTW: finished" << endl;
     fftw_destroy_plan(plan);
+    // write debug output
+#if DEBUG_POST_FFT
+    vector<size_t> shape_post_fft { static_cast<size_t>(buf_post_fft.dim(2).extent()),
+                                    static_cast<size_t>(buf_post_fft.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-post_fft.npy", (complex<double> *)buf_post_fft.begin(), shape_post_fft);
+#endif
 
     // backprojection - post-FFT
 #if DEBUG_Q
