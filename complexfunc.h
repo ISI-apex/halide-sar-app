@@ -22,6 +22,7 @@ public:
     ComplexFunc(Halide::Var &element, std::string name = "");
     ComplexFunc(Halide::Var &element, Halide::Func &inner);
     ComplexExpr operator()(std::vector<Halide::Expr>);
+    ComplexExpr operator()();
     ComplexExpr operator()(Halide::Expr idx1);
     ComplexExpr operator()(Halide::Expr idx1, Halide::Expr idx2);
     ComplexExpr operator()(Halide::Expr idx1, Halide::Expr idx2, Halide::Expr idx3);
@@ -322,6 +323,10 @@ ComplexExpr ComplexFunc::operator()(std::vector<Halide::Expr> idx) {
     return ComplexExpr(this, idx);
 }
 
+ComplexExpr ComplexFunc::operator()() {
+    std::vector<Halide::Expr> idx({});
+    return (*this)(idx);
+}
 ComplexExpr ComplexFunc::operator()(Halide::Expr idx1) {
     std::vector<Halide::Expr> idx({idx1});
     return (*this)(idx);
