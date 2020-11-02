@@ -61,7 +61,7 @@ public:
         Func phs_func = phs;
         ComplexFunc input(c, phs_func);
 
-        // Create window
+        // Create window: produces shape {nsamples, npulses}
         Func win_x("win_x");
         win_x = taylor_func(nsamples, TAYLOR_S_L);
         Func win_y("win_y");
@@ -72,20 +72,21 @@ public:
         out_win(x, y) = win(x, y);
 #endif
 
-        // Filter phase history
+        // Filter phase history: produces shape {nsamples}
         Func filt("filt");
         filt(x) = abs(k_r(x));
 #if DEBUG_FILT
         out_filt(x) = filt(x);
 #endif
 
+        // phs_filt: produces shape {nsamples, npulses}
         ComplexFunc phs_filt(c, "phs_filt");
         phs_filt(x, y) = input(x, y) * filt(x) * win(x, y);
 #if DEBUG_PHS_FILT
         out_phs_filt(c, x, y) = phs_filt.inner(c, x, y);
 #endif
 
-        // Zero pad phase history
+        // Zero pad phase history: produces shape {N_fft, npulses}
         ComplexFunc phs_pad(c, "phs_pad");
         phs_pad(x, y) = pad(phs_filt, nsamples, npulses,
                             ComplexExpr(c, Expr(0.0), Expr(0.0)),
@@ -94,7 +95,7 @@ public:
         out_phs_pad(c, x, y) = phs_pad.inner(c, x, y);
 #endif
 
-        // shift
+        // shift: produces shape {N_fft, npulses}
         ComplexFunc fftsh(c, "fftshift");
         fftsh(x, y) = fftshift(phs_pad, N_fft, npulses, x, y);
 
