@@ -1,5 +1,5 @@
 #include <complex>
-#include <stdio.h>
+#include <iostream>
 
 #include <Halide.h>
 #include <halide_image_io.h>
@@ -71,32 +71,26 @@ int main(int argc, char **argv) {
     npydata = cnpy::npy_load(platform_dir + "/B_IF.npy");
     ptr_flt = npydata.data<float>();
     float B_IF = *ptr_flt;
-    printf("B_IF: %f\n", B_IF);
 
     npydata = cnpy::npy_load(platform_dir + "/delta_r.npy");
     ptr_dbl = npydata.data<double>();
     double delta_r = *ptr_dbl;
-    printf("delta_r: %lf\n", delta_r);
 
     npydata = cnpy::npy_load(platform_dir + "/chirprate.npy");
     ptr_dbl = npydata.data<double>();
     double chirprate = *ptr_dbl;
-    printf("chirprate: %lf\n", chirprate);
 
     npydata = cnpy::npy_load(platform_dir + "/f_0.npy");
     ptr_dbl = npydata.data<double>();
     double f_0 = *ptr_dbl;
-    printf("f_0: %lf\n", f_0);
 
     npydata = cnpy::npy_load(platform_dir + "/nsamples.npy");
     ptr_int = npydata.data<int>();
     int nsamples = *ptr_int;
-    printf("nsamples: %d\n", nsamples);
 
     npydata = cnpy::npy_load(platform_dir + "/npulses.npy");
     ptr_int = npydata.data<int>();
     int npulses = *ptr_int;
-    printf("npulses: %d\n", npulses);
 
     // Load arrays
     // freq: <class 'numpy.ndarray'>
@@ -177,17 +171,17 @@ int main(int argc, char **argv) {
     complex<float> *phs = static_cast<complex<float> *>(malloc(npulses * nsamples * sizeof(complex<float>)));
     memcpy(phs, npydata.data<complex<float>>(), npulses * nsamples * sizeof(complex<float>));
 
+    cout << "Loaded platform data" << endl;
+    cout << "Number of pulses: " << npulses << endl;
+    cout << "Pulse sample size: " << nsamples << endl;
+
     // Img plane variables
 
     int nu = ip_upsample(nsamples);
-    cout << "nu: " << nu << endl;
     int nv = ip_upsample(npulses);
-    cout << "nv: " << nv << endl;
 
     double d_u = ip_du(delta_r, RES_FACTOR, nsamples, nu);
-    cout << "d_u: " << d_u << endl;
     double d_v = ip_dv(ASPECT, d_u);
-    cout << "d_v: " << d_v << endl;
 
     Buffer<double, 1> in_u(nu);
     ip_uv(nu, d_u, in_u);
@@ -211,6 +205,10 @@ int main(int argc, char **argv) {
 
     Buffer<double, 2> in_pixel_locs(nu*nv, 3);
     ip_pixel_locs(in_u, in_v, buf_u_hat, buf_v_hat, in_pixel_locs);
+
+    cout << "Computed image plane parameters" << endl;
+    cout << "X length: " << nu << endl;
+    cout << "Y length: " << nv << endl;
 
     // Compute FFT width (power of 2)
     int N_fft = static_cast<int>(pow(2, static_cast<int>(log2(nsamples * UPSAMPLE)) + 1));
