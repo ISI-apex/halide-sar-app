@@ -28,7 +28,7 @@ Expr ip_k(Expr n, Expr d, Var x) {
 Expr ip_hat(Func a, Func b, Expr extent, Var x) {
     RDom r(0, extent);
     Func cross = cross3_func(a, b);
-    return cross(x) / norm_expr(cross(r));
+    return cross(x) / norm(cross(r));
 }
 
 class ImgPlaneUVGenerator : public Halide::Generator<ImgPlaneUVGenerator> {

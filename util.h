@@ -113,7 +113,7 @@ inline Expr log10(Expr x) {
     return log(x) / log(Expr(10));
 }
 
-inline Expr norm_expr(Expr in) {
+inline Expr norm(Expr in) {
     return sqrt(sum(in * in));
 }
 

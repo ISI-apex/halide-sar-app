@@ -12,7 +12,7 @@ public:
     void generate() {
         RDom r(0, input.dim(0).extent(), "r");
         Func in_func = input;
-        output() = norm_expr(in_func(r));
+        output() = norm(in_func(r));
     }
 };
 
@@ -25,7 +25,7 @@ public:
         Var x{"x"};
         RDom r(0, input.dim(0).extent(), "r");
         Func in_func = input;
-        output(x) = norm_expr(in_func(r, x));
+        output(x) = norm(in_func(r, x));
     }
 };
 
