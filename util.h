@@ -105,9 +105,12 @@ inline Func vstack2_func(Func a, Func b, Expr y_extent, const std::string &name 
     return f;
 }
 
-inline Expr log2f_expr(Expr x) {
-    Expr log2 = log(x) / log(Expr(2.0f));
-    return log2;
+inline Expr log2(Expr x) {
+    return log(x) / log(Expr(2));
+}
+
+inline Expr log10(Expr x) {
+    return log(x) / log(Expr(10));
 }
 
 inline Expr norm_expr(Expr in) {
