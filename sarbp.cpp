@@ -43,15 +43,16 @@ using Halide::Runtime::Buffer;
 #define DEBUG_BP_DB 0
 
 int main(int argc, char **argv) {
-    if (argc < 6) {
-        cerr << "Usage: " << argv[0] << " <platform_dir> <upsample> <output_png> <dB_min> <dB_max>" << endl;
+    if (argc < 7) {
+        cerr << "Usage: " << argv[0] << " <platform_dir> <taylor> <upsample> <output_png> <dB_min> <dB_max>" << endl;
         return 1;
     }
     string platform_dir = string(argv[1]);
-    int upsample = atoi(argv[2]);
-    string output_png = string(argv[3]);
-    double dB_min = atof(argv[4]);
-    double dB_max = atof(argv[5]);
+    int taylor = atoi(argv[2]);
+    int upsample = atoi(argv[3]);
+    string output_png = string(argv[4]);
+    double dB_min = atof(argv[5]);
+    double dB_max = atof(argv[6]);
 
     PlatformData pd = platform_load(platform_dir);
     cout << "Loaded platform data" << endl;
@@ -82,7 +83,7 @@ int main(int argc, char **argv) {
 #endif
     Buffer<double, 3> buf_pre_fft(2, N_fft, pd.npulses);
     cout << "Halide pre-fft start" << endl;
-    int rv = backprojection_pre_fft(pd.phs, pd.k_r, N_fft,
+    int rv = backprojection_pre_fft(pd.phs, pd.k_r, taylor, N_fft,
 #if DEBUG_WIN
         buf_win,
 #endif

@@ -26,12 +26,11 @@ using namespace Halide;
 #define DEBUG_IMG 0
 #define DEBUG_FIMG 0
 
-#define TAYLOR_S_L 17
-
 class BackprojectionPreFFTGenerator : public Halide::Generator<BackprojectionPreFFTGenerator> {
 public:
     Input<Buffer<float>> phs {"phs", 3}; // complex 2d input  (Halide thinks this is 3d: [2, x, y])
     Input<Buffer<float>> k_r {"k_r", 1};
+    Input<int> taylor {"taylor"};
     Input<int> N_fft {"N_fft"};
 
 #if DEBUG_WIN
@@ -60,9 +59,9 @@ public:
 
         // Create window: produces shape {nsamples, npulses}
         Func win_x("win_x");
-        win_x = taylor_func(nsamples, TAYLOR_S_L);
+        win_x = taylor_func(nsamples, taylor, "win_x");
         Func win_y("win_y");
-        win_y = taylor_func(npulses, TAYLOR_S_L);
+        win_y = taylor_func(npulses, taylor, "win_y");
         Func win("win");
         win(x, y) = win_x(x) * win_y(y);
 #if DEBUG_WIN
