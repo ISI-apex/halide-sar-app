@@ -62,14 +62,14 @@ PlatformData platform_load(string platform_dir) {
     Buffer<double, 1> k_y(npulses);
     memcpy(k_y.begin(), npy_k_y.data<double>(), npy_k_y.num_bytes());
 
-    Buffer<float, 1> n_hat(3);
-    bool has_n_hat = file_exists(platform_dir + "/n_hat.npy");
-    if (has_n_hat) {
+    optional<Buffer<float, 1>> n_hat = nullopt;
+    if (file_exists(platform_dir + "/n_hat.npy")) {
         NpyArray npy_n_hat = npy_load(platform_dir + "/n_hat.npy");
         if (npy_n_hat.shape.size() != 1 || npy_n_hat.shape[0] != 3) {
             throw runtime_error("Bad shape: n_hat");
         }
-        memcpy(n_hat.begin(), npy_n_hat.data<float>(), npy_n_hat.num_bytes());
+        n_hat.emplace(Buffer<float, 1>(3));
+        memcpy(n_hat.value().begin(), npy_n_hat.data<float>(), npy_n_hat.num_bytes());
     }
 
     NpyArray npy_R_c = npy_load(platform_dir + "/R_c.npy");
@@ -103,7 +103,5 @@ PlatformData platform_load(string platform_dir) {
     memcpy(phs.begin(), reinterpret_cast<float *>(npy_phs.data<complex<float>>()), npy_phs.num_bytes());
 
     return PlatformData(B_IF, delta_r, chirprate, f_0, nsamples, npulses,
-                        freq, k_r, k_y,
-                        has_n_hat ? optional<Buffer<float, 1>>{n_hat} : nullopt,
-                        R_c, t, pos, phs);
+                        freq, k_r, k_y, n_hat, R_c, t, pos, phs);
 }
