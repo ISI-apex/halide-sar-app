@@ -21,6 +21,15 @@ static bool file_exists(const string& path) {
 PlatformData platform_load(string platform_dir) {
     // Load primitives
 
+    std::optional<double> B = nullopt;
+    if (file_exists(platform_dir + "/B.npy")) {
+        NpyArray npy_B = npy_load(platform_dir + "/B.npy");
+        if (npy_B.word_size != sizeof(double)) {
+            throw runtime_error("Bad word size: B");
+        }
+        B.emplace(*npy_B.data<double>());
+    }
+
     NpyArray npy_B_IF = npy_load(platform_dir + "/B_IF.npy");
     float B_IF;
     if (npy_B_IF.word_size == sizeof(float)) {
@@ -37,6 +46,15 @@ PlatformData platform_load(string platform_dir) {
         throw runtime_error("Bad word size: delta_r");
     }
     double delta_r = *npy_delta_r.data<double>();
+
+    std::optional<double> delta_t = nullopt;
+    if (file_exists(platform_dir + "/delta_t.npy")) {
+        NpyArray npy_delta_t = npy_load(platform_dir + "/delta_t.npy");
+        if (npy_delta_t.word_size != sizeof(double)) {
+            throw runtime_error("Bad word size: delta_t");
+        }
+        delta_t.emplace(*npy_delta_t.data<double>());
+    }
 
     NpyArray npy_chirprate = npy_load(platform_dir + "/chirprate.npy");
     if (npy_chirprate.word_size != sizeof(double)) {
@@ -72,6 +90,15 @@ PlatformData platform_load(string platform_dir) {
         throw runtime_error("Bad word size: npulses");
     }
 
+    std::optional<double> vp = nullopt;
+    if (file_exists(platform_dir + "/vp.npy")) {
+        NpyArray npy_vp = npy_load(platform_dir + "/vp.npy");
+        if (npy_vp.word_size != sizeof(double)) {
+            throw runtime_error("Bad word size: vp");
+        }
+        vp.emplace(*npy_vp.data<double>());
+    }
+
     // Load arrays
 
     std::optional<Buffer<float, 1>> freq = nullopt;
@@ -80,11 +107,19 @@ PlatformData platform_load(string platform_dir) {
         if (npy_freq.shape.size() != 1 || npy_freq.shape[0] != nsamples) {
             throw runtime_error("Bad shape: freq");
         }
-        if (npy_freq.word_size != sizeof(float)) {
+        freq.emplace(Buffer<float, 1>(nsamples));
+        if (npy_freq.word_size == sizeof(float)) {
+            memcpy(freq.value().begin(), npy_freq.data<float>(), npy_freq.num_bytes());
+        } else if (npy_freq.word_size == sizeof(double)) {
+            cout << "PlatformData: downcasting freq from double to float" << endl;
+            const double *src = npy_freq.data<double>();
+            float *dest = freq.value().begin();
+            for (size_t i = 0; i < npy_freq.num_vals; i++) {
+                dest[i] = (float)src[i];
+            }
+        } else {
             throw runtime_error("Bad word size: freq");
         }
-        freq.emplace(Buffer<float, 1>(nsamples));
-        memcpy(freq.value().begin(), npy_freq.data<float>(), npy_freq.num_bytes());
     }
 
     NpyArray npy_k_r = npy_load(platform_dir + "/k_r.npy");
@@ -135,11 +170,19 @@ PlatformData platform_load(string platform_dir) {
     if (npy_R_c.shape.size() != 1 || npy_R_c.shape[0] != 3) {
         throw runtime_error("Bad shape: R_c");
     }
-    if (npy_R_c.word_size != sizeof(float)) {
+    Buffer<float, 1> R_c(3);
+    if (npy_R_c.word_size == sizeof(float)) {
+        memcpy(R_c.begin(), npy_R_c.data<float>(), npy_R_c.num_bytes());
+    } else if (npy_R_c.word_size == sizeof(double)) {
+        cout << "PlatformData: downcasting R_c from double to float" << endl;
+        const double *src = npy_R_c.data<double>();
+        float *dest = R_c.begin();
+        for (size_t i = 0; i < npy_R_c.num_vals; i++) {
+            dest[i] = (float)src[i];
+        }
+    } else {
         throw runtime_error("Bad word size: R_c");
     }
-    Buffer<float, 1> R_c(3);
-    memcpy(R_c.begin(), npy_R_c.data<float>(), npy_R_c.num_bytes());
 
     NpyArray npy_t = npy_load(platform_dir + "/t.npy");
     if (npy_t.shape.size() != 1 || npy_t.shape[0] != nsamples) {
@@ -158,10 +201,18 @@ PlatformData platform_load(string platform_dir) {
         throw runtime_error("Bad shape: pos");
     }
     Buffer<float, 2> pos(3, npulses);
-    if (npy_pos.word_size != sizeof(float)) {
+    if (npy_pos.word_size == sizeof(float)) {
+        memcpy(pos.begin(), npy_pos.data<float>(), npy_pos.num_bytes());
+    } else if (npy_pos.word_size == sizeof(double)) { 
+        cout << "PlatformData: downcasting pos from double to float" << endl;
+        const double *src = npy_pos.data<double>();
+        float *dest = pos.begin();
+        for (size_t i = 0; i < npy_pos.num_vals; i++) {
+            dest[i] = (float)src[i];
+        }
+    } else {
         throw runtime_error("Bad word size: pos");
     }
-    memcpy(pos.begin(), npy_pos.data<float>(), npy_pos.num_bytes());
 
     NpyArray npy_phs = npy_load(platform_dir + "/phs.npy");
     if (npy_phs.shape.size() != 2 || npy_phs.shape[0] != npulses || npy_phs.shape[1] != nsamples) {
@@ -182,6 +233,6 @@ PlatformData platform_load(string platform_dir) {
         throw runtime_error("Bad word size: phs");
     }
 
-    return PlatformData(B_IF, delta_r, chirprate, f_0, nsamples, npulses,
+    return PlatformData(B, B_IF, delta_r, delta_t, chirprate, f_0, nsamples, npulses, vp,
                         freq, k_r, k_y, n_hat, R_c, t, pos, phs);
 }

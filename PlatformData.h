@@ -6,12 +6,15 @@
 #include <Halide.h>
 
 struct PlatformData {
-    PlatformData(float B_IF,
+    PlatformData(std::optional<double> B,
+                 float B_IF,
                  double delta_r,
+                 std::optional<double> delta_t,
                  double chirprate,
                  double f_0,
                  int nsamples,
                  int npulses,
+                 std::optional<double> vp,
                  std::optional<Halide::Runtime::Buffer<float, 1>> freq,
                  Halide::Runtime::Buffer<float, 1> k_r,
                  std::optional<Halide::Runtime::Buffer<double, 1>> k_y,
@@ -20,12 +23,15 @@ struct PlatformData {
                  Halide::Runtime::Buffer<double, 1> t,
                  Halide::Runtime::Buffer<float, 2> pos,
                  Halide::Runtime::Buffer<float, 3> phs):
+                 B(B),
                  B_IF(B_IF),
                  delta_r(delta_r),
+                 delta_t(delta_t),
                  chirprate(chirprate),
                  f_0(f_0),
                  nsamples(nsamples),
                  npulses(npulses),
+                 vp(vp),
                  freq(freq),
                  k_r(k_r),
                  k_y(k_y),
@@ -35,12 +41,15 @@ struct PlatformData {
                  pos(pos),
                  phs(phs) {}
 
+    std::optional<double> B;
     float B_IF;
     double delta_r;
+    std::optional<double> delta_t;
     double chirprate;
     double f_0;
     int nsamples;
     int npulses;
+    std::optional<double> vp;
     std::optional<Halide::Runtime::Buffer<float, 1>> freq;
     Halide::Runtime::Buffer<float, 1> k_r;
     std::optional<Halide::Runtime::Buffer<double, 1>> k_y;
