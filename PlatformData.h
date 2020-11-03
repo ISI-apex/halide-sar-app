@@ -15,6 +15,7 @@ struct PlatformData {
                  Halide::Runtime::Buffer<float, 1> freq,
                  Halide::Runtime::Buffer<float, 1> k_r,
                  Halide::Runtime::Buffer<double, 1>k_y,
+                 std::optional<Halide::Runtime::Buffer<float, 1>> n_hat,
                  Halide::Runtime::Buffer<float, 1> R_c,
                  Halide::Runtime::Buffer<double, 1> t,
                  Halide::Runtime::Buffer<float, 2> pos,
@@ -28,6 +29,7 @@ struct PlatformData {
                  freq(freq),
                  k_r(k_r),
                  k_y(k_y),
+                 n_hat(n_hat),
                  R_c(R_c),
                  t(t),
                  pos(pos),
@@ -42,6 +44,7 @@ struct PlatformData {
     Halide::Runtime::Buffer<float, 1> freq;
     Halide::Runtime::Buffer<float, 1> k_r;
     Halide::Runtime::Buffer<double, 1> k_y;
+    std::optional<Halide::Runtime::Buffer<float, 1>> n_hat;
     Halide::Runtime::Buffer<float, 1> R_c;
     Halide::Runtime::Buffer<double, 1> t;
     Halide::Runtime::Buffer<float, 2> pos;

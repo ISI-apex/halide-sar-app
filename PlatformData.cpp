@@ -10,6 +10,14 @@ using namespace std;
 using namespace cnpy;
 using Halide::Runtime::Buffer;
 
+static bool file_exists(const string& path) {
+    if (FILE *f = fopen(path.c_str(), "rb")) {
+        fclose(f);
+        return true;
+    }
+    return false;
+}
+
 PlatformData platform_load(string platform_dir) {
     // Load primitives
 
@@ -54,6 +62,16 @@ PlatformData platform_load(string platform_dir) {
     Buffer<double, 1> k_y(npulses);
     memcpy(k_y.begin(), npy_k_y.data<double>(), npy_k_y.num_bytes());
 
+    Buffer<float, 1> n_hat(3);
+    bool has_n_hat = file_exists(platform_dir + "/n_hat.npy");
+    if (has_n_hat) {
+        NpyArray npy_n_hat = npy_load(platform_dir + "/n_hat.npy");
+        if (npy_n_hat.shape.size() != 1 || npy_n_hat.shape[0] != 3) {
+            throw runtime_error("Bad shape: n_hat");
+        }
+        memcpy(n_hat.begin(), npy_n_hat.data<float>(), npy_n_hat.num_bytes());
+    }
+
     NpyArray npy_R_c = npy_load(platform_dir + "/R_c.npy");
     if (npy_R_c.shape.size() != 1 || npy_R_c.shape[0] != 3) {
         throw runtime_error("Bad shape: R_c");
@@ -69,7 +87,7 @@ PlatformData platform_load(string platform_dir) {
     memcpy(t.begin(), npy_t.data<double>(), npy_t.num_bytes());
 
     // Load matrices
-    
+
     NpyArray npy_pos = npy_load(platform_dir + "/pos.npy");
     if (npy_pos.shape.size() != 2 || npy_pos.shape[0] != npulses || npy_pos.shape[1] != 3) {
         throw runtime_error("Bad shape: pos");
@@ -85,5 +103,7 @@ PlatformData platform_load(string platform_dir) {
     memcpy(phs.begin(), reinterpret_cast<float *>(npy_phs.data<complex<float>>()), npy_phs.num_bytes());
 
     return PlatformData(B_IF, delta_r, chirprate, f_0, nsamples, npulses,
-                        freq, k_r, k_y, R_c, t, pos, phs);
+                        freq, k_r, k_y,
+                        has_n_hat ? optional<Buffer<float, 1>>{n_hat} : nullopt,
+                        R_c, t, pos, phs);
 }
