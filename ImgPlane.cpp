@@ -29,7 +29,7 @@ inline double ip_dv(double aspect, double du) {
 }
 
 ImgPlane img_plane_create(PlatformData &pd, double res_factor,
-                          const int _n_hat[3], double aspect, bool upsample) {
+                          const float _n_hat[3], double aspect, bool upsample) {
     int nu;
     int nv;
     if (upsample) {
@@ -55,7 +55,7 @@ ImgPlane img_plane_create(PlatformData &pd, double res_factor,
     Buffer<double, 1> k_v(nv);
     ip_k(nv, d_v, k_v);
 
-    Buffer<const int, 1> n_hat(&_n_hat[0], 3);
+    Buffer<const float, 1> n_hat(&_n_hat[0], 3);
 
     Buffer<double, 1> v_hat(3);
     ip_v_hat(n_hat, pd.R_c, v_hat);

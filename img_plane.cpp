@@ -58,7 +58,7 @@ public:
 
 class ImgPlaneVHatGenerator : public Halide::Generator<ImgPlaneVHatGenerator> {
 public:
-    Input<Buffer<int>> n_hat {"n_hat", 1};
+    Input<Buffer<float>> n_hat {"n_hat", 1};
     Input<Buffer<float>> R_c {"R_c", 1};
     Output<Buffer<double>> v_hat {"v_hat", 1};
 
@@ -71,7 +71,7 @@ public:
 class ImgPlaneUHatGenerator : public Halide::Generator<ImgPlaneUHatGenerator> {
 public:
     Input<Buffer<double>> v_hat {"v_hat", 1};
-    Input<Buffer<int>> n_hat {"n_hat", 1};
+    Input<Buffer<float>> n_hat {"n_hat", 1};
     Output<Buffer<double>> u_hat {"u_hat", 1};
 
     void generate() {
