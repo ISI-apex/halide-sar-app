@@ -44,17 +44,15 @@ using Halide::Runtime::Buffer;
 
 #define UPSAMPLE 2
 
-// TODO: These values should depend on the dataset and/or platform?
-#define DB_MIN -30
-#define DB_MAX 0
-
 int main(int argc, char **argv) {
-    if (argc < 3) {
-        cerr << "Usage: " << argv[0] << " <platform_dir> <output_png>" << endl;
+    if (argc < 5) {
+        cerr << "Usage: " << argv[0] << " <platform_dir> <output_png> <dB_min> <dB_max>" << endl;
         return 1;
     }
     string platform_dir = string(argv[1]);
     string output_png = string(argv[2]);
+    double dB_min = atof(argv[3]);
+    double dB_max = atof(argv[4]);
 
     PlatformData pd = platform_load(platform_dir);
     cout << "Loaded platform data" << endl;
@@ -297,7 +295,7 @@ int main(int argc, char **argv) {
     // Produce output image
     Buffer<uint8_t, 2> buf_bp_u8(buf_bp_dB.dim(0).extent(), buf_bp_dB.dim(1).extent());
     cout << "Halide PNG production start" << endl;
-    rv = img_output_u8(buf_bp_dB, DB_MIN, DB_MAX, buf_bp_u8);
+    rv = img_output_u8(buf_bp_dB, dB_min, dB_max, buf_bp_u8);
     cout << "Halide PNG production returned " << rv << endl;
     if (rv != 0) {
         return rv;
