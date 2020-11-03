@@ -22,7 +22,15 @@ PlatformData platform_load(string platform_dir) {
     // Load primitives
 
     NpyArray npy_B_IF = npy_load(platform_dir + "/B_IF.npy");
-    float B_IF = *npy_B_IF.data<float>();
+    float B_IF;
+    if (npy_B_IF.word_size == sizeof(float)) {
+        B_IF = *npy_B_IF.data<float>();
+    } else if (npy_B_IF.word_size == sizeof(double)) {
+        cout << "PlatformData: downcasting B_IF from double to float" << endl;
+        B_IF = (float)*npy_B_IF.data<double>();
+    } else {
+        throw runtime_error("Bad word size: B_IF");
+    }
 
     NpyArray npy_delta_r = npy_load(platform_dir + "/delta_r.npy");
     double delta_r = *npy_delta_r.data<double>();
@@ -56,7 +64,18 @@ PlatformData platform_load(string platform_dir) {
         throw runtime_error("Bad shape: k_r");
     }
     Buffer<float, 1> k_r(nsamples);
-    memcpy(k_r.begin(), npy_k_r.data<float>(), npy_k_r.num_bytes());
+    if (npy_k_r.word_size == sizeof(float)) {
+        memcpy(k_r.begin(), npy_k_r.data<float>(), npy_k_r.num_bytes());
+    } else if (npy_k_r.word_size == sizeof(double)) {
+        cout << "PlatformData: downcasting k_r from double to float" << endl;
+        const double *src = npy_k_r.data<double>();
+        float *dest = k_r.begin();
+        for (size_t i = 0; i < npy_k_r.num_vals; i++) {
+            dest[i] = (float)src[i];
+        }
+    } else {
+        throw runtime_error("Bad word size: k_r");
+    }
 
     std::optional<Buffer<double, 1>> k_y = nullopt;
     if (file_exists(platform_dir + "/k_y.npy")) {
@@ -106,7 +125,19 @@ PlatformData platform_load(string platform_dir) {
         throw runtime_error("Bad shape: phs");
     }
     Buffer<float, 3> phs(2, nsamples, npulses);
-    memcpy(phs.begin(), reinterpret_cast<float *>(npy_phs.data<complex<float>>()), npy_phs.num_bytes());
+    if (npy_phs.word_size == sizeof(complex<float>)) {
+        memcpy(phs.begin(), reinterpret_cast<float *>(npy_phs.data<complex<float>>()), npy_phs.num_bytes());
+    } else if (npy_phs.word_size == sizeof(complex<double>)) {
+        cout << "PlatformData: downcasting phs from complex<double> to complex<float>" << endl;
+        const complex<double> *src = npy_phs.data<complex<double>>();
+        float *dest = phs.begin();
+        for (size_t i = 0; i < npy_phs.num_vals; i++) {
+            dest[i * 2] = (float)src[i].real();
+            dest[(i * 2) + 1] = (float)src[i].imag();
+        }
+    } else {
+        throw runtime_error("Bad word size: phs");
+    }
 
     return PlatformData(B_IF, delta_r, chirprate, f_0, nsamples, npulses,
                         freq, k_r, k_y, n_hat, R_c, t, pos, phs);
