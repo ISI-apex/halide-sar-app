@@ -42,17 +42,16 @@ using Halide::Runtime::Buffer;
 #define DEBUG_BP 0
 #define DEBUG_BP_DB 0
 
-#define UPSAMPLE 2
-
 int main(int argc, char **argv) {
-    if (argc < 5) {
-        cerr << "Usage: " << argv[0] << " <platform_dir> <output_png> <dB_min> <dB_max>" << endl;
+    if (argc < 6) {
+        cerr << "Usage: " << argv[0] << " <platform_dir> <upsample> <output_png> <dB_min> <dB_max>" << endl;
         return 1;
     }
     string platform_dir = string(argv[1]);
-    string output_png = string(argv[2]);
-    double dB_min = atof(argv[3]);
-    double dB_max = atof(argv[4]);
+    int upsample = atoi(argv[2]);
+    string output_png = string(argv[3]);
+    double dB_min = atof(argv[4]);
+    double dB_max = atof(argv[5]);
 
     PlatformData pd = platform_load(platform_dir);
     cout << "Loaded platform data" << endl;
@@ -66,7 +65,7 @@ int main(int argc, char **argv) {
     cout << "Y length: " << ip.nv << endl;
 
     // Compute FFT width (power of 2)
-    int N_fft = static_cast<int>(pow(2, static_cast<int>(log2(pd.nsamples * UPSAMPLE)) + 1));
+    int N_fft = static_cast<int>(pow(2, static_cast<int>(log2(pd.nsamples * upsample)) + 1));
 
     // backprojection - pre-FFT
 #if DEBUG_WIN
