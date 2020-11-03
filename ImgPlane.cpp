@@ -14,11 +14,6 @@
 using namespace std;
 using Halide::Runtime::Buffer;
 
-#define RES_FACTOR 1.0
-#define ASPECT 1.0
-
-const int N_HAT[] = { 0, 0, 1 };
-
 inline double ip_upsample(int n) {
     double l = log2((double) n);
     int r = (l - (int)l) > 0;
@@ -33,12 +28,20 @@ inline double ip_dv(double aspect, double du) {
     return aspect * du;
 }
 
-ImgPlane img_plane_create(PlatformData &pd) {
-    int nu = ip_upsample(pd.nsamples);
-    int nv = ip_upsample(pd.npulses);
+ImgPlane img_plane_create(PlatformData &pd, double res_factor,
+                          const int _n_hat[3], double aspect, bool upsample) {
+    int nu;
+    int nv;
+    if (upsample) {
+        nu = ip_upsample(pd.nsamples);
+        nv = ip_upsample(pd.npulses);
+    } else {
+        nu = pd.nsamples;
+        nv = pd.npulses;
+    }
 
-    double d_u = ip_du(pd.delta_r, RES_FACTOR, pd.nsamples, nu);
-    double d_v = ip_dv(ASPECT, d_u);
+    double d_u = ip_du(pd.delta_r, res_factor, pd.nsamples, nu);
+    double d_v = ip_dv(aspect, d_u);
 
     Buffer<double, 1> u(nu);
     ip_uv(nu, d_u, u);
@@ -52,7 +55,7 @@ ImgPlane img_plane_create(PlatformData &pd) {
     Buffer<double, 1> k_v(nv);
     ip_k(nv, d_v, k_v);
 
-    Buffer<const int, 1> n_hat(&N_HAT[0], 3);
+    Buffer<const int, 1> n_hat(&_n_hat[0], 3);
 
     Buffer<double, 1> v_hat(3);
     ip_v_hat(n_hat, pd.R_c, v_hat);

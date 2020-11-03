@@ -31,6 +31,12 @@ struct ImgPlane {
     Halide::Runtime::Buffer<double, 2> pixel_locs;
 };
 
-ImgPlane img_plane_create(PlatformData &pd);
+const int N_HAT[] = { 0, 0, 1 };
+
+ImgPlane img_plane_create(PlatformData &pd,
+                          double res_factor = 1.0,
+                          const int n_hat[3] = N_HAT,
+                          double aspect = 1.0,
+                          bool upsample = true);
 
 #endif
