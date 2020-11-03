@@ -41,12 +41,15 @@ PlatformData platform_load(string platform_dir) {
 
     // Load arrays
 
-    NpyArray npy_freq = npy_load(platform_dir + "/freq.npy");
-    if (npy_freq.shape.size() != 1 || npy_freq.shape[0] != nsamples) {
-        throw runtime_error("Bad shape: freq");
+    std::optional<Buffer<float, 1>> freq = nullopt;
+    if (file_exists(platform_dir + "/freq.npy")) {
+        NpyArray npy_freq = npy_load(platform_dir + "/freq.npy");
+        if (npy_freq.shape.size() != 1 || npy_freq.shape[0] != nsamples) {
+            throw runtime_error("Bad shape: freq");
+        }
+        freq.emplace(Buffer<float, 1>(nsamples));
+        memcpy(freq.value().begin(), npy_freq.data<float>(), npy_freq.num_bytes());
     }
-    Buffer<float, 1> freq(nsamples);
-    memcpy(freq.begin(), npy_freq.data<float>(), npy_freq.num_bytes());
 
     NpyArray npy_k_r = npy_load(platform_dir + "/k_r.npy");
     if (npy_k_r.shape.size() != 1 || npy_k_r.shape[0] != nsamples) {
@@ -55,12 +58,15 @@ PlatformData platform_load(string platform_dir) {
     Buffer<float, 1> k_r(nsamples);
     memcpy(k_r.begin(), npy_k_r.data<float>(), npy_k_r.num_bytes());
 
-    NpyArray npy_k_y = npy_load(platform_dir + "/k_y.npy");
-    if (npy_k_y.shape.size() != 1 || npy_k_y.shape[0] != npulses) {
-        throw runtime_error("Bad shape: k_y");
+    std::optional<Buffer<double, 1>> k_y = nullopt;
+    if (file_exists(platform_dir + "/k_y.npy")) {
+        NpyArray npy_k_y = npy_load(platform_dir + "/k_y.npy");
+        if (npy_k_y.shape.size() != 1 || npy_k_y.shape[0] != npulses) {
+            throw runtime_error("Bad shape: k_y");
+        }
+        k_y.emplace(Buffer<double, 1>(npulses));
+        memcpy(k_y.value().begin(), npy_k_y.data<double>(), npy_k_y.num_bytes());
     }
-    Buffer<double, 1> k_y(npulses);
-    memcpy(k_y.begin(), npy_k_y.data<double>(), npy_k_y.num_bytes());
 
     optional<Buffer<float, 1>> n_hat = nullopt;
     if (file_exists(platform_dir + "/n_hat.npy")) {
