@@ -33,19 +33,44 @@ PlatformData platform_load(string platform_dir) {
     }
 
     NpyArray npy_delta_r = npy_load(platform_dir + "/delta_r.npy");
+    if (npy_delta_r.word_size != sizeof(double)) {
+        throw runtime_error("Bad word size: delta_r");
+    }
     double delta_r = *npy_delta_r.data<double>();
 
     NpyArray npy_chirprate = npy_load(platform_dir + "/chirprate.npy");
+    if (npy_chirprate.word_size != sizeof(double)) {
+        throw runtime_error("Bad word size: chirprate");
+    }
     double chirprate = *npy_chirprate.data<double>();
 
     NpyArray npy_f_0 = npy_load(platform_dir + "/f_0.npy");
+    if (npy_f_0.word_size != sizeof(double)) {
+        throw runtime_error("Bad word size: f_0");
+    }
     double f_0 = *npy_f_0.data<double>();
 
     NpyArray npy_nsamples = npy_load(platform_dir + "/nsamples.npy");
-    int nsamples = *npy_nsamples.data<int>();
+    int nsamples;
+    if (npy_nsamples.word_size == sizeof(int)) {
+        nsamples = *npy_nsamples.data<int>();
+    } else if (npy_nsamples.word_size == sizeof(int64_t)) {
+        // no need to warn of downcasting
+        nsamples = (int)*npy_nsamples.data<int64_t>();
+    } else {
+        throw runtime_error("Bad word size: nsamples");
+    }
 
     NpyArray npy_npulses = npy_load(platform_dir + "/npulses.npy");
-    int npulses = *npy_npulses.data<int>();
+    int npulses;
+    if (npy_npulses.word_size == sizeof(int)) {
+        npulses = *npy_npulses.data<int>();
+    } else if (npy_npulses.word_size == sizeof(int64_t)) {
+        // no need to warn of downcasting
+        npulses = (int)*npy_npulses.data<int64_t>();
+    } else {
+        throw runtime_error("Bad word size: npulses");
+    }
 
     // Load arrays
 
@@ -54,6 +79,9 @@ PlatformData platform_load(string platform_dir) {
         NpyArray npy_freq = npy_load(platform_dir + "/freq.npy");
         if (npy_freq.shape.size() != 1 || npy_freq.shape[0] != nsamples) {
             throw runtime_error("Bad shape: freq");
+        }
+        if (npy_freq.word_size != sizeof(float)) {
+            throw runtime_error("Bad word size: freq");
         }
         freq.emplace(Buffer<float, 1>(nsamples));
         memcpy(freq.value().begin(), npy_freq.data<float>(), npy_freq.num_bytes());
@@ -83,6 +111,9 @@ PlatformData platform_load(string platform_dir) {
         if (npy_k_y.shape.size() != 1 || npy_k_y.shape[0] != npulses) {
             throw runtime_error("Bad shape: k_y");
         }
+        if (npy_k_y.word_size != sizeof(double)) {
+            throw runtime_error("Bad word size: k_y");
+        }
         k_y.emplace(Buffer<double, 1>(npulses));
         memcpy(k_y.value().begin(), npy_k_y.data<double>(), npy_k_y.num_bytes());
     }
@@ -93,6 +124,9 @@ PlatformData platform_load(string platform_dir) {
         if (npy_n_hat.shape.size() != 1 || npy_n_hat.shape[0] != 3) {
             throw runtime_error("Bad shape: n_hat");
         }
+        if (npy_n_hat.word_size != sizeof(float)) {
+            throw runtime_error("Bad word size: n_hat");
+        }
         n_hat.emplace(Buffer<float, 1>(3));
         memcpy(n_hat.value().begin(), npy_n_hat.data<float>(), npy_n_hat.num_bytes());
     }
@@ -101,12 +135,18 @@ PlatformData platform_load(string platform_dir) {
     if (npy_R_c.shape.size() != 1 || npy_R_c.shape[0] != 3) {
         throw runtime_error("Bad shape: R_c");
     }
+    if (npy_R_c.word_size != sizeof(float)) {
+        throw runtime_error("Bad word size: R_c");
+    }
     Buffer<float, 1> R_c(3);
     memcpy(R_c.begin(), npy_R_c.data<float>(), npy_R_c.num_bytes());
 
     NpyArray npy_t = npy_load(platform_dir + "/t.npy");
     if (npy_t.shape.size() != 1 || npy_t.shape[0] != nsamples) {
         throw runtime_error("Bad shape: t");
+    }
+    if (npy_t.word_size != sizeof(double)) {
+        throw runtime_error("Bad word size: t");
     }
     Buffer<double, 1> t(nsamples);
     memcpy(t.begin(), npy_t.data<double>(), npy_t.num_bytes());
@@ -118,6 +158,9 @@ PlatformData platform_load(string platform_dir) {
         throw runtime_error("Bad shape: pos");
     }
     Buffer<float, 2> pos(3, npulses);
+    if (npy_pos.word_size != sizeof(float)) {
+        throw runtime_error("Bad word size: pos");
+    }
     memcpy(pos.begin(), npy_pos.data<float>(), npy_pos.num_bytes());
 
     NpyArray npy_phs = npy_load(platform_dir + "/phs.npy");
