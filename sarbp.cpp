@@ -61,7 +61,8 @@ int main(int argc, char **argv) {
     cout << "Number of pulses: " << pd.npulses << endl;
     cout << "Pulse sample size: " << pd.nsamples << endl;
 
-    ImgPlane ip = img_plane_create(pd);
+    const float *n_hat = pd.n_hat.has_value() ? pd.n_hat.value().begin() : &N_HAT[0];
+    ImgPlane ip = img_plane_create(pd, RES_FACTOR, n_hat);
     cout << "Computed image plane parameters" << endl;
     cout << "X length: " << ip.nu << endl;
     cout << "Y length: " << ip.nv << endl;
