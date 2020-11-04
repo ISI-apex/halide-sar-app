@@ -21,7 +21,7 @@ static bool file_exists(const string& path) {
 PlatformData platform_load(string platform_dir) {
     // Load primitives
 
-    std::optional<double> B = nullopt;
+    optional<double> B = nullopt;
     if (file_exists(platform_dir + "/B.npy")) {
         NpyArray npy_B = npy_load(platform_dir + "/B.npy");
         if (npy_B.word_size != sizeof(double)) {
@@ -47,7 +47,7 @@ PlatformData platform_load(string platform_dir) {
     }
     double delta_r = *npy_delta_r.data<double>();
 
-    std::optional<double> delta_t = nullopt;
+    optional<double> delta_t = nullopt;
     if (file_exists(platform_dir + "/delta_t.npy")) {
         NpyArray npy_delta_t = npy_load(platform_dir + "/delta_t.npy");
         if (npy_delta_t.word_size != sizeof(double)) {
@@ -90,7 +90,7 @@ PlatformData platform_load(string platform_dir) {
         throw runtime_error("Bad word size: npulses");
     }
 
-    std::optional<double> vp = nullopt;
+    optional<double> vp = nullopt;
     if (file_exists(platform_dir + "/vp.npy")) {
         NpyArray npy_vp = npy_load(platform_dir + "/vp.npy");
         if (npy_vp.word_size != sizeof(double)) {
@@ -101,7 +101,7 @@ PlatformData platform_load(string platform_dir) {
 
     // Load arrays
 
-    std::optional<Buffer<float, 1>> freq = nullopt;
+    optional<Buffer<float, 1>> freq = nullopt;
     if (file_exists(platform_dir + "/freq.npy")) {
         NpyArray npy_freq = npy_load(platform_dir + "/freq.npy");
         if (npy_freq.shape.size() != 1 || npy_freq.shape[0] != nsamples) {
@@ -140,7 +140,7 @@ PlatformData platform_load(string platform_dir) {
         throw runtime_error("Bad word size: k_r");
     }
 
-    std::optional<Buffer<double, 1>> k_y = nullopt;
+    optional<Buffer<double, 1>> k_y = nullopt;
     if (file_exists(platform_dir + "/k_y.npy")) {
         NpyArray npy_k_y = npy_load(platform_dir + "/k_y.npy");
         if (npy_k_y.shape.size() != 1 || npy_k_y.shape[0] != npulses) {
