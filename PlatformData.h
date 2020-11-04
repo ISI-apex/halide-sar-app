@@ -7,11 +7,11 @@
 
 struct PlatformData {
     PlatformData(std::optional<double> B,
-                 float B_IF,
+                 std::optional<float> B_IF,
                  double delta_r,
                  std::optional<double> delta_t,
-                 double chirprate,
-                 double f_0,
+                 std::optional<double> chirprate,
+                 std::optional<double> f_0,
                  int nsamples,
                  int npulses,
                  std::optional<double> vp,
@@ -20,7 +20,7 @@ struct PlatformData {
                  std::optional<Halide::Runtime::Buffer<double, 1>> k_y,
                  std::optional<Halide::Runtime::Buffer<float, 1>> n_hat,
                  Halide::Runtime::Buffer<float, 1> R_c,
-                 Halide::Runtime::Buffer<double, 1> t,
+                 std::optional<Halide::Runtime::Buffer<double, 1>> t,
                  Halide::Runtime::Buffer<float, 2> pos,
                  Halide::Runtime::Buffer<float, 3> phs):
                  B(B),
@@ -42,11 +42,11 @@ struct PlatformData {
                  phs(phs) {}
 
     std::optional<double> B;
-    float B_IF;
+    std::optional<float> B_IF;
     double delta_r;
     std::optional<double> delta_t;
-    double chirprate;
-    double f_0;
+    std::optional<double> chirprate;
+    std::optional<double> f_0;
     int nsamples;
     int npulses;
     std::optional<double> vp;
@@ -55,7 +55,7 @@ struct PlatformData {
     std::optional<Halide::Runtime::Buffer<double, 1>> k_y;
     std::optional<Halide::Runtime::Buffer<float, 1>> n_hat;
     Halide::Runtime::Buffer<float, 1> R_c;
-    Halide::Runtime::Buffer<double, 1> t;
+    std::optional<Halide::Runtime::Buffer<double, 1>> t;
     Halide::Runtime::Buffer<float, 2> pos;
     Halide::Runtime::Buffer<float, 3> phs;
 };
