@@ -1,12 +1,13 @@
 #include <Halide.h>
 
 #include "backprojection_debug.h"
-#include "complexfunc.h"
+#include "halide_complexfunc.h"
 #include "signal.h"
 #include "signal_complex.h"
 #include "util.h"
 
 using namespace Halide;
+using namespace Halide::Tools;
 
 class BackprojectionRitsarGenerator : public Halide::Generator<BackprojectionRitsarGenerator> {
 public:

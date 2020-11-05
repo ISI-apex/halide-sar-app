@@ -1,10 +1,11 @@
 #include <Halide.h>
 
-#include "complexfunc.h"
+#include "halide_complexfunc.h"
 #include "signal.h"
 #include "util.h"
 
 using namespace Halide;
+using namespace Halide::Tools;
 
 class ImgOutputToDBGenerator : public Halide::Generator<ImgOutputToDBGenerator> {
 public:
