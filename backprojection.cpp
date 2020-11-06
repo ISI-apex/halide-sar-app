@@ -10,7 +10,8 @@ using namespace Halide;
 
 class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator> {
 public:
-    Input<Buffer<float>> phs {"phs", 3}; // complex 2d input  (Halide thinks this is 3d: [2, x, y])
+    // 2-D complex data (3-D when handled as primitive data: {2, x, y})
+    Input<Buffer<float>> phs {"phs", 3};
     Input<Buffer<float>> k_r {"k_r", 1};
     Input<int> taylor {"taylor"};
     Input<int> N_fft {"N_fft"};
@@ -69,7 +70,8 @@ public:
     Output<Buffer<double>> out_fimg{"out_fimg", 2};
 #endif
 
-    Output<Buffer<double>> output_buffer{"output_packed", 3};
+    // 2-D complex data (3-D when handled as primitive data: {2, x, y})
+    Output<Buffer<double>> output_img{"output_img", 3};
 
     // xs: {nu*nv, npulses}
     // lsa, lsb, lsn: implicit linspace parameters (min, max, count)
@@ -231,7 +233,7 @@ public:
         // img_rect: produce shape {nu, nv}, but reverse row order
         ComplexFunc img_rect(c, "img_rect");
         img_rect(x, y) = fimg((nu * (nv - y - 1)) + x);
-        output_buffer(c, x, y) = img_rect.inner(c, x, y);
+        output_img(c, x, y) = img_rect.inner(c, x, y);
 
         int vectorsize = 16;
         int blocksize = 64;
@@ -257,7 +259,6 @@ public:
         img.inner.update(0).parallel(x, blocksize);
         fimg.inner.in(img_rect.inner).compute_inline();
         img_rect.inner.compute_root().parallel(y).vectorize(x, vectorsize);
-        //output_buffer.print_loop_nest();
     }
 };
 
