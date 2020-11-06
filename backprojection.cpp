@@ -7,13 +7,12 @@
 
 using namespace Halide;
 
-// pre-fft
 #define DEBUG_WIN 0
 #define DEBUG_FILT 0
 #define DEBUG_PHS_FILT 0
 #define DEBUG_PHS_PAD 0
-
-// post-fft
+#define DEBUG_PRE_FFT 0
+#define DEBUG_POST_FFT 0
 #define DEBUG_Q 0
 #define DEBUG_DR 0
 #define DEBUG_NORM_R0 0
@@ -26,12 +25,17 @@ using namespace Halide;
 #define DEBUG_IMG 0
 #define DEBUG_FIMG 0
 
-class BackprojectionPreFFTGenerator : public Halide::Generator<BackprojectionPreFFTGenerator> {
+class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator> {
 public:
     Input<Buffer<float>> phs {"phs", 3}; // complex 2d input  (Halide thinks this is 3d: [2, x, y])
     Input<Buffer<float>> k_r {"k_r", 1};
     Input<int> taylor {"taylor"};
     Input<int> N_fft {"N_fft"};
+    Input<double> delta_r {"delta_r"};
+    Input<Buffer<double>> u {"u", 1};
+    Input<Buffer<double>> v {"v", 1};
+    Input<Buffer<float>> pos {"pos", 2};
+    Input<Buffer<double>> r {"r", 2};
 
 #if DEBUG_WIN
     Output<Buffer<double>> out_win{"out_win", 2};
@@ -45,80 +49,12 @@ public:
 #if DEBUG_PHS_PAD
     Output<Buffer<double>> out_phs_pad{"out_phs_pad", 3}; // complex
 #endif
-
-    Output<Buffer<double>> output_buffer{"output_packed", 3}; // complex 2d output (Halide thinks this is 3d: [2, x, y])
-
-    void generate() {
-        Var c{"c"}, x{"x"}, y{"y"};
-        Expr nsamples("nsamples");
-        nsamples = phs.dim(1).extent();
-        Expr npulses("npulses");
-        npulses = phs.dim(2).extent();
-        Func phs_func = phs;
-        ComplexFunc input(c, phs_func);
-
-        // Create window: produces shape {nsamples, npulses}
-        Func win_x("win_x");
-        win_x = taylor_func(nsamples, taylor, "win_x");
-        Func win_y("win_y");
-        win_y = taylor_func(npulses, taylor, "win_y");
-        Func win("win");
-        win(x, y) = win_x(x) * win_y(y);
-#if DEBUG_WIN
-        out_win(x, y) = win(x, y);
+#if DEBUG_PRE_FFT
+    Output<Buffer<double>> out_pre_fft{"out_pre_fft", 3};
 #endif
-
-        // Filter phase history: produces shape {nsamples}
-        Func filt("filt");
-        filt(x) = abs(k_r(x));
-#if DEBUG_FILT
-        out_filt(x) = filt(x);
+#if DEBUG_POST_FFT
+    Output<Buffer<double>> out_post_fft{"out_post_fft", 3};
 #endif
-
-        // phs_filt: produces shape {nsamples, npulses}
-        ComplexFunc phs_filt(c, "phs_filt");
-        phs_filt(x, y) = input(x, y) * filt(x) * win(x, y);
-#if DEBUG_PHS_FILT
-        out_phs_filt(c, x, y) = phs_filt.inner(c, x, y);
-#endif
-
-        // Zero pad phase history: produces shape {N_fft, npulses}
-        ComplexFunc phs_pad(c, "phs_pad");
-        phs_pad(x, y) = pad(phs_filt, nsamples, npulses,
-                            ComplexExpr(c, Expr(0.0), Expr(0.0)),
-                            N_fft, npulses, c, x, y);
-#if DEBUG_PHS_PAD
-        out_phs_pad(c, x, y) = phs_pad.inner(c, x, y);
-#endif
-
-        // shift: produces shape {N_fft, npulses}
-        ComplexFunc fftsh(c, "fftshift");
-        fftsh(x, y) = fftshift(phs_pad, N_fft, npulses, x, y);
-
-        output_buffer(c, x, y) = fftsh.inner(c, x, y);
-
-        phs_func.compute_root();
-        win_x.compute_root();
-        win_y.compute_root();
-        win.compute_root();
-        filt.compute_root();
-        phs_filt.inner.compute_root();
-        phs_pad.inner.compute_root();
-        fftsh.inner.compute_root();
-    }
-};
-
-class BackprojectionPostFFTGenerator : public Halide::Generator<BackprojectionPostFFTGenerator> {
-public:
-    Input<Buffer<double>> in {"in", 3};
-    Input<int> nsamples {"nsamples"};
-    Input<double> delta_r {"delta_r"};
-    Input<Buffer<float>> k_r {"k_r", 1};
-    Input<Buffer<double>> u {"u", 1};
-    Input<Buffer<double>> v {"v", 1};
-    Input<Buffer<float>> pos {"pos", 2};
-    Input<Buffer<double>> r {"r", 2};
-
 #if DEBUG_Q
     Output<Buffer<double>> out_Q{"out_Q", 3};
 #endif
@@ -174,25 +110,74 @@ public:
     void generate() {
         Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
         // inputs as functions
-        Func in_func("in_func");
-        in_func = in;
-        ComplexFunc input(c, in_func);
+        Func phs_func = phs;
+        ComplexFunc phs_cmplx(c, phs_func);
 
         // some extents and related RDoms
-        Expr N_fft = in.dim(1).extent();
-        Expr npulses = in.dim(2).extent();
+        Expr nsamples("nsamples");
+        nsamples = phs.dim(1).extent();
+        Expr npulses("npulses");
+        npulses = phs.dim(2).extent();
         Expr nu = u.dim(0).extent();
         Expr nv = v.dim(0).extent();
         Expr nd = pos.dim(0).extent(); // nd = 3 (spatial dimensions)
         RDom rnpulses(0, npulses, "rnpulses");
         RDom rnd(0, nd, "rnd");
 
+        // Create window: produces shape {nsamples, npulses}
+        Func win_x("win_x");
+        win_x = taylor_func(nsamples, taylor, "win_x");
+        Func win_y("win_y");
+        win_y = taylor_func(npulses, taylor, "win_y");
+        Func win("win");
+        win(x, y) = win_x(x) * win_y(y);
+#if DEBUG_WIN
+        out_win(x, y) = win(x, y);
+#endif
+
+        // Filter phase history: produces shape {nsamples}
+        Func filt("filt");
+        filt(x) = abs(k_r(x));
+#if DEBUG_FILT
+        out_filt(x) = filt(x);
+#endif
+
+        // phs_filt: produces shape {nsamples, npulses}
+        ComplexFunc phs_filt(c, "phs_filt");
+        phs_filt(x, y) = phs_cmplx(x, y) * filt(x) * win(x, y);
+#if DEBUG_PHS_FILT
+        out_phs_filt(c, x, y) = phs_filt.inner(c, x, y);
+#endif
+
+        // Zero pad phase history: produces shape {N_fft, npulses}
+        ComplexFunc phs_pad(c, "phs_pad");
+        phs_pad(x, y) = pad(phs_filt, nsamples, npulses,
+                            ComplexExpr(c, Expr(0.0), Expr(0.0)),
+                            N_fft, npulses, c, x, y);
+#if DEBUG_PHS_PAD
+        out_phs_pad(c, x, y) = phs_pad.inner(c, x, y);
+#endif
+
+        // shift: produces shape {N_fft, npulses}
+        ComplexFunc fftsh(c, "fftshift");
+        fftsh(x, y) = fftshift(phs_pad, N_fft, npulses, x, y);
+#if DEBUG_PRE_FFT
+        out_pre_fft(c, x, y) = fftsh.inner(c, x, y);
+#endif
+
+        // dft: produces shape {N_fft, npulses}
+        ComplexFunc dft(c, "dft");
+        dft.inner.define_extern("call_dft", {fftsh.inner, N_fft}, Float(64), 3, NameMangling::C);
+#if DEBUG_POST_FFT
+        out_post_fft(c, x, y) = dft.inner(c, x, y);
+#endif
+
         // k_c: produces scalar
         Expr k_c = k_r(nsamples / 2);
 
         // Q: produces shape {N_fft, npulses}
         ComplexFunc Q(c, "Q");
-        Q(x, y) = fftshift(input, N_fft, npulses, x, y);
+        Q(x, y) = fftshift(dft, N_fft, npulses, x, y);
 #if DEBUG_Q
         out_Q(c, x, y) = Q.inner(c, x, y);
 #endif
@@ -267,7 +252,15 @@ public:
 
         int vectorsize = 16;
         int blocksize = 64;
-        in_func.compute_root();
+        phs_func.compute_root();
+        win_x.compute_root();
+        win_y.compute_root();
+        win.compute_root();
+        filt.compute_root();
+        phs_filt.inner.compute_root();
+        phs_pad.inner.compute_root();
+        fftsh.inner.compute_root();
+        dft.inner.compute_root();
         Q.inner.compute_root();
         norm_r0.compute_root();
         rr0.compute_root().parallel(z).vectorize(x, vectorsize);
@@ -285,5 +278,4 @@ public:
     }
 };
 
-HALIDE_REGISTER_GENERATOR(BackprojectionPreFFTGenerator, backprojection_pre_fft)
-HALIDE_REGISTER_GENERATOR(BackprojectionPostFFTGenerator, backprojection_post_fft)
+HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)

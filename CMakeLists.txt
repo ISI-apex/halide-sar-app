@@ -55,15 +55,10 @@ add_executable(ip_pixel_locs.generator img_plane.cpp)
 target_link_libraries(ip_pixel_locs.generator PRIVATE Halide::Generator)
 add_halide_library(ip_pixel_locs FROM ip_pixel_locs.generator)
 
-add_executable(backprojection_pre_fft.generator backprojection.cpp)
-target_link_libraries(backprojection_pre_fft.generator PRIVATE Halide::Generator)
-add_halide_library(backprojection_pre_fft FROM backprojection_pre_fft.generator
-                                          FEATURES large_buffers)
-
-add_executable(backprojection_post_fft.generator backprojection.cpp)
-target_link_libraries(backprojection_post_fft.generator PRIVATE Halide::Generator)
-add_halide_library(backprojection_post_fft FROM backprojection_post_fft.generator
-                                           FEATURES large_buffers)
+add_executable(backprojection.generator backprojection.cpp)
+target_link_libraries(backprojection.generator PRIVATE Halide::Generator)
+add_halide_library(backprojection FROM backprojection.generator
+                                  FEATURES large_buffers)
 
 add_executable(img_output_to_dB.generator img_output.cpp)
 target_link_libraries(img_output_to_dB.generator PRIVATE Halide::Generator)
@@ -98,7 +93,6 @@ target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          ip_v_hat
                                          ip_u_hat
                                          ip_pixel_locs
-                                         backprojection_pre_fft
-                                         backprojection_post_fft
+                                         backprojection
                                          img_output_u8
                                          img_output_to_dB)

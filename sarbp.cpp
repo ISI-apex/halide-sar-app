@@ -1,3 +1,5 @@
+#undef NDEBUG // force assertions
+#include <assert.h>
 #include <complex>
 #include <iostream>
 
@@ -11,21 +13,20 @@
 #include "ImgPlane.h"
 
 // Halide generators
-#include "backprojection_pre_fft.h"
-#include "backprojection_post_fft.h"
+#include "backprojection.h"
 #include "img_output_u8.h"
 #include "img_output_to_dB.h"
 
 using namespace std;
 using Halide::Runtime::Buffer;
 
-// pre-fft
+// from backprojection generator
 #define DEBUG_WIN 0
 #define DEBUG_FILT 0
 #define DEBUG_PHS_FILT 0
 #define DEBUG_PHS_PAD 0
-
-// post-fft
+#define DEBUG_PRE_FFT 0
+#define DEBUG_POST_FFT 0
 #define DEBUG_Q 0
 #define DEBUG_NORM_R0 0
 #define DEBUG_RR0 0
@@ -37,10 +38,68 @@ using Halide::Runtime::Buffer;
 #define DEBUG_IMG 0
 #define DEBUG_FIMG 0
 
-#define DEBUG_PRE_FFT 0
-#define DEBUG_POST_FFT 0
+// local to this file
 #define DEBUG_BP 0
 #define DEBUG_BP_DB 0
+
+#ifdef _WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
+// FFTW plan initialization can have high overhead, so share and reuse it
+static fftw_plan fft_plan = nullptr;
+
+static void ctx_init_fftw(size_t N_fft) {
+    assert(N_fft > 0);
+    fftw_complex *fft_in = fftw_alloc_complex(N_fft);
+    assert(fft_in);
+    fftw_complex *fft_out = fftw_alloc_complex(N_fft);
+    assert(fft_out);
+    fft_plan = fftw_plan_dft_1d(N_fft, fft_in, fft_out, FFTW_FORWARD, FFTW_ESTIMATE);
+    assert(fft_plan);
+    fftw_free(fft_in);
+    fftw_free(fft_out);
+}
+
+static void ctx_destroy_fftw(void) {
+    fftw_destroy_plan(fft_plan);
+    fft_plan = nullptr;
+}
+
+extern "C" DLLEXPORT int call_dft(halide_buffer_t *in, int N_fft, halide_buffer_t *out) {
+    // input and output are complex data
+    assert(in->dimensions == 3);
+    assert(out->dimensions == 3);
+    assert(out->dim[0].min == 0);
+    assert(out->dim[0].extent == 2);
+    // FFTW needs entire rows of complex data
+    assert(out->dim[1].min == 0);
+    assert(out->dim[1].extent == N_fft);
+    if(in->is_bounds_query()) {
+        cout << "call_dft: bounds query" << endl;
+        // input and output shapes are the same
+        for (int i = 0; i < in->dimensions; i++) {
+            in->dim[i].min = out->dim[i].min;
+            in->dim[i].extent = out->dim[i].extent;
+        }
+    } else {
+        assert(in->host);
+        assert(in->type == halide_type_of<double>());
+        assert(out->host);
+        assert(fft_plan);
+        cout << "call_dft: FFTW: processing vectors ["
+             << out->dim[2].min << ", " << out->dim[2].extent << ")" << endl;
+        fftw_complex *fft_in = (fftw_complex*)in->host;
+        fftw_complex *fft_out = (fftw_complex*)out->host;
+        for (int i = 0; i < out->dim[2].extent; i++) {
+            fftw_execute_dft(fft_plan, &fft_in[i * N_fft], &fft_out[i * N_fft]);
+        }
+        cout << "call_dft: FFTW: finished" << endl;
+    }
+    return 0;
+}
 
 int main(int argc, char **argv) {
     if (argc < 7) {
@@ -68,6 +127,9 @@ int main(int argc, char **argv) {
     // Compute FFT width (power of 2)
     int N_fft = static_cast<int>(pow(2, static_cast<int>(log2(pd.nsamples * upsample)) + 1));
 
+    // FFTW: init shared context
+    ctx_init_fftw(static_cast<size_t>(N_fft));
+
     // backprojection - pre-FFT
 #if DEBUG_WIN
     Buffer<double, 2> buf_win(pd.phs.dim(1).extent(), pd.phs.dim(2).extent());
@@ -81,71 +143,12 @@ int main(int argc, char **argv) {
 #if DEBUG_PHS_PAD
     Buffer<double, 3> buf_phs_pad(2, N_fft, pd.phs.dim(2).extent());
 #endif
-    Buffer<double, 3> buf_pre_fft(2, N_fft, pd.npulses);
-    cout << "Halide pre-fft start" << endl;
-    int rv = backprojection_pre_fft(pd.phs, pd.k_r, taylor, N_fft,
-#if DEBUG_WIN
-        buf_win,
-#endif
-#if DEBUG_FILT
-        buf_filt,
-#endif
-#if DEBUG_PHS_FILT
-        buf_phs_filt,
-#endif
-#if DEBUG_PHS_PAD
-        buf_phs_pad,
-#endif
-        buf_pre_fft);
-    cout << "Halide pre-fft returned " << rv << endl;
-    if (rv != 0) {
-        return rv;
-    }
-    // write debug output
-#if DEBUG_WIN
-    vector<size_t> shape_win { static_cast<size_t>(buf_win.dim(1).extent()),
-                               static_cast<size_t>(buf_win.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-win.npy", (double *)buf_win.begin(), shape_win);
-#endif
-#if DEBUG_FILT
-    vector<size_t> shape_filt { static_cast<size_t>(buf_filt.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-filt.npy", (float *)buf_filt.begin(), shape_filt);
-#endif
-#if DEBUG_PHS_FILT
-    vector<size_t> shape_phs_filt { static_cast<size_t>(buf_phs_filt.dim(2).extent()),
-                                    static_cast<size_t>(buf_phs_filt.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-phs_filt.npy", (complex<double> *)buf_phs_filt.begin(), shape_phs_filt);
-#endif
-#if DEBUG_PHS_PAD
-    vector<size_t> shape_phs_pad { static_cast<size_t>(buf_phs_pad.dim(2).extent()),
-                                   static_cast<size_t>(buf_phs_pad.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-phs_pad.npy", (complex<double> *)buf_phs_pad.begin(), shape_phs_pad);
-#endif
 #if DEBUG_PRE_FFT
-    vector<size_t> shape_pre_fft { static_cast<size_t>(buf_pre_fft.dim(2).extent()),
-                                   static_cast<size_t>(buf_pre_fft.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-pre_fft.npy", (complex<double> *)buf_pre_fft.begin(), shape_pre_fft);
+    Buffer<double, 3> buf_pre_fft(2, N_fft, pd.phs.dim(2).extent());
 #endif
-
-    // FFT
-    Buffer<double, 3> buf_post_fft(2, N_fft, pd.npulses);
-    fftw_complex *fft_in = reinterpret_cast<fftw_complex *>(buf_pre_fft.begin());
-    fftw_complex *fft_out = reinterpret_cast<fftw_complex *>(buf_post_fft.begin());
-    fftw_plan plan = fftw_plan_dft_1d(N_fft, fft_in, fft_out, FFTW_FORWARD, FFTW_ESTIMATE);
-    cout << "FFTW: processing " << buf_post_fft.dim(2).extent() << " DFTs" << endl;
-    for (int i = 0; i < buf_post_fft.dim(2).extent(); i++) {
-        fftw_execute_dft(plan, &fft_in[i * N_fft], &fft_out[i * N_fft]);
-    }
-    cout << "FFTW: finished" << endl;
-    fftw_destroy_plan(plan);
-    // write debug output
 #if DEBUG_POST_FFT
-    vector<size_t> shape_post_fft { static_cast<size_t>(buf_post_fft.dim(2).extent()),
-                                    static_cast<size_t>(buf_post_fft.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-post_fft.npy", (complex<double> *)buf_post_fft.begin(), shape_post_fft);
+    Buffer<double, 3> buf_post_fft(2, N_fft, pd.phs.dim(2).extent());
 #endif
-
-    // backprojection - post-FFT
 #if DEBUG_Q
     Buffer<double, 3> buf_q(2, N_fft, buf_post_fft.dim(2).extent());
 #endif
@@ -184,9 +187,28 @@ int main(int argc, char **argv) {
 #if DEBUG_FIMG
     Buffer<double, 2> buf_fimg(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
 #endif
+
     Buffer<double, 3> buf_bp(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
-    cout << "Halide post-fft start" << endl;
-    rv = backprojection_post_fft(buf_post_fft, pd.nsamples, pd.delta_r, pd.k_r, ip.u, ip.v, pd.pos, ip.pixel_locs,
+    cout << "Halide backprojection start " << endl;
+    int rv = backprojection(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs,
+#if DEBUG_WIN
+        buf_win,
+#endif
+#if DEBUG_FILT
+        buf_filt,
+#endif
+#if DEBUG_PHS_FILT
+        buf_phs_filt,
+#endif
+#if DEBUG_PHS_PAD
+        buf_phs_pad,
+#endif
+#if DEBUG_PRE_FFT
+        buf_pre_fft,
+#endif
+#if DEBUG_POST_FFT
+        buf_post_fft,
+#endif
 #if DEBUG_Q
         buf_q,
 #endif
@@ -218,12 +240,44 @@ int main(int argc, char **argv) {
         buf_fimg,
 #endif
         buf_bp);
-    cout << "Halide post-fft returned " << rv << endl;
+    cout << "Halide backprojection returned " << rv << endl;
     if (rv != 0) {
         return rv;
     }
 
-    // write output
+    // FFTW: clean up shared context
+    ctx_destroy_fftw();
+
+    // write debug output
+#if DEBUG_WIN
+    vector<size_t> shape_win { static_cast<size_t>(buf_win.dim(1).extent()),
+                               static_cast<size_t>(buf_win.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-win.npy", (double *)buf_win.begin(), shape_win);
+#endif
+#if DEBUG_FILT
+    vector<size_t> shape_filt { static_cast<size_t>(buf_filt.dim(0).extent()) };
+    cnpy::npy_save("sarbp_debug-filt.npy", (float *)buf_filt.begin(), shape_filt);
+#endif
+#if DEBUG_PHS_FILT
+    vector<size_t> shape_phs_filt { static_cast<size_t>(buf_phs_filt.dim(2).extent()),
+                                    static_cast<size_t>(buf_phs_filt.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-phs_filt.npy", (complex<double> *)buf_phs_filt.begin(), shape_phs_filt);
+#endif
+#if DEBUG_PHS_PAD
+    vector<size_t> shape_phs_pad { static_cast<size_t>(buf_phs_pad.dim(2).extent()),
+                                   static_cast<size_t>(buf_phs_pad.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-phs_pad.npy", (complex<double> *)buf_phs_pad.begin(), shape_phs_pad);
+#endif
+#if DEBUG_PRE_FFT
+    vector<size_t> shape_pre_fft { static_cast<size_t>(buf_pre_fft.dim(2).extent()),
+                                   static_cast<size_t>(buf_pre_fft.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-pre_fft.npy", (complex<double> *)buf_pre_fft.begin(), shape_pre_fft);
+#endif
+#if DEBUG_POST_FFT
+    vector<size_t> shape_post_fft { static_cast<size_t>(buf_post_fft.dim(2).extent()),
+                                    static_cast<size_t>(buf_post_fft.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-post_fft.npy", (complex<double> *)buf_post_fft.begin(), shape_post_fft);
+#endif
 #if DEBUG_Q
     vector<size_t> shape_q { static_cast<size_t>(buf_q.dim(2).extent()),
                              static_cast<size_t>(buf_q.dim(1).extent()) };
