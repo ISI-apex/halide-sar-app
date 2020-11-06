@@ -13,30 +13,13 @@
 #include "ImgPlane.h"
 
 // Halide generators
+#include "backprojection_debug.h"
 #include "backprojection.h"
 #include "img_output_u8.h"
 #include "img_output_to_dB.h"
 
 using namespace std;
 using Halide::Runtime::Buffer;
-
-// from backprojection generator
-#define DEBUG_WIN 0
-#define DEBUG_FILT 0
-#define DEBUG_PHS_FILT 0
-#define DEBUG_PHS_PAD 0
-#define DEBUG_PRE_FFT 0
-#define DEBUG_POST_FFT 0
-#define DEBUG_Q 0
-#define DEBUG_NORM_R0 0
-#define DEBUG_RR0 0
-#define DEBUG_NORM_RR0 0
-#define DEBUG_DR_I 0
-#define DEBUG_Q_REAL 0
-#define DEBUG_Q_IMAG 0
-#define DEBUG_Q_HAT 0
-#define DEBUG_IMG 0
-#define DEBUG_FIMG 0
 
 // local to this file
 #define DEBUG_BP 0
