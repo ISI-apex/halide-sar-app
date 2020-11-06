@@ -1,7 +1,6 @@
 #include <Halide.h>
 
 #include "util.h"
-#include "util_func.h"
 
 using namespace Halide;
 
@@ -12,9 +11,8 @@ using namespace Halide;
 // u and v
 Func ip_uv(Expr n, Expr d, const std::string &name = "uv") {
     Var x{"x"};
-    Func arange = arange_func(-n / 2, n / 2, 1);
     Func uv(name);
-    uv(x) = arange(x) * d;
+    uv(x) = arange(-n / 2, 1, x) * d;
     return uv;
 } 
 

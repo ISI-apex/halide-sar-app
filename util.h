@@ -71,4 +71,8 @@ inline Expr linspace(Expr start, Expr stop, Expr num, Var x) {
     return clamp(start + x * step, start, stop);
 }
 
+inline Expr arange(Expr start, Expr step, Var x) {
+    return start + x * step;
+}
+
 #endif

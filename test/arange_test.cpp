@@ -24,7 +24,7 @@ static void reference(float *ref) {
 int main(int argc, char **argv) {
     float ref[(size_t)N] = { 0 };
     Buffer<float, 1> out((int)N);
-    int rv = arange(START, STOP, STEP, out);
+    int rv = arange(START, STEP, out);
 
     // output should be: [ 0, 1.5, 3, 4.5, 6, 7.5, 9, 10.5, 12, 13.5 ]
     if (!rv) {
