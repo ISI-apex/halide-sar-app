@@ -20,9 +20,7 @@ Func ip_uv(Expr n, Expr d, const std::string &name = "uv") {
 
 // k_u and k_v
 Expr ip_k(Expr n, Expr d, Var x) {
-    RDom r(0, n, "r");
-    Func ls = linspace_func(Expr(-1.0) / (2 * d), Expr(1.0) / (2 * d), r);
-    return Expr(2 * M_PI) * ls(x);
+    return Expr(2 * M_PI) * linspace(Expr(-1.0) / (2 * d), Expr(1.0) / (2 * d), n, x);
 }
 
 // v_hat and u_hat

@@ -1,6 +1,6 @@
 #include <Halide.h>
 
-#include "util_func.h"
+#include "util.h"
 
 using namespace Halide;
 
@@ -12,8 +12,8 @@ public:
     Output<Buffer<float>> output_buffer{"output_buffer", 1};
 
     void generate() {
-        RDom r(0, input_num, "r");
-        output_buffer = linspace_func(input_start, input_stop, r);
+    	Var x{"x"};
+        output_buffer(x) = linspace(input_start, input_stop, input_num, x);
     }
 };
 

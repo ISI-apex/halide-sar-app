@@ -65,4 +65,10 @@ inline Expr repeat1(Func a, Expr extent_a, Var x) {
     return a(x % extent_a);
 }
 
+inline Expr linspace(Expr start, Expr stop, Expr num, Var x) {
+    Expr step = (stop - start) / (num - Expr(1));
+    // force "stop" value to avoid floating point deviations
+    return clamp(start + x * step, start, stop);
+}
+
 #endif

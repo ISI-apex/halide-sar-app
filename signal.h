@@ -4,7 +4,6 @@
 #include <Halide.h>
 
 #include "util.h"
-#include "util_func.h"
 
 using namespace Halide;
 
@@ -13,10 +12,11 @@ using namespace Halide;
 #endif
 
 inline Func taylor_func(Expr num, Expr S_L = Expr(43), const std::string &name = "taylor") {
+    Var x{"x"};
     // need to define our domain
     RDom n(0, num, "n");
-    Func xi("xi");
-    xi = linspace_func(Expr(-0.5), Expr(0.5), n);
+
+    Expr xi = linspace(Expr(-0.5), Expr(0.5), num, x);
 
     Expr A("A");
     A = Expr(1.0 / (double)M_PI) * acosh(pow(10, S_L * Expr(1.0/20)));
@@ -25,7 +25,6 @@ inline Func taylor_func(Expr num, Expr S_L = Expr(43), const std::string &name =
     Expr sigma_p("sigma_p");
     sigma_p = n_bar / sqrt(pow(A, 2) + (pow(n_bar - Expr(0.5), 2)));
 
-    Var x{"x"};
     Func F_m_num;
     Func F_m_den;
     Func F_m;
@@ -38,7 +37,7 @@ inline Func taylor_func(Expr num, Expr S_L = Expr(43), const std::string &name =
 
     Func w("w");
     w(x) = Expr(1.0);
-    w(x) += F_m(r) * cos(Expr(2 * (double)M_PI) * (r + 1) * xi(x));
+    w(x) += F_m(r) * cos(Expr(2 * (double)M_PI) * (r + 1) * xi);
 
     // separate iteration domain (RDom) to get maximum
     Func out(name);
