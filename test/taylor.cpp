@@ -11,7 +11,8 @@ public:
     Output<Buffer<double>> output{"output", 1};
 
     void generate() {
-        output = taylor_func(nsamples, S_L);
+        Var x{"x"};
+        output(x) = taylor(nsamples, S_L, x);
     }
 };
 

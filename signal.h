@@ -11,8 +11,7 @@ using namespace Halide;
 #define M_PI 3.14159265358979323846
 #endif
 
-inline Func taylor_func(Expr num, Expr S_L = Expr(43), const std::string &name = "taylor") {
-    Var x{"x"};
+inline Expr taylor(Expr num, Expr S_L, Var x) {
     // need to define our domain
     RDom n(0, num, "n");
 
@@ -40,9 +39,7 @@ inline Func taylor_func(Expr num, Expr S_L = Expr(43), const std::string &name =
     w(x) += F_m(r) * cos(Expr(2 * (double)M_PI) * (r + 1) * xi);
 
     // separate iteration domain (RDom) to get maximum
-    Func out(name);
-    out(x) = w(x) / maximum(w(n));
-    return out;
+    return w(x) / maximum(w(n));
 }
 
 // Normalizes dB between 0 and 1, then scales by Type t's max (e.g., UInt(8) or UInt(16))

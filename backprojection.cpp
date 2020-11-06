@@ -13,7 +13,7 @@ public:
     // 2-D complex data (3-D when handled as primitive data: {2, x, y})
     Input<Buffer<float>> phs {"phs", 3};
     Input<Buffer<float>> k_r {"k_r", 1};
-    Input<int> taylor {"taylor"};
+    Input<int> taylor_s_l {"taylor_s_l"};
     Input<int> N_fft {"N_fft"};
     Input<double> delta_r {"delta_r"};
     Input<Buffer<double>> u {"u", 1};
@@ -111,9 +111,9 @@ public:
 
         // Create window: produces shape {nsamples, npulses}
         Func win_x("win_x");
-        win_x = taylor_func(nsamples, taylor, "win_x");
+        win_x(x) = taylor(nsamples, taylor_s_l, x);
         Func win_y("win_y");
-        win_y = taylor_func(npulses, taylor, "win_y");
+        win_y(y) = taylor(npulses, taylor_s_l, y);
         Func win("win");
         win(x, y) = win_x(x) * win_y(y);
 #if DEBUG_WIN
