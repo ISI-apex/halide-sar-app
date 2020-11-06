@@ -111,9 +111,9 @@ public:
 
         // Create window: produces shape {nsamples, npulses}
         Func win_x("win_x");
-        win_x(x) = taylor(nsamples, taylor_s_l, x);
+        win_x(x) = taylor(nsamples, taylor_s_l, x, "win_x");
         Func win_y("win_y");
-        win_y(y) = taylor(npulses, taylor_s_l, y);
+        win_y(y) = taylor(npulses, taylor_s_l, y, "win_y");
         Func win("win");
         win(x, y) = win_x(x) * win_y(y);
 #if DEBUG_WIN
