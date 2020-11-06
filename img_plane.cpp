@@ -9,11 +9,8 @@ using namespace Halide;
 #endif
 
 // u and v
-Func ip_uv(Expr n, Expr d, const std::string &name = "uv") {
-    Var x{"x"};
-    Func uv(name);
-    uv(x) = arange(-n / 2, 1, x) * d;
-    return uv;
+Expr ip_uv(Expr n, Expr d, Var x) {
+    return arange(-n / 2, 1, x) * d;
 } 
 
 // k_u and k_v
@@ -36,7 +33,8 @@ public:
     Output<Buffer<double>> out {"out", 1}; // of n length 
 
     void generate() {
-        out = ip_uv(n, d);
+        Var x{"x"};
+        out(x) = ip_uv(n, d, x);
     }
 };
 
