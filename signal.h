@@ -16,13 +16,9 @@ inline Expr taylor(Expr num, Expr S_L, Var x, const std::string &inner_name_pref
     RDom n(0, num, "n");
 
     Expr xi = linspace(Expr(-0.5), Expr(0.5), num, x);
-
-    Expr A(inner_name_prefix + "_A");
-    A = Expr(1.0 / (double)M_PI) * acosh(pow(10, S_L * Expr(1.0/20)));
-    Expr n_bar(inner_name_prefix + "_n_bar");
-    n_bar = ConciseCasts::i32(2 * pow(A, 2) + Expr(0.5)) + Expr(1);
-    Expr sigma_p(inner_name_prefix + "_sigma_p");
-    sigma_p = n_bar / sqrt(pow(A, 2) + (pow(n_bar - Expr(0.5), 2)));
+    Expr A = Expr(1.0 / (double)M_PI) * acosh(pow(10, S_L * Expr(1.0/20)));
+    Expr n_bar = ConciseCasts::i32(2 * pow(A, 2) + Expr(0.5)) + Expr(1);
+    Expr sigma_p = n_bar / sqrt(pow(A, 2) + (pow(n_bar - Expr(0.5), 2)));
 
     Func F_m_num(inner_name_prefix + "_F_m_num");
     Func F_m_den(inner_name_prefix + "_F_m_den");
