@@ -34,38 +34,23 @@ add_subdirectory(test)
 
 # Generators and Filters (libraries)
 
-add_executable(ip_uv.generator img_plane.cpp)
-target_link_libraries(ip_uv.generator PRIVATE Halide::Generator)
-add_halide_library(ip_uv FROM ip_uv.generator)
-
-add_executable(ip_k.generator img_plane.cpp)
-target_link_libraries(ip_k.generator PRIVATE Halide::Generator)
-add_halide_library(ip_k FROM ip_k.generator)
-
-add_executable(ip_v_hat.generator img_plane.cpp)
-target_link_libraries(ip_v_hat.generator PRIVATE Halide::Generator)
-add_halide_library(ip_v_hat FROM ip_v_hat.generator)
-
-add_executable(ip_u_hat.generator img_plane.cpp)
-target_link_libraries(ip_u_hat.generator PRIVATE Halide::Generator)
-add_halide_library(ip_u_hat FROM ip_u_hat.generator)
-
-add_executable(ip_pixel_locs.generator img_plane.cpp)
-target_link_libraries(ip_pixel_locs.generator PRIVATE Halide::Generator)
-add_halide_library(ip_pixel_locs FROM ip_pixel_locs.generator)
+add_executable(img_plane.generator img_plane.cpp)
+target_link_libraries(img_plane.generator PRIVATE Halide::Generator)
+add_halide_library(ip_uv FROM img_plane.generator)
+add_halide_library(ip_k FROM img_plane.generator)
+add_halide_library(ip_v_hat FROM img_plane.generator)
+add_halide_library(ip_u_hat FROM img_plane.generator)
+add_halide_library(ip_pixel_locs FROM img_plane.generator)
 
 add_executable(backprojection.generator backprojection.cpp)
 target_link_libraries(backprojection.generator PRIVATE Halide::Generator)
 add_halide_library(backprojection FROM backprojection.generator
                                   FEATURES large_buffers)
 
-add_executable(img_output_to_dB.generator img_output.cpp)
-target_link_libraries(img_output_to_dB.generator PRIVATE Halide::Generator)
-add_halide_library(img_output_to_dB FROM img_output_to_dB.generator)
-
-add_executable(img_output_u8.generator img_output.cpp)
-target_link_libraries(img_output_u8.generator PRIVATE Halide::Generator)
-add_halide_library(img_output_u8 FROM img_output_u8.generator)
+add_executable(img_output.generator img_output.cpp)
+target_link_libraries(img_output.generator PRIVATE Halide::Generator)
+add_halide_library(img_output_to_dB FROM img_output.generator)
+add_halide_library(img_output_u8 FROM img_output.generator)
 
 
 # Executables
