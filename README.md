@@ -6,9 +6,10 @@ Based on the [RITSAR](https://github.com/dm6718/RITSAR) backprojection implement
 
 ## Prerequisites:
 
+* C/C++ compiler with C++17 support, including standard library features, e.g. GCC >= 7.3
 * [Halide](https://halide-lang.org/) (>= 10.0.0) and transitive dependencies (e.g., LLVM >= 9.x)
 * [cnpy](https://github.com/rogersce/cnpy)
-* [FFTW3](http://www.fftw.org/).
+* [FFTW3](http://www.fftw.org/)
 
 
 ## Compiling
