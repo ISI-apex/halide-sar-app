@@ -39,14 +39,6 @@ target_link_libraries(taylor.generator PRIVATE Halide::Generator)
 add_halide_library(taylor FROM taylor.generator)
 
 
-# TODO: automate these tests
-# Non-automated test executables
-
-add_executable(taylor_test taylor_test.cpp)
-target_link_libraries(taylor_test PRIVATE Halide::Halide
-                                          taylor)
-
-
 # Tests
 
 add_executable(arange_test arange_test.cpp)
@@ -87,3 +79,8 @@ target_link_libraries(stack_test PRIVATE Halide::Halide
                                          vstack1
                                          vstack2)
 add_test(stack stack_test)
+
+add_executable(taylor_test taylor_test.cpp)
+target_link_libraries(taylor_test PRIVATE Halide::Halide
+                                          taylor)
+add_test(taylor taylor_test)
