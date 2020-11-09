@@ -209,9 +209,8 @@ public:
         out_fimg(c, x) = fimg.inner(c, x);
 #endif
 
-        // img_rect: produce shape {nu, nv}, but reverse row order
-        img_rect(x, y) = fimg((nu * (nv - y - 1)) + x);
-        output_img(c, x, y) = img_rect.inner(c, x, y);
+        // output_img: produce shape {nu, nv}, but reverse row order
+        output_img(c, x, y) = fimg.inner(c, (nu * (nv - y - 1)) + x);
     }
 
     void schedule() {
@@ -237,8 +236,8 @@ public:
         Q_hat.inner.compute_root().unroll(c).reorder(x,y).vectorize(x, vectorsize).parallel(y);
         img.inner.compute_root();
         img.inner.update(0).parallel(x, blocksize);
-        fimg.inner.in(img_rect.inner).compute_inline();
-        img_rect.inner.compute_root().parallel(y).vectorize(x, vectorsize);
+        fimg.inner.in(output_img).compute_inline();
+        output_img.compute_root().parallel(y).vectorize(x, vectorsize);
     }
 
 private:
@@ -263,7 +262,6 @@ private:
     ComplexFunc Q_hat{c, "Q_hat"};
     ComplexFunc img{c, "img"};
     ComplexFunc fimg{c, "fimg"};
-    ComplexFunc img_rect{c, "img_rect"};
 };
 
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)
