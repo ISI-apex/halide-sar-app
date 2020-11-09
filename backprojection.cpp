@@ -98,10 +98,8 @@ public:
         ComplexFunc phs_cmplx(c, phs_func);
 
         // some extents and related RDoms
-        Expr nsamples("nsamples");
-        nsamples = phs.dim(1).extent();
-        Expr npulses("npulses");
-        npulses = phs.dim(2).extent();
+        Expr nsamples = phs.dim(1).extent();
+        Expr npulses = phs.dim(2).extent();
         Expr nu = u.dim(0).extent();
         Expr nv = v.dim(0).extent();
         Expr nd = pos.dim(0).extent(); // nd = 3 (spatial dimensions)
