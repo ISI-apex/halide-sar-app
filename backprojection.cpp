@@ -93,9 +93,8 @@ public:
     }
 
     void generate() {
-        Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
         // inputs as functions
-        Func phs_func = phs;
+        phs_func = phs;
         ComplexFunc phs_cmplx(c, phs_func);
 
         // some extents and related RDoms
@@ -110,32 +109,26 @@ public:
         RDom rnd(0, nd, "rnd");
 
         // Create window: produces shape {nsamples, npulses}
-        Func win_x("win_x");
         win_x(x) = taylor(nsamples, taylor_s_l, x, "win_x");
-        Func win_y("win_y");
         win_y(y) = taylor(npulses, taylor_s_l, y, "win_y");
-        Func win("win");
         win(x, y) = win_x(x) * win_y(y);
 #if DEBUG_WIN
         out_win(x, y) = win(x, y);
 #endif
 
         // Filter phase history: produces shape {nsamples}
-        Func filt("filt");
         filt(x) = abs(k_r(x));
 #if DEBUG_FILT
         out_filt(x) = filt(x);
 #endif
 
         // phs_filt: produces shape {nsamples, npulses}
-        ComplexFunc phs_filt(c, "phs_filt");
         phs_filt(x, y) = phs_cmplx(x, y) * filt(x) * win(x, y);
 #if DEBUG_PHS_FILT
         out_phs_filt(c, x, y) = phs_filt.inner(c, x, y);
 #endif
 
         // Zero pad phase history: produces shape {N_fft, npulses}
-        ComplexFunc phs_pad(c, "phs_pad");
         phs_pad(x, y) = pad(phs_filt, nsamples, npulses,
                             ComplexExpr(c, Expr(0.0), Expr(0.0)),
                             N_fft, npulses, c, x, y);
@@ -144,14 +137,12 @@ public:
 #endif
 
         // shift: produces shape {N_fft, npulses}
-        ComplexFunc fftsh(c, "fftshift");
         fftsh(x, y) = fftshift(phs_pad, N_fft, npulses, x, y);
 #if DEBUG_PRE_FFT
         out_pre_fft(c, x, y) = fftsh.inner(c, x, y);
 #endif
 
         // dft: produces shape {N_fft, npulses}
-        ComplexFunc dft(c, "dft");
         dft.inner.define_extern("call_dft", {fftsh.inner, N_fft}, Float(64), 3, NameMangling::C);
 #if DEBUG_POST_FFT
         out_post_fft(c, x, y) = dft.inner(c, x, y);
@@ -161,44 +152,36 @@ public:
         Expr k_c = k_r(nsamples / 2);
 
         // Q: produces shape {N_fft, npulses}
-        ComplexFunc Q(c, "Q");
         Q(x, y) = fftshift(dft, N_fft, npulses, x, y);
 #if DEBUG_Q
         out_Q(c, x, y) = Q.inner(c, x, y);
 #endif
 
         // norm(r0): produces shape {npulses}
-        Func norm_r0("norm_r0");
         norm_r0(x) = norm(pos(rnd, x));
 #if DEBUG_NORM_R0
         out_norm_r0(x) = norm_r0(x);
 #endif
 
         // r - r0: produces shape {nu*nv, nd, npulses}
-        Func rr0("rr0");
         rr0(x, y, z) = r(x, y) - pos(y, z);
 #if DEBUG_RR0
         out_rr0(x, y, z) = rr0(x, y, z);
 #endif
 
         // norm(r - r0): produces shape {nu*nv, npulses}
-        Func norm_rr0("norm_rr0");
         norm_rr0(x, y) = norm(rr0(x, rnd, y));
 #if DEBUG_NORM_RR0
         out_norm_rr0(x, y) = norm_rr0(x, y);
 #endif
 
         // dr_i: produces shape {nu*nv, npulses}
-        Func dr_i("dr_i");
         dr_i(x, y) = norm_r0(y) - norm_rr0(x, y);
 #if DEBUG_DR_I
         out_dr_i(x, y) = dr_i(x, y);
 #endif
 
         // Q_{real,imag,hat}: produce shape {nu*nv, npulses}
-        Func Q_real("Q_real");
-        Func Q_imag("Q_imag");
-        ComplexFunc Q_hat(c, "Q_hat");
         Q_real(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 0, x, y);
 #if DEBUG_Q_REAL
         out_q_real(x, y) = Q_real(x, y);
@@ -215,7 +198,6 @@ public:
 #endif
 
         // img: produces shape {nu*nv}
-        ComplexFunc img(c, "img");
         img(x) = ComplexExpr(c, Expr(0.0), Expr(0.0));
         img(x) += Q_hat(x, rnpulses) * exp(ComplexExpr(c, Expr(0.0), Expr(-1.0)) * k_c * dr_i(x, rnpulses));
 #if DEBUG_IMG
@@ -224,17 +206,17 @@ public:
 
         // finally...
         Expr fdr_i = norm_r0(npulses / 2) - norm_rr0(x, npulses / 2);
-        ComplexFunc fimg(c, "fimg");
         fimg(x) = img(x) * exp(ComplexExpr(c, Expr(0.0), Expr(1.0)) * k_c * fdr_i);
 #if DEBUG_FIMG
         out_fimg(c, x) = fimg.inner(c, x);
 #endif
 
         // img_rect: produce shape {nu, nv}, but reverse row order
-        ComplexFunc img_rect(c, "img_rect");
         img_rect(x, y) = fimg((nu * (nv - y - 1)) + x);
         output_img(c, x, y) = img_rect.inner(c, x, y);
+    }
 
+    void schedule() {
         int vectorsize = 16;
         int blocksize = 64;
         phs_func.compute_root();
@@ -260,6 +242,30 @@ public:
         fimg.inner.in(img_rect.inner).compute_inline();
         img_rect.inner.compute_root().parallel(y).vectorize(x, vectorsize);
     }
+
+private:
+    Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
+
+    Func phs_func{"phs_func"};
+    Func win_x{"win_x"};
+    Func win_y{"win_y"};
+    Func win{"win"};
+    Func filt{"filt"};
+    ComplexFunc phs_filt{c, "phs_filt"};
+    ComplexFunc phs_pad{c, "phs_pad"};
+    ComplexFunc fftsh{c, "fftshift"};
+    ComplexFunc dft{c, "dft"};
+    ComplexFunc Q{c, "Q"};
+    Func norm_r0{"norm_r0"};
+    Func rr0{"rr0"};
+    Func norm_rr0{"norm_rr0"};
+    Func dr_i{"dr_i"};
+    Func Q_real{"Q_real"};
+    Func Q_imag{"Q_imag"};
+    ComplexFunc Q_hat{c, "Q_hat"};
+    ComplexFunc img{c, "img"};
+    ComplexFunc fimg{c, "fimg"};
+    ComplexFunc img_rect{c, "img_rect"};
 };
 
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)
