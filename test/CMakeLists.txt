@@ -42,11 +42,6 @@ add_halide_library(taylor FROM taylor.generator)
 # TODO: automate these tests
 # Non-automated test executables
 
-add_executable(norm_test norm_test.cpp)
-target_link_libraries(norm_test PRIVATE Halide::Halide
-                                        norm1d
-                                        norm2d)
-
 add_executable(taylor_test taylor_test.cpp)
 target_link_libraries(taylor_test PRIVATE Halide::Halide
                                           taylor)
@@ -73,6 +68,12 @@ add_executable(linspace_test linspace_test.cpp)
 target_link_libraries(linspace_test PRIVATE Halide::Halide
                                             linspace)
 add_test(linspace linspace_test)
+
+add_executable(norm_test norm_test.cpp)
+target_link_libraries(norm_test PRIVATE Halide::Halide
+                                        norm1d
+                                        norm2d)
+add_test(norm norm_test)
 
 add_executable(repeat_test repeat_test.cpp)
 target_link_libraries(repeat_test PRIVATE Halide::Halide

@@ -2,6 +2,7 @@
 
 #include <Halide.h>
 
+#include "test.h"
 #include "norm1d.h"
 #include "norm2d.h"
 
@@ -18,7 +19,11 @@ int test_1d(void) {
     int rv = norm1d(in_buf, out_buf);
     if (!rv) {
         // should be 5
-        cout << out_buf() << endl;
+        cout << "norm1d:" << endl << out_buf() << endl;
+        if (out_buf.number_of_elements() != 1 || out_buf() != 5) {
+            cerr << "Verification failed" << endl;
+            return -1;
+        }
     }
     return rv;
 }
@@ -30,12 +35,12 @@ int test_2d(void) {
     int rv = norm2d(in_buf, out_buf);
     if (!rv) {
         // should be [ 5, 13 ]
-        float *obuf = out_buf.begin();
-        cout << "[ " << obuf[0];
-        for (size_t i = 1; i < Y_LEN; i++) {
-            cout << ", " << obuf[i];
+        cout << "norm2d:" << endl;
+        print_1d(out_buf);
+        if (out_buf.number_of_elements() != 2 || out_buf(0) != 5 || out_buf(1) != 13) {
+            cerr << "Verification failed" << endl;
+            return -1;
         }
-        cout << " ]" << endl;
     }
     return rv;
 }
