@@ -1,5 +1,6 @@
 #undef NDEBUG // force assertions
 #include <assert.h>
+#include <chrono>
 #include <complex>
 #include <iostream>
 
@@ -19,6 +20,7 @@
 #include "img_output_to_dB.h"
 
 using namespace std;
+using namespace std::chrono;
 using Halide::Runtime::Buffer;
 
 // local to this file
@@ -96,14 +98,20 @@ int main(int argc, char **argv) {
     double dB_min = atof(argv[5]);
     double dB_max = atof(argv[6]);
 
+    auto start = high_resolution_clock::now();
     PlatformData pd = platform_load(platform_dir);
-    cout << "Loaded platform data" << endl;
+    auto stop = high_resolution_clock::now();
+    cout << "Loaded platform data in "
+         << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
     cout << "Number of pulses: " << pd.npulses << endl;
     cout << "Pulse sample size: " << pd.nsamples << endl;
 
     const float *n_hat = pd.n_hat.has_value() ? pd.n_hat.value().begin() : &N_HAT[0];
+    start = high_resolution_clock::now();
     ImgPlane ip = img_plane_create(pd, RES_FACTOR, n_hat);
-    cout << "Computed image plane parameters" << endl;
+    stop = high_resolution_clock::now();
+    cout << "Computed image plane parameters in "
+         << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
     cout << "X length: " << ip.nu << endl;
     cout << "Y length: " << ip.nv << endl;
 
@@ -173,6 +181,7 @@ int main(int argc, char **argv) {
 
     Buffer<double, 3> buf_bp(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
     cout << "Halide backprojection start " << endl;
+    start = high_resolution_clock::now();
     int rv = backprojection(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs,
 #if DEBUG_WIN
         buf_win,
@@ -223,7 +232,9 @@ int main(int argc, char **argv) {
         buf_fimg,
 #endif
         buf_bp);
-    cout << "Halide backprojection returned " << rv << endl;
+    stop = high_resolution_clock::now();
+    cout << "Halide backprojection returned " << rv << " in "
+         << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
     if (rv != 0) {
         return rv;
     }
@@ -318,8 +329,11 @@ int main(int argc, char **argv) {
     // Convert to dB
     Buffer<double, 2> buf_bp_dB(ip.u.dim(0).extent(), ip.v.dim(0).extent());
     cout << "Halide dB conversion start" << endl;
+    start = high_resolution_clock::now();
     rv = img_output_to_dB(buf_bp, buf_bp_dB);
-    cout << "Halide dB conversion returned " << rv << endl;
+    stop = high_resolution_clock::now();
+    cout << "Halide dB conversion returned " << rv << " in "
+         << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
     if (rv != 0) {
         return rv;
     }
@@ -332,12 +346,19 @@ int main(int argc, char **argv) {
     // Produce output image
     Buffer<uint8_t, 2> buf_bp_u8(buf_bp_dB.dim(0).extent(), buf_bp_dB.dim(1).extent());
     cout << "Halide PNG production start" << endl;
+    start = high_resolution_clock::now();
     rv = img_output_u8(buf_bp_dB, dB_min, dB_max, buf_bp_u8);
-    cout << "Halide PNG production returned " << rv << endl;
+    stop = high_resolution_clock::now();
+    cout << "Halide PNG production returned " << rv << " in "
+         << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
     if (rv != 0) {
         return rv;
     }
+    start = high_resolution_clock::now();
     Halide::Tools::convert_and_save_image(buf_bp_u8, output_png);
+    stop = high_resolution_clock::now();
+    cout << "Wrote " << output_png << " in "
+         << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
 
     return rv;
 }
