@@ -26,7 +26,6 @@ find_package(PkgConfig REQUIRED)
 
 # Find FFTW3 double precision
 pkg_check_modules(FFTW fftw3 REQUIRED)
-link_directories(${FFTW_LIBRARY_DIRS})
 
 
 enable_testing()
@@ -84,6 +83,7 @@ target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleCla
 target_include_directories(sarbp_test PRIVATE ${CNPY_INCLUDE_DIR}
                                               ${ZLIB_INCLUDE_DIRS}
                                               ${FFTW_INCLUDE_DIRS})
+target_link_directories(sarbp_test PRIVATE ${FFTW_LIBRARY_DIRS})
 target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          Halide::ImageIO
                                          ${CNPY}
