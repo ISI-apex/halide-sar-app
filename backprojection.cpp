@@ -94,7 +94,7 @@ public:
 
     void generate() {
         // inputs as functions
-        phs_func = phs;
+        Func phs_func = phs;
         ComplexFunc phs_cmplx(c, phs_func);
 
         // some extents and related RDoms
@@ -216,7 +216,6 @@ public:
     void schedule() {
         int vectorsize = 16;
         int blocksize = 64;
-        phs_func.compute_root();
         win_x.compute_root();
         win_y.compute_root();
         win.compute_root();
@@ -243,7 +242,6 @@ public:
 private:
     Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
 
-    Func phs_func{"phs_func"};
     Func win_x{"win_x"};
     Func win_y{"win_y"};
     Func win{"win"};
