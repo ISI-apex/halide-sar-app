@@ -93,10 +93,6 @@ public:
     }
 
     void generate() {
-        // inputs as functions
-        Func phs_func = phs;
-        ComplexFunc phs_cmplx(c, phs_func);
-
         // some extents and related RDoms
         Expr nsamples = phs.dim(1).extent();
         Expr npulses = phs.dim(2).extent();
@@ -121,6 +117,8 @@ public:
 #endif
 
         // phs_filt: produces shape {nsamples, npulses}
+        Func phs_func = phs;
+        ComplexFunc phs_cmplx(c, phs_func);
         phs_filt(x, y) = phs_cmplx(x, y) * filt(x) * win(x, y);
 #if DEBUG_PHS_FILT
         out_phs_filt(c, x, y) = phs_filt.inner(c, x, y);
@@ -145,9 +143,6 @@ public:
 #if DEBUG_POST_FFT
         out_post_fft(c, x, y) = dft.inner(c, x, y);
 #endif
-
-        // k_c: produces scalar
-        Expr k_c = k_r(nsamples / 2);
 
         // Q: produces shape {N_fft, npulses}
         Q(x, y) = fftshift(dft, N_fft, npulses, x, y);
@@ -194,6 +189,9 @@ public:
 #if DEBUG_Q_HAT
         out_q_hat(c, x, y) = Q_hat.inner(c, x, y);
 #endif
+
+        // k_c: produces scalar
+        Expr k_c = k_r(nsamples / 2);
 
         // img: produces shape {nu*nv}
         img(x) = ComplexExpr(c, Expr(0.0), Expr(0.0));
