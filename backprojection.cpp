@@ -176,18 +176,13 @@ public:
         out_dr_i(x, y) = dr_i(x, y);
 #endif
 
-        // Q_{real,imag,hat}: produce shape {nu*nv, npulses}
-        Q_real(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 0, x, y);
+        Q_hat.inner(c, x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, c, x, y);
 #if DEBUG_Q_REAL
-        out_q_real(x, y) = Q_real(x, y);
+        out_q_real(x, y) = Q_hat.inner(0, x, y);
 #endif
-        Q_imag(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 1, x, y);
 #if DEBUG_Q_IMAG
-        out_q_imag(x, y) = Q_imag(x, y);
+        out_q_imag(x, y) = Q_hat.inner(1, x, y);
 #endif
-        // NOTE: it is possible to do this, directly
-        //Q_hat(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, c);
-        Q_hat(x, y) = ComplexExpr(c, Q_real(x, y), Q_imag(x, y));
 #if DEBUG_Q_HAT
         out_q_hat(c, x, y) = Q_hat.inner(c, x, y);
 #endif
@@ -246,10 +241,7 @@ public:
             norm_r0.compute_root();
             rr0.compute_root().parallel(z).vectorize(x, vectorsize);
             norm_rr0.compute_root().parallel(y).vectorize(x, vectorsize);
-            dr_i.in(Q_real).compute_inline();
-            dr_i.in(Q_imag).compute_inline();
-            Q_real.in(Q_hat.inner).compute_inline();
-            Q_imag.in(Q_hat.inner).compute_inline();
+            dr_i.compute_inline();
             Q_hat.inner.compute_root().unroll(c).reorder(x,y).vectorize(x, vectorsize).parallel(y);
             Var block, thread;
             img.inner.compute_root().gpu_tile(x, block, thread, 16);
@@ -275,10 +267,7 @@ public:
             norm_r0.compute_root();
             rr0.compute_root().parallel(z).vectorize(x, vectorsize);
             norm_rr0.compute_root().parallel(y).vectorize(x, vectorsize);
-            dr_i.in(Q_real).compute_inline();
-            dr_i.in(Q_imag).compute_inline();
-            Q_real.in(Q_hat.inner).compute_inline();
-            Q_imag.in(Q_hat.inner).compute_inline();
+            dr_i.compute_inline();
             Q_hat.inner.compute_root().unroll(c).reorder(x,y).vectorize(x, vectorsize).parallel(y);
             img.inner.compute_root();
             img.inner.update(0).parallel(x, blocksize);
@@ -305,8 +294,6 @@ private:
     Func rr0{"rr0"};
     Func norm_rr0{"norm_rr0"};
     Func dr_i{"dr_i"};
-    Func Q_real{"Q_real"};
-    Func Q_imag{"Q_imag"};
     ComplexFunc Q_hat{c, "Q_hat"};
     ComplexFunc img{c, "img"};
     ComplexFunc fimg{c, "fimg"};
