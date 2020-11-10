@@ -46,6 +46,8 @@ add_executable(backprojection.generator backprojection.cpp)
 target_link_libraries(backprojection.generator PRIVATE Halide::Generator)
 add_halide_library(backprojection FROM backprojection.generator
                                   FEATURES large_buffers)
+add_halide_library(backprojection_cuda FROM backprojection.generator
+                                       FEATURES large_buffers cuda)
 
 add_executable(img_output.generator img_output.cpp)
 target_link_libraries(img_output.generator PRIVATE Halide::Generator)
@@ -79,5 +81,6 @@ target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          ip_u_hat
                                          ip_pixel_locs
                                          backprojection
+                                         backprojection_cuda
                                          img_output_u8
                                          img_output_to_dB)

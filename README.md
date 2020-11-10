@@ -32,3 +32,9 @@ To run the backprojection test:
 ```sh
 ./sarbp_test ../data/AFRL/pass1/HH_npy 17 2 output.png -30.0 0.0
 ```
+
+or with a GPU CUDA schedule:
+
+```sh
+./sarbp_test ../data/AFRL/pass1/HH_npy 17 2 output.png -30.0 0.0 cuda
+```

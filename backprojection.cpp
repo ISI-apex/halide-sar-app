@@ -231,8 +231,16 @@ public:
         Q_real.in(Q_hat.inner).compute_inline();
         Q_imag.in(Q_hat.inner).compute_inline();
         Q_hat.inner.compute_root().unroll(c).reorder(x,y).vectorize(x, vectorsize).parallel(y);
-        img.inner.compute_root();
-        img.inner.update(0).parallel(x, blocksize);
+        if (get_target().has_gpu_feature()) {
+            std::cout << "backprojection: GPU target" << std::endl;
+            Var block, thread;
+            img.inner.compute_root().gpu_tile(x, block, thread, 16);
+            img.inner.update(0).gpu_tile(x, block, thread, 16);
+        } else {
+            std::cout << "backprojection: CPU target" << std::endl;
+            img.inner.compute_root();
+            img.inner.update(0).parallel(x, blocksize);
+        }
         fimg.inner.in(output_img).compute_inline();
         output_img.compute_root().parallel(y).vectorize(x, vectorsize);
     }
@@ -261,3 +269,4 @@ private:
 };
 
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)
+HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda)
