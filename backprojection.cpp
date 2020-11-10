@@ -144,8 +144,10 @@ public:
         out_post_fft(c, x, y) = dft.inner(c, x, y);
 #endif
 
+        dft_out(x, y) = dft(x, y);
+
         // Q: produces shape {N_fft, npulses}
-        Q(x, y) = fftshift(dft, N_fft, npulses, x, y);
+        Q(x, y) = fftshift(dft_out, N_fft, npulses, x, y);
 #if DEBUG_Q
         out_Q(c, x, y) = Q.inner(c, x, y);
 #endif
@@ -239,6 +241,7 @@ public:
             phs_pad.inner.compute_root();
             fftsh.inner.compute_root();
             dft.inner.compute_root();
+            dft_out.inner.compute_inline();
             Q.inner.compute_root();
             norm_r0.compute_root();
             rr0.compute_root().parallel(z).vectorize(x, vectorsize);
@@ -267,6 +270,7 @@ public:
             phs_pad.inner.compute_root();
             fftsh.inner.compute_root();
             dft.inner.compute_root();
+            dft_out.inner.compute_inline();
             Q.inner.compute_root();
             norm_r0.compute_root();
             rr0.compute_root().parallel(z).vectorize(x, vectorsize);
@@ -295,6 +299,7 @@ private:
     ComplexFunc phs_pad{c, "phs_pad"};
     ComplexFunc fftsh{c, "fftshift"};
     ComplexFunc dft{c, "dft"};
+    ComplexFunc dft_out{c, "dft_out"};
     ComplexFunc Q{c, "Q"};
     Func norm_r0{"norm_r0"};
     Func rr0{"rr0"};
