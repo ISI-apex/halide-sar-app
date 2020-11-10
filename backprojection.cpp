@@ -197,14 +197,14 @@ public:
 
         // img: produces shape {nu*nv}
         img(x) = ComplexExpr(c, Expr(0.0), Expr(0.0));
-        img(x) += Q_hat(x, rnpulses) * exp(ComplexExpr(c, Expr(0.0), Expr(-1.0)) * k_c * dr_i(x, rnpulses));
+        img(x) += Q_hat(x, rnpulses) * expj(c, -k_c * dr_i(x, rnpulses));
 #if DEBUG_IMG
         out_img(c, x) = img.inner(c, x);
 #endif
 
         // finally...
         Expr fdr_i = norm_r0(npulses / 2) - norm_rr0(x, npulses / 2);
-        fimg(x) = img(x) * exp(ComplexExpr(c, Expr(0.0), Expr(1.0)) * k_c * fdr_i);
+        fimg(x) = img(x) * expj(c, k_c * fdr_i);
 #if DEBUG_FIMG
         out_fimg(c, x) = fimg.inner(c, x);
 #endif
