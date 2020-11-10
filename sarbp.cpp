@@ -17,6 +17,7 @@
 #include "backprojection_debug.h"
 #include "backprojection.h"
 #include "backprojection_cuda.h"
+#include "backprojection_ritsar.h"
 #include "img_output_u8.h"
 #include "img_output_to_dB.h"
 
@@ -89,7 +90,7 @@ extern "C" DLLEXPORT int call_dft(halide_buffer_t *in, int N_fft, halide_buffer_
 
 int main(int argc, char **argv) {
     if (argc < 7) {
-        cerr << "Usage: " << argv[0] << " <platform_dir> <taylor> <upsample> <output_png> <dB_min> <dB_max> [cpu|cuda]" << endl;
+        cerr << "Usage: " << argv[0] << " <platform_dir> <taylor> <upsample> <output_png> <dB_min> <dB_max> [cpu|cuda|ritsar]" << endl;
         return 1;
     }
     string platform_dir = string(argv[1]);
@@ -111,6 +112,9 @@ int main(int argc, char **argv) {
     } else if (bp_sched == "cuda") {
         backprojection_impl = backprojection_cuda;
         cout << "Using schedule with CUDA" << endl;
+    } else if (bp_sched == "ritsar") {
+        backprojection_impl = backprojection_ritsar;
+        cout << "Using RITSAR baseline" << endl;
     } else {
         cerr << "Unknown schedule: " << bp_sched << endl;
         return -1;
