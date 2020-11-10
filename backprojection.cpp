@@ -228,6 +228,7 @@ public:
             std::cout << "scheduling for GPU " << tgt << std::endl;
             int vectorsize = 16;
             int blocksize = 64;
+            Var block{"block"}, thread{"thread"};
             win_x.compute_root();
             win_y.compute_root();
             win.compute_root();
@@ -236,18 +237,17 @@ public:
             phs_pad.inner.compute_root();
             fftsh.inner.compute_root();
             dft.inner.compute_root();
-            dft_out.inner.compute_inline();
+            dft_out.inner.compute_root();
             Q.inner.compute_root();
             norm_r0.compute_root();
-            rr0.compute_root().parallel(z).vectorize(x, vectorsize);
-            norm_rr0.compute_root().parallel(y).vectorize(x, vectorsize);
+            rr0.compute_inline();
+            norm_rr0.compute_root().gpu_tile(x, block, thread, blocksize);
             dr_i.compute_inline();
-            Q_hat.inner.compute_root().unroll(c).reorder(x,y).vectorize(x, vectorsize).parallel(y);
-            Var block, thread;
-            img.inner.compute_root().gpu_tile(x, block, thread, 16);
-            img.inner.update(0).gpu_tile(x, block, thread, 16);
-            fimg.inner.in(output_img).compute_inline();
-            output_img.compute_root().parallel(y).vectorize(x, vectorsize);
+            Q_hat.inner.compute_inline();
+            img.inner.compute_root().gpu_tile(x, block, thread, blocksize);
+            img.inner.update(0).gpu_tile(x, block, thread, blocksize);
+            fimg.inner.compute_root().gpu_tile(x, block, thread, blocksize);
+            output_img.compute_root().vectorize(x, vectorsize).parallel(y);
             output_img.print_loop_nest();
         } else {
             // CPU target
