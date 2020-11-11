@@ -128,6 +128,7 @@ PlatformData platform_load(string platform_dir) {
         } else {
             throw runtime_error("Bad word size: freq");
         }
+        freq.value().set_host_dirty();
     }
 
     NpyArray npy_k_r = npy_load(platform_dir + "/k_r.npy");
@@ -147,6 +148,7 @@ PlatformData platform_load(string platform_dir) {
     } else {
         throw runtime_error("Bad word size: k_r");
     }
+    k_r.set_host_dirty();
 
     optional<Buffer<double, 1>> k_y = nullopt;
     if (file_exists(platform_dir + "/k_y.npy")) {
@@ -159,6 +161,7 @@ PlatformData platform_load(string platform_dir) {
         }
         k_y.emplace(Buffer<double, 1>(npulses));
         memcpy(k_y.value().begin(), npy_k_y.data<double>(), npy_k_y.num_bytes());
+        k_y.value().set_host_dirty();
     }
 
     optional<Buffer<float, 1>> n_hat = nullopt;
@@ -172,6 +175,7 @@ PlatformData platform_load(string platform_dir) {
         }
         n_hat.emplace(Buffer<float, 1>(3));
         memcpy(n_hat.value().begin(), npy_n_hat.data<float>(), npy_n_hat.num_bytes());
+        n_hat.value().set_host_dirty();
     }
 
     NpyArray npy_R_c = npy_load(platform_dir + "/R_c.npy");
@@ -191,6 +195,7 @@ PlatformData platform_load(string platform_dir) {
     } else {
         throw runtime_error("Bad word size: R_c");
     }
+    R_c.set_host_dirty();
 
     optional<Buffer<double, 1>> t = nullopt;
     if (file_exists(platform_dir + "/t.npy")) {
@@ -203,6 +208,7 @@ PlatformData platform_load(string platform_dir) {
         }
         t.emplace(Buffer<double, 1>(nsamples));
         memcpy(t.value().begin(), npy_t.data<double>(), npy_t.num_bytes());
+        t.value().set_host_dirty();
     }
 
     // Load matrices
@@ -224,6 +230,7 @@ PlatformData platform_load(string platform_dir) {
     } else {
         throw runtime_error("Bad word size: pos");
     }
+    pos.set_host_dirty();
 
     NpyArray npy_phs = npy_load(platform_dir + "/phs.npy");
     if (npy_phs.shape.size() != 2 || npy_phs.shape[0] != npulses || npy_phs.shape[1] != nsamples) {
@@ -243,6 +250,7 @@ PlatformData platform_load(string platform_dir) {
     } else {
         throw runtime_error("Bad word size: phs");
     }
+    phs.set_host_dirty();
 
     return PlatformData(B, B_IF, delta_r, delta_t, chirprate, f_0, nsamples, npulses, vp,
                         freq, k_r, k_y, n_hat, R_c, t, pos, phs);
