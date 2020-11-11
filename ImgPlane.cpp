@@ -45,26 +45,34 @@ ImgPlane img_plane_create(PlatformData &pd, double res_factor,
 
     Buffer<double, 1> u(nu);
     ip_uv(nu, d_u, u);
+    u.set_host_dirty();
 
     Buffer<double, 1> v(nv);
     ip_uv(nv, d_v, v);
+    v.set_host_dirty();
 
     Buffer<double, 1> k_u(nu);
     ip_k(nu, d_u, k_u);
+    k_u.set_host_dirty();
 
     Buffer<double, 1> k_v(nv);
     ip_k(nv, d_v, k_v);
+    k_v.set_host_dirty();
 
     Buffer<const float, 1> n_hat(_n_hat, 3);
+    n_hat.set_host_dirty();
 
     Buffer<double, 1> v_hat(3);
     ip_v_hat(n_hat, pd.R_c, v_hat);
+    v_hat.set_host_dirty();
 
     Buffer<double, 1> u_hat(3);
     ip_u_hat(v_hat, n_hat, u_hat);
+    u_hat.set_host_dirty();
 
     Buffer<double, 2> pixel_locs(nu*nv, 3);
     ip_pixel_locs(u, v, u_hat, v_hat, pixel_locs);
+    pixel_locs.set_host_dirty();
 
     return ImgPlane(nu, nv, d_u, d_v, u, v, k_u, k_v, u_hat, v_hat, pixel_locs);
 }
