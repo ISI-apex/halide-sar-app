@@ -10,6 +10,10 @@ using namespace Halide;
 
 class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator> {
 public:
+    GeneratorParam<int32_t> vectorsize {"vectorsize", 16};
+    GeneratorParam<int32_t> blocksize {"blocksize", 64};
+    GeneratorParam<bool> print_loop_nest {"print_loop_nest", false};
+
     // 2-D complex data (3-D when handled as primitive data: {2, x, y})
     Input<Buffer<float>> phs {"phs", 3};
     Input<Buffer<float>> k_r {"k_r", 1};
@@ -226,9 +230,9 @@ public:
             fftsh.inner.compute_root(); // helps the Mullapudi2016 autoscheduler pass full vectors of input to DFT
         } else if(tgt.has_gpu_feature()) {
             // GPU target
-            std::cout << "scheduling for GPU " << tgt << std::endl;
-            int vectorsize = 16;
-            int blocksize = 64;
+            std::cout << "Scheduling for GPU: " << tgt << std::endl
+                      << "Block size: " << blocksize.value() << std::endl
+                      << "Vector size: " << vectorsize.value() << std::endl;
             Var block{"block"}, thread{"thread"};
             win_x.compute_root();
             win_y.compute_root();
@@ -249,12 +253,14 @@ public:
             img.inner.update(0).gpu_tile(x, block, thread, blocksize);
             fimg.inner.compute_root().gpu_tile(x, block, thread, blocksize);
             output_img.compute_root().vectorize(x, vectorsize).parallel(y);
-            output_img.print_loop_nest();
+            if (print_loop_nest) {
+                output_img.print_loop_nest();
+            }
         } else {
             // CPU target
-            std::cout << "scheduling for CPU " << tgt << std::endl;
-            int vectorsize = 16;
-            int blocksize = 64;
+            std::cout << "Scheduling for CPU: " << tgt << std::endl
+                      << "Block size: " << blocksize.value() << std::endl
+                      << "Vector size: " << vectorsize.value() << std::endl;
             Var xi{"xi"}, xo{"xo"};
             win_x.compute_root();
             win_y.compute_root();
@@ -274,7 +280,9 @@ public:
             img.inner.update(0).reorder(c, rnpulses, x).unroll(c).parallel(x, blocksize);
             fimg.inner.in(output_img).compute_inline();
             output_img.compute_root().parallel(y).vectorize(x, vectorsize);
-            output_img.print_loop_nest();
+            if (print_loop_nest) {
+                output_img.print_loop_nest();
+            }
         }
     }
 
