@@ -77,7 +77,7 @@ public:
     // lsa, lsb, lsn: implicit linspace parameters (min, max, count)
     // fp: {N_fft, npulses}
     // output: {nu*nv, npulses}
-    inline Expr interp(Func xs, Expr lsa, Expr lsb, Expr lsn, ComplexFunc fp, Expr c, Var x, Var y) {
+    inline Expr interp(Func xs, Expr lsa, Expr lsb, Expr lsn, ComplexFunc fp, Var c, Var x, Var y) {
         Expr lsr = (lsb-lsa) / (lsn-1);             // linspace rate of increase
         Expr luts = (xs(x, y) - lsa) / lsr;         // input value scaled to linspace
         Expr lutl = ConciseCasts::i32(floor(luts)); // lower index
@@ -176,6 +176,7 @@ public:
         out_dr_i(x, y) = dr_i(x, y);
 #endif
 
+        // Q_hat: produces shape {nu*nv, npulses}
         Q_hat.inner(c, x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, c, x, y);
 #if DEBUG_Q_REAL
         out_q_real(x, y) = Q_hat.inner(0, x, y);
