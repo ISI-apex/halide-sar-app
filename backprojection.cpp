@@ -99,8 +99,8 @@ public:
         Expr nu = u.dim(0).extent();
         Expr nv = v.dim(0).extent();
         Expr nd = pos.dim(0).extent(); // nd = 3 (spatial dimensions)
-        RDom rnpulses(0, npulses, "rnpulses");
-        RDom rnd(0, nd, "rnd");
+        rnpulses = RDom(0, npulses, "rnpulses");
+        rnd = RDom(0, nd, "rnd");
 
         // Create window: produces shape {nsamples, npulses}
         win_x(x) = taylor(nsamples, taylor_s_l, x, "win_x");
@@ -254,6 +254,7 @@ public:
             std::cout << "scheduling for CPU " << tgt << std::endl;
             int vectorsize = 16;
             int blocksize = 64;
+            Var xi{"xi"}, xo{"xo"};
             win_x.compute_root();
             win_y.compute_root();
             win.compute_root();
@@ -265,12 +266,11 @@ public:
             dft_out.inner.compute_inline();
             Q.inner.compute_root();
             norm_r0.compute_root();
-            rr0.compute_root().parallel(z).vectorize(x, vectorsize);
             norm_rr0.compute_root().parallel(y).vectorize(x, vectorsize);
             dr_i.compute_inline();
-            Q_hat.inner.compute_root().unroll(c).reorder(x,y).vectorize(x, vectorsize).parallel(y);
-            img.inner.compute_root();
-            img.inner.update(0).parallel(x, blocksize);
+            Q_hat.inner.compute_inline();
+            img.inner.compute_root().unroll(c).split(x, xo, xi, blocksize).vectorize(xi, vectorsize).parallel(xo, blocksize);
+            img.inner.update(0).reorder(c, rnpulses, x).unroll(c).parallel(x, blocksize);
             fimg.inner.in(output_img).compute_inline();
             output_img.compute_root().parallel(y).vectorize(x, vectorsize);
             output_img.print_loop_nest();
@@ -297,6 +297,8 @@ private:
     ComplexFunc Q_hat{c, "Q_hat"};
     ComplexFunc img{c, "img"};
     ComplexFunc fimg{c, "fimg"};
+    RDom rnpulses;
+    RDom rnd;
 };
 
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)
