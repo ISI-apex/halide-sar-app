@@ -212,37 +212,76 @@ public:
     }
 
     void schedule() {
-        int vectorsize = 16;
-        int blocksize = 64;
-        win_x.compute_root();
-        win_y.compute_root();
-        win.compute_root();
-        filt.compute_root();
-        phs_filt.inner.compute_root();
-        phs_pad.inner.compute_root();
-        fftsh.inner.compute_root();
-        dft.inner.compute_root();
-        Q.inner.compute_root();
-        norm_r0.compute_root();
-        rr0.compute_root().parallel(z).vectorize(x, vectorsize);
-        norm_rr0.compute_root().parallel(y).vectorize(x, vectorsize);
-        dr_i.in(Q_real).compute_inline();
-        dr_i.in(Q_imag).compute_inline();
-        Q_real.in(Q_hat.inner).compute_inline();
-        Q_imag.in(Q_hat.inner).compute_inline();
-        Q_hat.inner.compute_root().unroll(c).reorder(x,y).vectorize(x, vectorsize).parallel(y);
-        if (get_target().has_gpu_feature()) {
-            std::cout << "backprojection: GPU target" << std::endl;
+        Target tgt(target);
+        if(auto_schedule) {
+            std::cout << "setting size/scalar estimates for autoscheduler" << std::endl;
+            phs.set_estimates({{0, 2}, {0, 424}, {0, 469}});
+            k_r.set_estimates({{0, 424}});
+            u.set_estimates({{0, 512}});
+            v.set_estimates({{0, 512}});
+            pos.set_estimates({{0, 3}, {0, 469}});
+            r.set_estimates({{0, 262144}, {0, 3}});
+            output_img.set_estimates({{0, 2}, {0, 512}, {0, 512}});
+            delta_r.set_estimate(0.240851);
+            N_fft.set_estimate(1024);
+            taylor_s_l.set_estimate(17);
+            fftsh.inner.compute_root(); // helps the Mullapudi2016 autoscheduler pass full vectors of input to DFT
+        } else if(tgt.has_gpu_feature()) {
+            // GPU target
+            std::cout << "scheduling for GPU " << tgt << std::endl;
+            int vectorsize = 16;
+            int blocksize = 64;
+            win_x.compute_root();
+            win_y.compute_root();
+            win.compute_root();
+            filt.compute_root();
+            phs_filt.inner.compute_root();
+            phs_pad.inner.compute_root();
+            fftsh.inner.compute_root();
+            dft.inner.compute_root();
+            Q.inner.compute_root();
+            norm_r0.compute_root();
+            rr0.compute_root().parallel(z).vectorize(x, vectorsize);
+            norm_rr0.compute_root().parallel(y).vectorize(x, vectorsize);
+            dr_i.in(Q_real).compute_inline();
+            dr_i.in(Q_imag).compute_inline();
+            Q_real.in(Q_hat.inner).compute_inline();
+            Q_imag.in(Q_hat.inner).compute_inline();
+            Q_hat.inner.compute_root().unroll(c).reorder(x,y).vectorize(x, vectorsize).parallel(y);
             Var block, thread;
             img.inner.compute_root().gpu_tile(x, block, thread, 16);
             img.inner.update(0).gpu_tile(x, block, thread, 16);
+            fimg.inner.in(output_img).compute_inline();
+            output_img.compute_root().parallel(y).vectorize(x, vectorsize);
+            output_img.print_loop_nest();
         } else {
-            std::cout << "backprojection: CPU target" << std::endl;
+            // CPU target
+            std::cout << "scheduling for CPU " << tgt << std::endl;
+            int vectorsize = 16;
+            int blocksize = 64;
+            win_x.compute_root();
+            win_y.compute_root();
+            win.compute_root();
+            filt.compute_root();
+            phs_filt.inner.compute_root();
+            phs_pad.inner.compute_root();
+            fftsh.inner.compute_root();
+            dft.inner.compute_root();
+            Q.inner.compute_root();
+            norm_r0.compute_root();
+            rr0.compute_root().parallel(z).vectorize(x, vectorsize);
+            norm_rr0.compute_root().parallel(y).vectorize(x, vectorsize);
+            dr_i.in(Q_real).compute_inline();
+            dr_i.in(Q_imag).compute_inline();
+            Q_real.in(Q_hat.inner).compute_inline();
+            Q_imag.in(Q_hat.inner).compute_inline();
+            Q_hat.inner.compute_root().unroll(c).reorder(x,y).vectorize(x, vectorsize).parallel(y);
             img.inner.compute_root();
             img.inner.update(0).parallel(x, blocksize);
+            fimg.inner.in(output_img).compute_inline();
+            output_img.compute_root().parallel(y).vectorize(x, vectorsize);
+            output_img.print_loop_nest();
         }
-        fimg.inner.in(output_img).compute_inline();
-        output_img.compute_root().parallel(y).vectorize(x, vectorsize);
     }
 
 private:
