@@ -99,8 +99,8 @@ public:
         Expr nu = u.dim(0).extent();
         Expr nv = v.dim(0).extent();
         Expr nd = pos.dim(0).extent(); // nd = 3 (spatial dimensions)
-        RDom rnpulses(0, npulses, "rnpulses");
-        RDom rnd(0, nd, "rnd");
+        rnpulses = RDom(0, npulses, "rnpulses");
+        rnd = RDom(0, nd, "rnd");
 
         // Create window: produces shape {nsamples, npulses}
         win_x(x) = taylor(nsamples, taylor_s_l, x, "win_x");
@@ -144,8 +144,10 @@ public:
         out_post_fft(c, x, y) = dft.inner(c, x, y);
 #endif
 
+        dft_out(x, y) = dft(x, y);
+
         // Q: produces shape {N_fft, npulses}
-        Q(x, y) = fftshift(dft, N_fft, npulses, x, y);
+        Q(x, y) = fftshift(dft_out, N_fft, npulses, x, y);
 #if DEBUG_Q
         out_Q(c, x, y) = Q.inner(c, x, y);
 #endif
@@ -174,18 +176,13 @@ public:
         out_dr_i(x, y) = dr_i(x, y);
 #endif
 
-        // Q_{real,imag,hat}: produce shape {nu*nv, npulses}
-        Q_real(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 0, x, y);
+        Q_hat.inner(c, x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, c, x, y);
 #if DEBUG_Q_REAL
-        out_q_real(x, y) = Q_real(x, y);
+        out_q_real(x, y) = Q_hat.inner(0, x, y);
 #endif
-        Q_imag(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 1, x, y);
 #if DEBUG_Q_IMAG
-        out_q_imag(x, y) = Q_imag(x, y);
+        out_q_imag(x, y) = Q_hat.inner(1, x, y);
 #endif
-        // NOTE: it is possible to do this, directly
-        //Q_hat(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, c);
-        Q_hat(x, y) = ComplexExpr(c, Q_real(x, y), Q_imag(x, y));
 #if DEBUG_Q_HAT
         out_q_hat(c, x, y) = Q_hat.inner(c, x, y);
 #endif
@@ -195,14 +192,14 @@ public:
 
         // img: produces shape {nu*nv}
         img(x) = ComplexExpr(c, Expr(0.0), Expr(0.0));
-        img(x) += Q_hat(x, rnpulses) * exp(ComplexExpr(c, Expr(0.0), Expr(-1.0)) * k_c * dr_i(x, rnpulses));
+        img(x) += Q_hat(x, rnpulses) * expj(c, -k_c * dr_i(x, rnpulses));
 #if DEBUG_IMG
         out_img(c, x) = img.inner(c, x);
 #endif
 
         // finally...
         Expr fdr_i = norm_r0(npulses / 2) - norm_rr0(x, npulses / 2);
-        fimg(x) = img(x) * exp(ComplexExpr(c, Expr(0.0), Expr(1.0)) * k_c * fdr_i);
+        fimg(x) = img(x) * expj(c, k_c * fdr_i);
 #if DEBUG_FIMG
         out_fimg(c, x) = fimg.inner(c, x);
 #endif
@@ -212,37 +209,72 @@ public:
     }
 
     void schedule() {
-        int vectorsize = 16;
-        int blocksize = 64;
-        win_x.compute_root();
-        win_y.compute_root();
-        win.compute_root();
-        filt.compute_root();
-        phs_filt.inner.compute_root();
-        phs_pad.inner.compute_root();
-        fftsh.inner.compute_root();
-        dft.inner.compute_root();
-        Q.inner.compute_root();
-        norm_r0.compute_root();
-        rr0.compute_root().parallel(z).vectorize(x, vectorsize);
-        norm_rr0.compute_root().parallel(y).vectorize(x, vectorsize);
-        dr_i.in(Q_real).compute_inline();
-        dr_i.in(Q_imag).compute_inline();
-        Q_real.in(Q_hat.inner).compute_inline();
-        Q_imag.in(Q_hat.inner).compute_inline();
-        Q_hat.inner.compute_root().unroll(c).reorder(x,y).vectorize(x, vectorsize).parallel(y);
-        if (get_target().has_gpu_feature()) {
-            std::cout << "backprojection: GPU target" << std::endl;
-            Var block, thread;
-            img.inner.compute_root().gpu_tile(x, block, thread, 16);
-            img.inner.update(0).gpu_tile(x, block, thread, 16);
+        Target tgt(target);
+        if(auto_schedule) {
+            std::cout << "setting size/scalar estimates for autoscheduler" << std::endl;
+            phs.set_estimates({{0, 2}, {0, 424}, {0, 469}});
+            k_r.set_estimates({{0, 424}});
+            u.set_estimates({{0, 512}});
+            v.set_estimates({{0, 512}});
+            pos.set_estimates({{0, 3}, {0, 469}});
+            r.set_estimates({{0, 262144}, {0, 3}});
+            output_img.set_estimates({{0, 2}, {0, 512}, {0, 512}});
+            delta_r.set_estimate(0.240851);
+            N_fft.set_estimate(1024);
+            taylor_s_l.set_estimate(17);
+            fftsh.inner.compute_root(); // helps the Mullapudi2016 autoscheduler pass full vectors of input to DFT
+        } else if(tgt.has_gpu_feature()) {
+            // GPU target
+            std::cout << "scheduling for GPU " << tgt << std::endl;
+            int vectorsize = 16;
+            int blocksize = 64;
+            Var block{"block"}, thread{"thread"};
+            win_x.compute_root();
+            win_y.compute_root();
+            win.compute_root();
+            filt.compute_root();
+            phs_filt.inner.compute_root();
+            phs_pad.inner.compute_root();
+            fftsh.inner.compute_root();
+            dft.inner.compute_root();
+            dft_out.inner.compute_root();
+            Q.inner.compute_root();
+            norm_r0.compute_root();
+            rr0.compute_inline();
+            norm_rr0.compute_root().gpu_tile(x, block, thread, blocksize);
+            dr_i.compute_inline();
+            Q_hat.inner.compute_inline();
+            img.inner.compute_root().gpu_tile(x, block, thread, blocksize);
+            img.inner.update(0).gpu_tile(x, block, thread, blocksize);
+            fimg.inner.compute_root().gpu_tile(x, block, thread, blocksize);
+            output_img.compute_root().vectorize(x, vectorsize).parallel(y);
+            output_img.print_loop_nest();
         } else {
-            std::cout << "backprojection: CPU target" << std::endl;
-            img.inner.compute_root();
-            img.inner.update(0).parallel(x, blocksize);
+            // CPU target
+            std::cout << "scheduling for CPU " << tgt << std::endl;
+            int vectorsize = 16;
+            int blocksize = 64;
+            Var xi{"xi"}, xo{"xo"};
+            win_x.compute_root();
+            win_y.compute_root();
+            win.compute_root();
+            filt.compute_root();
+            phs_filt.inner.compute_root();
+            phs_pad.inner.compute_root();
+            fftsh.inner.compute_root();
+            dft.inner.compute_root();
+            dft_out.inner.compute_inline();
+            Q.inner.compute_root();
+            norm_r0.compute_root();
+            norm_rr0.compute_root().parallel(y).vectorize(x, vectorsize);
+            dr_i.compute_inline();
+            Q_hat.inner.compute_inline();
+            img.inner.compute_root().unroll(c).split(x, xo, xi, blocksize).vectorize(xi, vectorsize).parallel(xo, blocksize);
+            img.inner.update(0).reorder(c, rnpulses, x).unroll(c).parallel(x, blocksize);
+            fimg.inner.in(output_img).compute_inline();
+            output_img.compute_root().parallel(y).vectorize(x, vectorsize);
+            output_img.print_loop_nest();
         }
-        fimg.inner.in(output_img).compute_inline();
-        output_img.compute_root().parallel(y).vectorize(x, vectorsize);
     }
 
 private:
@@ -256,16 +288,17 @@ private:
     ComplexFunc phs_pad{c, "phs_pad"};
     ComplexFunc fftsh{c, "fftshift"};
     ComplexFunc dft{c, "dft"};
+    ComplexFunc dft_out{c, "dft_out"};
     ComplexFunc Q{c, "Q"};
     Func norm_r0{"norm_r0"};
     Func rr0{"rr0"};
     Func norm_rr0{"norm_rr0"};
     Func dr_i{"dr_i"};
-    Func Q_real{"Q_real"};
-    Func Q_imag{"Q_imag"};
     ComplexFunc Q_hat{c, "Q_hat"};
     ComplexFunc img{c, "img"};
     ComplexFunc fimg{c, "fimg"};
+    RDom rnpulses;
+    RDom rnd;
 };
 
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)
