@@ -10,6 +10,18 @@ using namespace Halide;
 
 class BackprojectionRitsarGenerator : public Halide::Generator<BackprojectionRitsarGenerator> {
 public:
+    enum class Schedule { Serial,
+                          Vectorize,
+                          Parallel,
+                          VectorizeParallel };
+    GeneratorParam<Schedule> sched {"schedule",
+                                    Schedule::Vectorize, // closest to RITSAR
+                                    {{"s", Schedule::Serial},
+                                     {"v", Schedule::Vectorize},
+                                     {"p", Schedule::Parallel},
+                                     {"vp", Schedule::VectorizeParallel}}};
+    GeneratorParam<int32_t> vectorsize {"vectorsize", 4};
+
     // 2-D complex data (3-D when handled as primitive data: {2, x, y})
     Input<Buffer<float>> phs {"phs", 3};
     Input<Buffer<float>> k_r {"k_r", 1};
@@ -212,29 +224,98 @@ public:
     }
 
     void schedule() {
-        int vectorsize = 16;
-        int blocksize = 64;
-        win_x.compute_root();
-        win_y.compute_root();
-        win.compute_root();
-        filt.compute_root();
-        phs_filt.inner.compute_root();
-        phs_pad.inner.compute_root();
-        fftsh.inner.compute_root();
-        dft.inner.compute_root();
-        Q.inner.compute_root();
-        norm_r0.compute_root();
-        rr0.compute_root().parallel(z).vectorize(x, vectorsize);
-        norm_rr0.compute_root().parallel(y).vectorize(x, vectorsize);
-        dr_i.in(Q_real).compute_inline();
-        dr_i.in(Q_imag).compute_inline();
-        Q_real.in(Q_hat.inner).compute_inline();
-        Q_imag.in(Q_hat.inner).compute_inline();
-        Q_hat.inner.compute_root().unroll(c).reorder(x,y).vectorize(x, vectorsize).parallel(y);
-        img.inner.compute_root();
-        img.inner.update(0).parallel(x, blocksize);
-        fimg.inner.in(output_img).compute_inline();
-        output_img.compute_root().parallel(y).vectorize(x, vectorsize);
+        switch (sched) {
+        case Schedule::Serial:
+            win_x.compute_root();
+            win_y.compute_root();
+            win.compute_root();
+            filt.compute_root();
+            phs_filt.inner.compute_root();
+            phs_pad.inner.compute_root();
+            fftsh.inner.compute_root();
+            dft.inner.compute_root();
+            Q.inner.compute_root();
+            norm_r0.compute_root();
+            rr0.compute_root();
+            norm_rr0.compute_root();
+            dr_i.compute_root();
+            Q_real.compute_root();
+            Q_imag.compute_root();
+            Q_hat.inner.compute_root();
+            img.inner.compute_root();
+            fimg.inner.compute_root();
+            output_img.compute_root();
+            break;
+        case Schedule::Vectorize:
+            win_x.compute_root().vectorize(x, vectorsize);
+            win_y.compute_root().vectorize(y, vectorsize);
+            win.compute_root().vectorize(x, vectorsize);
+            filt.compute_root().vectorize(x, vectorsize);
+            phs_filt.inner.compute_root().vectorize(x, vectorsize);
+            phs_pad.inner.compute_root().vectorize(x, vectorsize);
+            fftsh.inner.compute_root().vectorize(x, vectorsize);
+            dft.inner.compute_root();
+            Q.inner.compute_root().vectorize(x, vectorsize);
+            norm_r0.compute_root().vectorize(x, vectorsize);
+            rr0.compute_root().vectorize(x, vectorsize);
+            norm_rr0.compute_root().vectorize(x, vectorsize);
+            dr_i.compute_root().vectorize(x, vectorsize);
+            Q_real.compute_root().vectorize(x, vectorsize);
+            Q_imag.compute_root().vectorize(x, vectorsize);
+            Q_hat.inner.compute_root().vectorize(x, vectorsize);
+            img.inner.compute_root().vectorize(x, vectorsize);
+            fimg.inner.compute_root().vectorize(x, vectorsize);
+            output_img.compute_root().vectorize(x, vectorsize);
+            break;
+        case Schedule::Parallel:
+            // TODO: can win_x and win_y be parallelized?
+            win_x.compute_root();
+            win_y.compute_root();
+            win.compute_root().parallel(y);
+            filt.compute_root().parallel(x);
+            phs_filt.inner.compute_root().parallel(y);
+            phs_pad.inner.compute_root().parallel(y);
+            fftsh.inner.compute_root().parallel(y);
+            // TODO: parallelize over y dimension
+            dft.inner.compute_root();
+            Q.inner.compute_root().parallel(y);
+            norm_r0.compute_root().parallel(x);
+            rr0.compute_root().parallel(z);
+            norm_rr0.compute_root().parallel(y);
+            dr_i.compute_root().parallel(y);
+            Q_real.compute_root().parallel(y);
+            Q_imag.compute_root().parallel(y);
+            Q_hat.inner.compute_root().parallel(y);
+            img.inner.compute_root().parallel(x);
+            img.inner.update(0).parallel(x);
+            fimg.inner.compute_root().parallel(x);
+            output_img.compute_root().parallel(y);
+            break;
+        case Schedule::VectorizeParallel:
+            // TODO: can win_x and win_y be parallelized?
+            win_x.compute_root().vectorize(x, vectorsize);
+            win_y.compute_root().vectorize(y, vectorsize);
+            win.compute_root().vectorize(x, vectorsize).parallel(y);
+            filt.compute_root().vectorize(x, vectorsize).parallel(x);
+            phs_filt.inner.compute_root().vectorize(x, vectorsize).parallel(y);
+            phs_pad.inner.compute_root().vectorize(x, vectorsize).parallel(y);
+            fftsh.inner.compute_root().vectorize(x, vectorsize).parallel(y);
+            // TODO: parallelize over y dimension
+            dft.inner.compute_root();
+            Q.inner.compute_root().vectorize(x, vectorsize).parallel(y);
+            norm_r0.compute_root().vectorize(x, vectorsize).parallel(x);
+            rr0.compute_root().vectorize(x, vectorsize).parallel(z);
+            norm_rr0.compute_root().vectorize(x, vectorsize).parallel(y);
+            dr_i.compute_root().vectorize(x, vectorsize).parallel(y);
+            Q_real.compute_root().vectorize(x, vectorsize).parallel(y);
+            Q_imag.compute_root().vectorize(x, vectorsize).parallel(y);
+            Q_hat.inner.compute_root().vectorize(x, vectorsize).parallel(y);
+            img.inner.compute_root().vectorize(x, vectorsize).parallel(x);
+            img.inner.update(0).vectorize(x, vectorsize).parallel(x);
+            fimg.inner.compute_root().vectorize(x, vectorsize).parallel(x);
+            output_img.compute_root().vectorize(x, vectorsize).parallel(y);
+            break;
+        }
     }
 
 private:

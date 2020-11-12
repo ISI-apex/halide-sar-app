@@ -45,7 +45,20 @@ add_halide_library(ip_pixel_locs FROM img_plane.generator)
 add_executable(backprojection_ritsar.generator backprojection_ritsar.cpp)
 target_link_libraries(backprojection_ritsar.generator PRIVATE Halide::Generator)
 add_halide_library(backprojection_ritsar FROM backprojection_ritsar.generator
-                                         FEATURES large_buffers)
+                                         FEATURES large_buffers
+                                         PARAMS schedule=v)
+add_halide_library(backprojection_ritsar_s FROM backprojection_ritsar.generator
+                                           GENERATOR backprojection_ritsar
+                                           FEATURES large_buffers
+                                           PARAMS schedule=s)
+add_halide_library(backprojection_ritsar_p FROM backprojection_ritsar.generator
+                                           GENERATOR backprojection_ritsar
+                                           FEATURES large_buffers
+                                           PARAMS schedule=p)
+add_halide_library(backprojection_ritsar_vp FROM backprojection_ritsar.generator
+                                            GENERATOR backprojection_ritsar
+                                            FEATURES large_buffers
+                                            PARAMS schedule=vp)
 
 add_executable(backprojection.generator backprojection.cpp)
 target_link_libraries(backprojection.generator PRIVATE Halide::Generator)
