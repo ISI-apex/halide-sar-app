@@ -18,6 +18,9 @@
 #include "backprojection.h"
 #include "backprojection_cuda.h"
 #include "backprojection_ritsar.h"
+#include "backprojection_ritsar_s.h"
+#include "backprojection_ritsar_p.h"
+#include "backprojection_ritsar_vp.h"
 #include "img_output_u8.h"
 #include "img_output_to_dB.h"
 
@@ -114,7 +117,16 @@ int main(int argc, char **argv) {
         cout << "Using schedule with CUDA" << endl;
     } else if (bp_sched == "ritsar") {
         backprojection_impl = backprojection_ritsar;
-        cout << "Using RITSAR baseline" << endl;
+        cout << "Using RITSAR baseline (vectorize)" << endl;
+    } else if (bp_sched == "ritsar-s") {
+        backprojection_impl = backprojection_ritsar_s;
+        cout << "Using RITSAR baseline (serial)" << endl;
+    } else if (bp_sched == "ritsar-p") {
+        backprojection_impl = backprojection_ritsar_p;
+        cout << "Using RITSAR baseline (parallel)" << endl;
+    } else if (bp_sched == "ritsar-vp") {
+        backprojection_impl = backprojection_ritsar_vp;
+        cout << "Using RITSAR baseline (vectorize+parallel)" << endl;
     } else {
         cerr << "Unknown schedule: " << bp_sched << endl;
         return -1;

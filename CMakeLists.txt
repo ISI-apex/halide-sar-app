@@ -101,5 +101,8 @@ target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          backprojection
                                          backprojection_cuda
                                          backprojection_ritsar
+                                         backprojection_ritsar_s
+                                         backprojection_ritsar_p
+                                         backprojection_ritsar_vp
                                          img_output_u8
                                          img_output_to_dB)
