@@ -107,11 +107,11 @@ public:
         rnd = RDom(0, nd, "rnd");
 
         // Create window: produces shape {nsamples, npulses}
-        win_x(x) = taylor(nsamples, taylor_s_l, x, "win_x");
-        win_y(y) = taylor(npulses, taylor_s_l, y, "win_y");
-        win(x, y) = win_x(x) * win_y(y);
+        win_sample(sample) = taylor(nsamples, taylor_s_l, sample, "win_sample");
+        win_pulse(pulse) = taylor(npulses, taylor_s_l, pulse, "win_pulse");
+        win(sample, pulse) = win_sample(sample) * win_pulse(pulse);
 #if DEBUG_WIN
-        out_win(x, y) = win(x, y);
+        out_win(sample, pulse) = win(sample, pulse);
 #endif
 
         // Filter phase history: produces shape {nsamples}
@@ -123,90 +123,89 @@ public:
         // phs_filt: produces shape {nsamples, npulses}
         Func phs_func = phs;
         ComplexFunc phs_cmplx(c, phs_func);
-        phs_filt(x, y) = phs_cmplx(x, y) * filt(x) * win(x, y);
+        phs_filt(x, pulse) = phs_cmplx(x, pulse) * filt(x) * win(x, pulse);
 #if DEBUG_PHS_FILT
-        out_phs_filt(c, x, y) = phs_filt.inner(c, x, y);
+        out_phs_filt(c, x, pulse) = phs_filt.inner(c, x, pulse);
 #endif
 
         // Zero pad phase history: produces shape {N_fft, npulses}
-        phs_pad(x, y) = pad(phs_filt, nsamples, npulses,
+        phs_pad(sample, pulse) = pad(phs_filt, nsamples, npulses,
                             ComplexExpr(c, Expr(0.0), Expr(0.0)),
-                            N_fft, npulses, c, x, y);
+                            N_fft, npulses, c, sample, pulse);
 #if DEBUG_PHS_PAD
-        out_phs_pad(c, x, y) = phs_pad.inner(c, x, y);
+        out_phs_pad(c, sample, pulse) = phs_pad.inner(c, sample, pulse);
 #endif
 
         // shift: produces shape {N_fft, npulses}
-        fftsh(x, y) = fftshift(phs_pad, N_fft, npulses, x, y);
+        fftsh(sample, pulse) = fftshift(phs_pad, N_fft, npulses, sample, pulse);
 #if DEBUG_PRE_FFT
-        out_pre_fft(c, x, y) = fftsh.inner(c, x, y);
+        out_pre_fft(c, sample, pulse) = fftsh.inner(c, sample, pulse);
 #endif
 
         // dft: produces shape {N_fft, npulses}
         dft.inner.define_extern("call_dft", {fftsh.inner, N_fft}, Float(64), 3, NameMangling::C);
 #if DEBUG_POST_FFT
-        out_post_fft(c, x, y) = dft.inner(c, x, y);
+        out_post_fft(c, sample, pulse) = dft.inner(c, sample, pulse);
 #endif
 
-        dft_out(x, y) = dft(x, y);
+        dft_out(sample, pulse) = dft(sample, pulse);
 
         // Q: produces shape {N_fft, npulses}
-        Q(x, y) = fftshift(dft_out, N_fft, npulses, x, y);
+        Q(sample, pulse) = fftshift(dft_out, N_fft, npulses, sample, pulse);
 #if DEBUG_Q
-        out_Q(c, x, y) = Q.inner(c, x, y);
+        out_Q(c, sample, pulse) = Q.inner(c, sample, pulse);
 #endif
 
         // norm(r0): produces shape {npulses}
-        norm_r0(x) = norm(pos(rnd, x));
+        norm_r0(pulse) = norm(pos(rnd, pulse));
 #if DEBUG_NORM_R0
-        out_norm_r0(x) = norm_r0(x);
+        out_norm_r0(pulse) = norm_r0(pulse);
 #endif
 
         // r - r0: produces shape {nu*nv, nd, npulses}
-        rr0(x, y, z) = r(x, y) - pos(y, z);
+        rr0(pixel, dim, pulse) = r(pixel, dim) - pos(dim, pulse);
 #if DEBUG_RR0
-        out_rr0(x, y, z) = rr0(x, y, z);
+        out_rr0(pixel, dim, pulse) = rr0(pixel, dim, pulse);
 #endif
 
         // norm(r - r0): produces shape {nu*nv, npulses}
-        norm_rr0(x, y) = norm(rr0(x, rnd, y));
+        norm_rr0(pixel, pulse) = norm(rr0(pixel, rnd, pulse));
 #if DEBUG_NORM_RR0
-        out_norm_rr0(x, y) = norm_rr0(x, y);
+        out_norm_rr0(pixel, pulse) = norm_rr0(pixel, pulse);
 #endif
 
         // dr_i: produces shape {nu*nv, npulses}
-        dr_i(x, y) = norm_r0(y) - norm_rr0(x, y);
+        dr_i(pixel, pulse) = norm_r0(pulse) - norm_rr0(pixel, pulse);
 #if DEBUG_DR_I
-        out_dr_i(x, y) = dr_i(x, y);
+        out_dr_i(pixel, pulse) = dr_i(pixel, pulse);
 #endif
 
         // Q_hat: produces shape {nu*nv, npulses}
-        Q_hat.inner(c, x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, c, x, y);
+        Q_hat.inner(c, pixel, pulse) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, c, pixel, pulse);
 #if DEBUG_Q_REAL
-        out_q_real(x, y) = Q_hat.inner(0, x, y);
+        out_q_real(pixel, pulse) = Q_hat.inner(0, pixel, pulse);
 #endif
 #if DEBUG_Q_IMAG
-        out_q_imag(x, y) = Q_hat.inner(1, x, y);
+        out_q_imag(pixel, pulse) = Q_hat.inner(1, pixel, pulse);
 #endif
 #if DEBUG_Q_HAT
-        out_q_hat(c, x, y) = Q_hat.inner(c, x, y);
+        out_q_hat(c, pixel, pulse) = Q_hat.inner(c, pixel, pulse);
 #endif
 
         // k_c: produces scalar
         Expr k_c = k_r(nsamples / 2);
 
         // img: produces shape {nu*nv}
-        img(x) = ComplexExpr(c, Expr(0.0), Expr(0.0));
-        img(x) += Q_hat(x, rnpulses) * expj(c, -k_c * dr_i(x, rnpulses));
+        img(pixel) = ComplexExpr(c, Expr(0.0), Expr(0.0));
+        img(pixel) += Q_hat(pixel, rnpulses) * expj(c, -k_c * dr_i(pixel, rnpulses));
 #if DEBUG_IMG
-        out_img(c, x) = img.inner(c, x);
+        out_img(c, pixel) = img.inner(c, pixel);
 #endif
 
         // finally...
-        Expr fdr_i = norm_r0(npulses / 2) - norm_rr0(x, npulses / 2);
-        fimg(x) = img(x) * expj(c, k_c * fdr_i);
+        fimg(pixel) = img(pixel) * expj(c, k_c * dr_i(pixel, npulses / 2));
 #if DEBUG_FIMG
-        out_fimg(c, x) = fimg.inner(c, x);
+        out_fimg(c, pixel) = fimg.inner(c, pixel);
 #endif
 
         // output_img: produce shape {nu, nv}, but reverse row order
@@ -234,8 +233,8 @@ public:
                       << "Block size: " << blocksize.value() << std::endl
                       << "Vector size: " << vectorsize.value() << std::endl;
             Var block{"block"}, thread{"thread"};
-            win_x.compute_root();
-            win_y.compute_root();
+            win_sample.compute_root();
+            win_pulse.compute_root();
             win.compute_root();
             filt.compute_root();
             phs_filt.inner.compute_root();
@@ -246,12 +245,12 @@ public:
             Q.inner.compute_root();
             norm_r0.compute_root();
             rr0.compute_inline();
-            norm_rr0.compute_root().gpu_tile(x, block, thread, blocksize);
+            norm_rr0.compute_root().gpu_tile(pixel, block, thread, blocksize);
             dr_i.compute_inline();
             Q_hat.inner.compute_inline();
-            img.inner.compute_root().gpu_tile(x, block, thread, blocksize);
-            img.inner.update(0).gpu_tile(x, block, thread, blocksize);
-            fimg.inner.compute_root().gpu_tile(x, block, thread, blocksize);
+            img.inner.compute_root().gpu_tile(pixel, block, thread, blocksize);
+            img.inner.update(0).gpu_tile(pixel, block, thread, blocksize);
+            fimg.inner.compute_root().gpu_tile(pixel, block, thread, blocksize);
             output_img.compute_root().vectorize(x, vectorsize).parallel(y);
             if (print_loop_nest) {
                 output_img.print_loop_nest();
@@ -261,9 +260,9 @@ public:
             std::cout << "Scheduling for CPU: " << tgt << std::endl
                       << "Block size: " << blocksize.value() << std::endl
                       << "Vector size: " << vectorsize.value() << std::endl;
-            Var xi{"xi"}, xo{"xo"};
-            win_x.compute_root();
-            win_y.compute_root();
+            Var pixeli{"pixeli"}, block{"block"};
+            win_sample.compute_root();
+            win_pulse.compute_root();
             win.compute_root();
             filt.compute_root();
             phs_filt.inner.compute_root();
@@ -273,11 +272,11 @@ public:
             dft_out.inner.compute_inline();
             Q.inner.compute_root();
             norm_r0.compute_root();
-            norm_rr0.compute_root().parallel(y).vectorize(x, vectorsize);
+            norm_rr0.compute_root().parallel(pulse).vectorize(pixel, vectorsize);
             dr_i.compute_inline();
             Q_hat.inner.compute_inline();
-            img.inner.compute_root().unroll(c).split(x, xo, xi, blocksize).vectorize(xi, vectorsize).parallel(xo, blocksize);
-            img.inner.update(0).reorder(c, rnpulses, x).unroll(c).parallel(x, blocksize);
+            img.inner.compute_root().unroll(c).split(pixel, block, pixeli, blocksize).vectorize(pixeli, vectorsize).parallel(block, blocksize);
+            img.inner.update(0).reorder(c, rnpulses, pixel).unroll(c).parallel(pixel, blocksize);
             fimg.inner.in(output_img).compute_inline();
             output_img.compute_root().parallel(y).vectorize(x, vectorsize);
             if (print_loop_nest) {
@@ -287,10 +286,11 @@ public:
     }
 
 private:
-    Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
+    Var x{"x"}, y{"y"};
+    Var c{"c"}, sample{"sample"}, pixel{"pixel"}, pulse{"pulse"}, dim{"dim"};
 
-    Func win_x{"win_x"};
-    Func win_y{"win_y"};
+    Func win_sample{"win_sample"};
+    Func win_pulse{"win_pulse"};
     Func win{"win"};
     Func filt{"filt"};
     ComplexFunc phs_filt{c, "phs_filt"};
