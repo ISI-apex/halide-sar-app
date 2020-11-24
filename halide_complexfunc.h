@@ -7,6 +7,9 @@
 #include <Halide.h>
 #include <vector>
 
+namespace Halide {
+namespace Tools {
+
 class ComplexExpr;
 /*
  * ComplexFunc wraps a Func in a way that intercepts index expressions and generates ComplexExprs for them.
@@ -112,7 +115,7 @@ inline ComplexExpr::ComplexExpr(const Halide::Var &element, const Halide::Expr &
 inline ComplexExpr operator-(const ComplexExpr &a) {
     if (a.can_read == false)
         throw;
-    return ComplexExpr(a.element, -a.pair, -a.pair);
+    return ComplexExpr(a.element, -a.real, -a.imag);
 }
 
 // addition
@@ -308,7 +311,7 @@ inline ComplexExpr select(const Halide::Var &element,
 
 ComplexFunc::ComplexFunc(Halide::Var &element, std::string name)
     : element(element) {
-    if(name == "") {
+    if (name == "") {
         inner = Halide::Func();
     } else {
         inner = Halide::Func(name);
@@ -339,5 +342,8 @@ ComplexExpr ComplexFunc::operator()(Halide::Expr idx1, Halide::Expr idx2, Halide
     std::vector<Halide::Expr> idx({idx1, idx2, idx3});
     return (*this)(idx);
 }
+
+}  // namespace Tools
+}  // namespace Halide
 
 #endif /* _HALIDE_COMPLEXFUNC_H */

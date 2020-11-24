@@ -3,12 +3,12 @@
 
 #include <Halide.h>
 
-#include "complexfunc.h"
+#include "halide_complexfunc.h"
 
 using namespace Halide;
 
-inline ComplexExpr pad(ComplexFunc in, Expr in_x_len, Expr in_y_len,
-                       ComplexExpr pad_val,
+inline Halide::Tools::ComplexExpr pad(Halide::Tools::ComplexFunc in, Expr in_x_len, Expr in_y_len,
+                       Halide::Tools::ComplexExpr pad_val,
                        Expr out_x_len, Expr out_y_len, Var c, Var x, Var y) {
     // leading pad entries (trailing entries are of equal size or +1 larger if length difference is odd)
     Expr x_pad = (out_x_len - in_x_len) / 2;
@@ -21,7 +21,7 @@ inline ComplexExpr pad(ComplexFunc in, Expr in_x_len, Expr in_y_len,
 }
 
 // swap left and right halves, top and bottom halves (swapping quadrants)
-inline ComplexExpr fftshift(ComplexFunc in, Expr x_extent, Expr y_extent, Var x, Var y) {
+inline Halide::Tools::ComplexExpr fftshift(Halide::Tools::ComplexFunc in, Expr x_extent, Expr y_extent, Var x, Var y) {
     // use the ceiling for midpoint computation
     Expr x_mid = (x_extent / 2) + (x_extent % 2);
     Expr y_mid = (y_extent / 2) + (y_extent % 2);
