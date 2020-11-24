@@ -230,9 +230,8 @@ public:
         } else if(tgt.has_gpu_feature()) {
             // GPU target
             std::cout << "Scheduling for GPU: " << tgt << std::endl
-                      << "Block size: " << blocksize.value() << std::endl
-                      << "Vector size: " << vectorsize.value() << std::endl;
-            Var block{"block"}, thread{"thread"};
+                      << "Block size: " << blocksize.value() << std::endl;
+            Var pixeli{"pixeli"}, block{"block"};
             win_sample.compute_root();
             win_pulse.compute_root();
             win.compute_root();
@@ -243,15 +242,15 @@ public:
             dft.inner.compute_root();
             dft_out.inner.compute_root();
             Q.inner.compute_root();
-            norm_r0.compute_root();
+            norm_r0.compute_root().vectorize(pulse, vectorsize);
             rr0.compute_inline();
-            norm_rr0.compute_root().gpu_tile(pixel, block, thread, blocksize);
+            norm_rr0.compute_inline();
             dr_i.compute_inline();
             Q_hat.inner.compute_inline();
-            img.inner.compute_root().gpu_tile(pixel, block, thread, blocksize);
-            img.inner.update(0).gpu_tile(pixel, block, thread, blocksize);
-            fimg.inner.compute_root().gpu_tile(pixel, block, thread, blocksize);
-            output_img.compute_root().vectorize(x, vectorsize).parallel(y);
+            img.inner.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
+            img.inner.update(0).reorder(c, rnpulses, pixel).gpu_tile(pixel, block, pixeli, blocksize);
+            fimg.inner.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
+            output_img.compute_root().bound(c, 0, 2).unroll(c).parallel(y).vectorize(x, vectorsize);
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
@@ -271,14 +270,17 @@ public:
             dft.inner.compute_root();
             dft_out.inner.compute_inline();
             Q.inner.compute_root();
-            norm_r0.compute_root();
-            norm_rr0.compute_root().parallel(pulse).vectorize(pixel, vectorsize);
-            dr_i.compute_inline();
-            Q_hat.inner.compute_inline();
+            norm_r0.compute_root().vectorize(pulse, vectorsize);
+            rr0.compute_inline();
+            Func dr_i_in_fimg = dr_i.clone_in(fimg.inner).compute_inline();
+            norm_rr0.clone_in(dr_i_in_fimg).compute_inline();
+            norm_rr0.reorder(pulse, pixel).compute_at(img.inner, pixel).store_at(img.inner, pixel).vectorize(pulse, vectorsize);
+            dr_i.reorder(pulse, pixel).reorder(pixel, pulse).compute_at(img.inner, pixel).store_at(img.inner, pixel).vectorize(pulse, vectorsize);
+            Q_hat.inner.compute_at(img.inner, pixel).store_at(img.inner, pixel).vectorize(pixel, vectorsize);
             img.inner.compute_root().unroll(c).split(pixel, block, pixeli, blocksize).vectorize(pixeli, vectorsize).parallel(block, blocksize);
             img.inner.update(0).reorder(c, rnpulses, pixel).unroll(c).parallel(pixel, blocksize);
-            fimg.inner.in(output_img).compute_inline();
-            output_img.compute_root().parallel(y).vectorize(x, vectorsize);
+            fimg.inner.compute_root().bound(c, 0, 2).unroll(c).split(pixel, block, pixeli, blocksize).vectorize(pixeli, vectorsize).parallel(block, blocksize);
+            output_img.compute_root().bound(c, 0, 2).unroll(c).parallel(y).vectorize(x, vectorsize);
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
