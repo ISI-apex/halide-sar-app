@@ -65,7 +65,8 @@ target_link_libraries(backprojection.generator PRIVATE Halide::Generator)
 add_halide_library(backprojection FROM backprojection.generator
                                   FEATURES large_buffers)
 add_halide_library(backprojection_cuda FROM backprojection.generator
-                                       FEATURES large_buffers cuda)
+                                       FEATURES large_buffers cuda
+                                       PARAMS blocksize=1024)
 
 add_executable(img_output.generator img_output.cpp)
 target_link_libraries(img_output.generator PRIVATE Halide::Generator)
