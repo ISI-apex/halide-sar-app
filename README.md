@@ -27,7 +27,14 @@ make -j
 
 ## Testing
 
-To run the backprojection test:
+Two datasets are available for testing.
+
+* The AFRL dataset contains 469 radar pulses, and the output image is 512x512
+* The Sandia dataset contains 1999 radar pulses, and the output image is 2048x2048
+
+### AFRL
+
+To run the backprojection test with the AFRL dataset:
 
 ```sh
 ./sarbp_test ../data/AFRL/pass1/HH_npy 17 2 output.png -30.0 0.0
@@ -37,4 +44,17 @@ or with a GPU CUDA schedule:
 
 ```sh
 ./sarbp_test ../data/AFRL/pass1/HH_npy 17 2 output.png -30.0 0.0 cuda
+```
+
+### Sandia
+
+To run the backprojection test with the Sandia dataset:
+```sh
+./sarbp_test ../data/Sandia/npy 30 2 output-Sandia.png -45.0 0.0
+```
+
+or with a GPU CUDA schedule:
+
+```sh
+./sarbp_test ../data/Sandia/npy 30 2 output-Sandia.png -45.0 0.0 cuda
 ```
