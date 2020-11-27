@@ -67,6 +67,9 @@ add_halide_library(backprojection FROM backprojection.generator
 add_halide_library(backprojection_cuda FROM backprojection.generator
                                        FEATURES large_buffers cuda
                                        PARAMS blocksize=1024)
+add_halide_library(backprojection_opencl FROM backprojection.generator
+                                         FEATURES large_buffers opencl cl_doubles
+                                         PARAMS blocksize=1024)
 
 add_executable(img_output.generator img_output.cpp)
 target_link_libraries(img_output.generator PRIVATE Halide::Generator)
@@ -101,6 +104,7 @@ target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          ip_pixel_locs
                                          backprojection
                                          backprojection_cuda
+                                         backprojection_opencl
                                          backprojection_ritsar
                                          backprojection_ritsar_s
                                          backprojection_ritsar_p

@@ -17,6 +17,7 @@
 #include "backprojection_debug.h"
 #include "backprojection.h"
 #include "backprojection_cuda.h"
+#include "backprojection_opencl.h"
 #include "backprojection_ritsar.h"
 #include "backprojection_ritsar_s.h"
 #include "backprojection_ritsar_p.h"
@@ -115,6 +116,9 @@ int main(int argc, char **argv) {
     } else if (bp_sched == "cuda") {
         backprojection_impl = backprojection_cuda;
         cout << "Using schedule with CUDA" << endl;
+    } else if (bp_sched == "opencl") {
+        backprojection_impl = backprojection_opencl;
+        cout << "Using schedule with OpenCL" << endl;
     } else if (bp_sched == "ritsar") {
         backprojection_impl = backprojection_ritsar;
         cout << "Using RITSAR baseline (vectorize)" << endl;
