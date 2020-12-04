@@ -85,10 +85,11 @@ extern "C" DLLEXPORT int call_dft(halide_buffer_t *in, int N_fft, halide_buffer_
         cout << "call_dft: FFTW: processing vectors ["
              << out->dim[2].min << ", " << out->dim[2].min + out->dim[2].extent << ")" << endl;
 #endif
-        fftw_complex *fft_in = (fftw_complex*)in->host;
-        fftw_complex *fft_out = (fftw_complex*)out->host;
-        for (int i = 0; i < out->dim[2].extent; i++) {
-            fftw_execute_dft(fft_plan, &fft_in[i * N_fft], &fft_out[i * N_fft]);
+        for (int i = out->dim[2].min; i < out->dim[2].min + out->dim[2].extent; i++) {
+            int coords[3] = {0, 0, i};
+            fftw_complex *fft_in = (fftw_complex *)in->address_of(coords);
+            fftw_complex *fft_out = (fftw_complex *)out->address_of(coords);
+            fftw_execute_dft(fft_plan, fft_in, fft_out);
         }
 #if 0
         cout << "call_dft: FFTW: finished" << endl;
