@@ -58,3 +58,9 @@ or with a GPU CUDA schedule:
 ```sh
 ./sarbp_test ../data/Sandia/npy 30 2 output-Sandia.png -45.0 0.0 cuda
 ```
+
+or with the Mullapudi2016 autoscheduler (for CPU):
+
+```sh
+./sarbp_test ../data/Sandia/npy 30 2 output-Sandia.png -45.0 0.0 auto-m16
+```

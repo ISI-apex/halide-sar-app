@@ -21,6 +21,7 @@
 #include "backprojection_ritsar_s.h"
 #include "backprojection_ritsar_p.h"
 #include "backprojection_ritsar_vp.h"
+#include "backprojection_auto_m16.h"
 #include "img_output_u8.h"
 #include "img_output_to_dB.h"
 
@@ -128,6 +129,9 @@ int main(int argc, char **argv) {
     } else if (bp_sched == "ritsar-vp") {
         backprojection_impl = backprojection_ritsar_vp;
         cout << "Using RITSAR baseline (vectorize+parallel)" << endl;
+    } else if (bp_sched == "auto-m16") {
+        backprojection_impl = backprojection_auto_m16;
+        cout << "Using autoschedule (Mullapudi2016)" << endl;
     } else {
         cerr << "Unknown schedule: " << bp_sched << endl;
         return -1;

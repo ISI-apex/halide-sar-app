@@ -215,17 +215,16 @@ public:
         Target tgt(target);
         if(auto_schedule) {
             std::cout << "setting size/scalar estimates for autoscheduler" << std::endl;
-            phs.set_estimates({{0, 2}, {0, 424}, {0, 469}});
-            k_r.set_estimates({{0, 424}});
-            u.set_estimates({{0, 512}});
-            v.set_estimates({{0, 512}});
-            pos.set_estimates({{0, 3}, {0, 469}});
-            r.set_estimates({{0, 262144}, {0, 3}});
-            output_img.set_estimates({{0, 2}, {0, 512}, {0, 512}});
-            delta_r.set_estimate(0.240851);
-            N_fft.set_estimate(1024);
-            taylor_s_l.set_estimate(17);
-            fftsh.inner.compute_root(); // helps the Mullapudi2016 autoscheduler pass full vectors of input to DFT
+            phs.set_estimates({{0, 2}, {0, 1800}, {0, 1999}});
+            k_r.set_estimates({{0, 1800}});
+            u.set_estimates({{0, 2048}});
+            v.set_estimates({{0, 2048}});
+            pos.set_estimates({{0, 3}, {0, 1999}});
+            r.set_estimates({{0, 4194304}, {0, 3}});
+            output_img.set_estimates({{0, 2}, {0, 2048}, {0, 2048}});
+            delta_r.set_estimate(0.539505);
+            N_fft.set_estimate(4096);
+            taylor_s_l.set_estimate(30);
         } else if(tgt.has_gpu_feature()) {
             // GPU target
             std::cout << "Scheduling for GPU: " << tgt << std::endl
@@ -310,3 +309,4 @@ private:
 
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda)
+HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_auto_m16)
