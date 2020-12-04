@@ -152,7 +152,7 @@ public:
 #endif
 
         // dft: produces shape {N_fft, npulses}
-        dft.inner.define_extern("call_dft", {fftsh.inner, N_fft}, Float(64), 3, NameMangling::C);
+        dft.inner.define_extern("call_dft", {fftsh.inner, N_fft}, Float(64), {c, x, y}, NameMangling::C);
 #if DEBUG_POST_FFT
         out_post_fft(c, x, y) = dft.inner(c, x, y);
 #endif
@@ -255,6 +255,7 @@ public:
             phs_filt.inner.compute_root().vectorize(x, vectorsize);
             phs_pad.inner.compute_root().vectorize(x, vectorsize);
             fftsh.inner.compute_root().vectorize(x, vectorsize);
+            // cannot vectorize extern func from here, but func's impl can
             dft.inner.compute_root();
             Q.inner.compute_root().vectorize(x, vectorsize);
             norm_r0.compute_root().vectorize(x, vectorsize);
@@ -277,8 +278,7 @@ public:
             phs_filt.inner.compute_root().parallel(y);
             phs_pad.inner.compute_root().parallel(y);
             fftsh.inner.compute_root().parallel(y);
-            // TODO: parallelize over y dimension
-            dft.inner.compute_root();
+            dft.inner.compute_root().parallel(y);
             Q.inner.compute_root().parallel(y);
             norm_r0.compute_root().parallel(x);
             rr0.compute_root().parallel(z);
@@ -301,8 +301,8 @@ public:
             phs_filt.inner.compute_root().vectorize(x, vectorsize).parallel(y);
             phs_pad.inner.compute_root().vectorize(x, vectorsize).parallel(y);
             fftsh.inner.compute_root().vectorize(x, vectorsize).parallel(y);
-            // TODO: parallelize over y dimension
-            dft.inner.compute_root();
+            // cannot vectorize extern func from here, but func's impl can
+            dft.inner.compute_root().parallel(y);
             Q.inner.compute_root().vectorize(x, vectorsize).parallel(y);
             norm_r0.compute_root().vectorize(x, vectorsize).parallel(x);
             rr0.compute_root().vectorize(x, vectorsize).parallel(z);

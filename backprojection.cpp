@@ -144,15 +144,13 @@ public:
 #endif
 
         // dft: produces shape {N_fft, npulses}
-        dft.inner.define_extern("call_dft", {fftsh.inner, N_fft}, Float(64), 3, NameMangling::C);
+        dft.inner.define_extern("call_dft", {fftsh.inner, N_fft}, Float(64), {c, sample, pulse}, NameMangling::C);
 #if DEBUG_POST_FFT
         out_post_fft(c, sample, pulse) = dft.inner(c, sample, pulse);
 #endif
 
-        dft_out(sample, pulse) = dft(sample, pulse);
-
         // Q: produces shape {N_fft, npulses}
-        Q(sample, pulse) = fftshift(dft_out, N_fft, npulses, sample, pulse);
+        Q(sample, pulse) = fftshift(dft, N_fft, npulses, sample, pulse);
 #if DEBUG_Q
         out_Q(c, sample, pulse) = Q.inner(c, sample, pulse);
 #endif
@@ -241,7 +239,6 @@ public:
             phs_pad.inner.compute_root();
             fftsh.inner.compute_root();
             dft.inner.compute_root();
-            dft_out.inner.compute_root();
             Q.inner.compute_root();
             norm_r0.compute_root().vectorize(pulse, vectorsize);
             rr0.compute_inline();
@@ -268,8 +265,7 @@ public:
             phs_filt.inner.compute_root();
             phs_pad.inner.compute_root();
             fftsh.inner.compute_root();
-            dft.inner.compute_root();
-            dft_out.inner.compute_inline();
+            dft.inner.compute_root().parallel(pulse);
             Q.inner.compute_root();
             norm_r0.compute_root().vectorize(pulse, vectorsize);
             rr0.compute_inline();
@@ -300,7 +296,6 @@ private:
     ComplexFunc phs_pad{c, "phs_pad"};
     ComplexFunc fftsh{c, "fftshift"};
     ComplexFunc dft{c, "dft"};
-    ComplexFunc dft_out{c, "dft_out"};
     ComplexFunc Q{c, "Q"};
     Func norm_r0{"norm_r0"};
     Func rr0{"rr0"};
