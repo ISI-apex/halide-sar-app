@@ -32,12 +32,6 @@ using Halide::Runtime::Buffer;
 #define DEBUG_BP 0
 #define DEBUG_BP_DB 0
 
-#ifdef _WIN32
-#define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT
-#endif
-
 // FFTW plan initialization can have high overhead, so share and reuse it
 static fftw_plan fft_plan = nullptr;
 
@@ -58,7 +52,7 @@ static void ctx_destroy_fftw(void) {
     fft_plan = nullptr;
 }
 
-extern "C" DLLEXPORT int call_dft(halide_buffer_t *in, int N_fft, halide_buffer_t *out) {
+int call_dft(halide_buffer_t *in, int N_fft, halide_buffer_t *out) {
     // input and output are complex data
     assert(in->dimensions == 3);
     assert(out->dimensions == 3);

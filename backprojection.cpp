@@ -144,7 +144,7 @@ public:
 #endif
 
         // dft: produces shape {N_fft, npulses}
-        dft.inner.define_extern("call_dft", {fftsh.inner, N_fft}, Float(64), {c, sample, pulse}, NameMangling::C);
+        dft.inner.define_extern("call_dft", {fftsh.inner, N_fft}, Float(64), {c, sample, pulse});
 #if DEBUG_POST_FFT
         out_post_fft(c, sample, pulse) = dft.inner(c, sample, pulse);
 #endif
