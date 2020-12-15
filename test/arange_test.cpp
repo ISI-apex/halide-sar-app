@@ -15,14 +15,14 @@ using Halide::Runtime::Buffer;
 
 #define N ceil((((STOP - START) / STEP)))
 
-static void reference(float *ref) {
+static void reference(vector<float> &ref) {
     for (size_t i = 0; i < N; i++) {
         ref[i] = START + i * STEP;
     }
 }
 
 int main(int argc, char **argv) {
-    float ref[(size_t)N] = { 0 };
+    vector<float> ref((size_t)N);
     Buffer<float, 1> out((int)N);
     int rv = arange(START, STEP, out);
 
