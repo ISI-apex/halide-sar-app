@@ -116,9 +116,9 @@ public:
         RDom rnd(0, nd, "rnd");
 
         // Create window: produces shape {nsamples, npulses}
-        win_x(x) = taylor(nsamples, taylor_s_l, x, "win_x");
-        win_y(y) = taylor(npulses, taylor_s_l, y, "win_y");
-        win(x, y) = win_x(x) * win_y(y);
+        win_x = Taylor(nsamples, taylor_s_l, x, "win_x");
+        win_y = Taylor(npulses, taylor_s_l, y, "win_y");
+        win(x, y) = win_x.series(x) * win_y.series(y);
 #if DEBUG_WIN
         out_win(x, y) = win(x, y);
 #endif
@@ -227,8 +227,8 @@ public:
     void schedule() {
         switch (sched) {
         case Schedule::Serial:
-            win_x.compute_root();
-            win_y.compute_root();
+            win_x.series.compute_root();
+            win_y.series.compute_root();
             win.compute_root();
             filt.compute_root();
             phs_filt.inner.compute_root();
@@ -248,8 +248,8 @@ public:
             output_img.compute_root();
             break;
         case Schedule::Vectorize:
-            win_x.compute_root().vectorize(x, vectorsize);
-            win_y.compute_root().vectorize(y, vectorsize);
+            win_x.series.compute_root().vectorize(x, vectorsize);
+            win_y.series.compute_root().vectorize(y, vectorsize);
             win.compute_root().vectorize(x, vectorsize);
             filt.compute_root().vectorize(x, vectorsize);
             phs_filt.inner.compute_root().vectorize(x, vectorsize);
@@ -271,8 +271,8 @@ public:
             break;
         case Schedule::Parallel:
             // TODO: can win_x and win_y be parallelized?
-            win_x.compute_root();
-            win_y.compute_root();
+            win_x.series.compute_root();
+            win_y.series.compute_root();
             win.compute_root().parallel(y);
             filt.compute_root().parallel(x);
             phs_filt.inner.compute_root().parallel(y);
@@ -294,8 +294,8 @@ public:
             break;
         case Schedule::VectorizeParallel:
             // TODO: can win_x and win_y be parallelized?
-            win_x.compute_root().vectorize(x, vectorsize);
-            win_y.compute_root().vectorize(y, vectorsize);
+            win_x.series.compute_root().vectorize(x, vectorsize);
+            win_y.series.compute_root().vectorize(y, vectorsize);
             win.compute_root().vectorize(x, vectorsize).parallel(y);
             filt.compute_root().vectorize(x, vectorsize).parallel(x);
             phs_filt.inner.compute_root().vectorize(x, vectorsize).parallel(y);
@@ -322,8 +322,8 @@ public:
 private:
     Var c{"c"}, x{"x"}, y{"y"}, z{"z"};
 
-    Func win_x{"win_x"};
-    Func win_y{"win_y"};
+    Taylor win_x;
+    Taylor win_y;
     Func win{"win"};
     Func filt{"filt"};
     ComplexFunc phs_filt{c, "phs_filt"};

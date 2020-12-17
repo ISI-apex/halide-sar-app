@@ -108,9 +108,9 @@ public:
         rnd = RDom(0, nd, "rnd");
 
         // Create window: produces shape {nsamples, npulses}
-        win_sample(sample) = taylor(nsamples, taylor_s_l, sample, "win_sample");
-        win_pulse(pulse) = taylor(npulses, taylor_s_l, pulse, "win_pulse");
-        win(sample, pulse) = win_sample(sample) * win_pulse(pulse);
+        win_sample = Taylor(nsamples, taylor_s_l, sample, "win_sample");
+        win_pulse = Taylor(npulses, taylor_s_l, pulse, "win_pulse");
+        win(sample, pulse) = win_sample.series(sample) * win_pulse.series(pulse);
 #if DEBUG_WIN
         out_win(sample, pulse) = win(sample, pulse);
 #endif
@@ -231,8 +231,8 @@ public:
             std::cout << "Scheduling for GPU: " << tgt << std::endl
                       << "Block size: " << blocksize.value() << std::endl;
             Var pixeli{"pixeli"}, block{"block"};
-            win_sample.compute_root();
-            win_pulse.compute_root();
+            win_sample.series.compute_root();
+            win_pulse.series.compute_root();
             win.compute_root();
             filt.compute_root();
             phs_filt.inner.compute_root();
@@ -258,8 +258,8 @@ public:
                       << "Block size: " << blocksize.value() << std::endl
                       << "Vector size: " << vectorsize.value() << std::endl;
             Var pixeli{"pixeli"}, block{"block"};
-            win_sample.compute_root();
-            win_pulse.compute_root();
+            win_sample.series.compute_root();
+            win_pulse.series.compute_root();
             win.compute_root();
             filt.compute_root();
             phs_filt.inner.compute_root();
@@ -288,8 +288,8 @@ private:
     Var x{"x"}, y{"y"};
     Var c{"c"}, sample{"sample"}, pixel{"pixel"}, pulse{"pulse"}, dim{"dim"};
 
-    Func win_sample{"win_sample"};
-    Func win_pulse{"win_pulse"};
+    Taylor win_sample;
+    Taylor win_pulse;
     Func win{"win"};
     Func filt{"filt"};
     ComplexFunc phs_filt{c, "phs_filt"};
