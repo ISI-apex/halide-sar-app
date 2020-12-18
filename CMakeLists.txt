@@ -28,8 +28,11 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(FFTW fftw3 REQUIRED)
 
 
-enable_testing()
-add_subdirectory(test)
+option(HALIDE_SAR_TESTS "Enable tests" ON)
+if(HALIDE_SAR_TESTS)
+  enable_testing()
+  add_subdirectory(test)
+endif()
 
 
 # Generators and Filters (libraries)
