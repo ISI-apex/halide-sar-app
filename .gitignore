@@ -33,3 +33,7 @@
 
 # Project-specific
 build
+
+# Vim temp files
+.*.swp
+.*.swo
