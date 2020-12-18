@@ -1,5 +1,3 @@
-#include <math.h>
-
 #include <Halide.h>
 
 #include "ImgPlane.h"
