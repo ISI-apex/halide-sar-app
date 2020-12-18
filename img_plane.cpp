@@ -11,7 +11,7 @@ using namespace Halide;
 // u and v
 Expr ip_uv(Expr n, Expr d, Var x) {
     return arange(-n / 2, 1, x) * d;
-} 
+}
 
 // k_u and k_v
 Expr ip_k(Expr n, Expr d, Var x) {
@@ -30,7 +30,7 @@ class ImgPlaneUVGenerator : public Halide::Generator<ImgPlaneUVGenerator> {
 public:
     Input<int> n {"n"}; // depends on upsample
     Input<double> d {"d"};
-    Output<Buffer<double>> out {"out", 1}; // of n length 
+    Output<Buffer<double>> out {"out", 1}; // of n length
 
     void generate() {
         Var x{"x"};
@@ -42,7 +42,7 @@ class ImgPlaneKGenerator : public Halide::Generator<ImgPlaneKGenerator> {
 public:
     Input<int> n {"n"}; // depends on upsample
     Input<double> d {"d"};
-    Output<Buffer<double>> k {"k", 1}; // of n length 
+    Output<Buffer<double>> k {"k", 1}; // of n length
 
     void generate() {
         Var x{"x"};

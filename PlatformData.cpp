@@ -220,7 +220,7 @@ PlatformData platform_load(string platform_dir) {
     Buffer<float, 2> pos(3, npulses);
     if (npy_pos.word_size == sizeof(float)) {
         memcpy(pos.begin(), npy_pos.data<float>(), npy_pos.num_bytes());
-    } else if (npy_pos.word_size == sizeof(double)) { 
+    } else if (npy_pos.word_size == sizeof(double)) {
         cout << "PlatformData: downcasting pos from double to float" << endl;
         const double *src = npy_pos.data<double>();
         float *dest = pos.begin();

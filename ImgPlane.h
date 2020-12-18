@@ -17,7 +17,7 @@ struct ImgPlane {
              nu(nu), nv(nv), d_u(d_u), d_v(d_v),
              u(u), v(v), k_u(k_u), k_v(k_v), u_hat(u_hat), v_hat(v_hat),
              pixel_locs(pixel_locs) {}
-    
+
     int nu;
     int nv;
     int d_u;
