@@ -8,18 +8,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
 # Find Halide
 find_package(Halide REQUIRED)
 
 # Find cnpy
-find_library(CNPY cnpy REQUIRED)
-find_path(CNPY_INCLUDE_DIR cnpy.h
-          HINTS ${CMAKE_PREFIX_PATH}
-          PATH_SUFFIXES include
-          REQUIRED)
-
-# Find zlib - public dependency of cnpy and we need its header
-find_package(ZLIB REQUIRED)
+find_package(Cnpy REQUIRED)
 
 # Find pkg-config
 find_package(PkgConfig REQUIRED)
@@ -87,22 +82,18 @@ add_halide_library(img_output_u8 FROM img_output.generator)
 # Executables
 
 add_executable(img_output_u8_test img_output_u8_test.cpp)
-target_include_directories(img_output_u8_test PRIVATE ${CNPY_INCLUDE_DIR}
-                                                      ${ZLIB_INCLUDE_DIRS})
 target_link_libraries(img_output_u8_test PRIVATE Halide::Halide
                                                  Halide::ImageIO
-                                                 ${CNPY}
+                                                 Cnpy::Cnpy
                                                  img_output_u8)
 
 add_executable(sarbp_test sarbp.cpp PlatformData.cpp ImgPlane.cpp)
 target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
-target_include_directories(sarbp_test PRIVATE ${CNPY_INCLUDE_DIR}
-                                              ${ZLIB_INCLUDE_DIRS}
-                                              ${FFTW_INCLUDE_DIRS})
+target_include_directories(sarbp_test PRIVATE ${FFTW_INCLUDE_DIRS})
 target_link_directories(sarbp_test PRIVATE ${FFTW_LIBRARY_DIRS})
 target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          Halide::ImageIO
-                                         ${CNPY}
+                                         Cnpy::Cnpy
                                          ${FFTW_STATIC_LIBRARIES}
                                          ip_uv
                                          ip_k
