@@ -34,6 +34,9 @@ void dft_destroy_fftw(void) {
     fft_plan = nullptr;
 }
 
+#ifdef NO_MANGLE
+extern "C" DLLEXPORT
+#endif
 int call_dft(halide_buffer_t *in, int N_fft, halide_buffer_t *out) {
     // input and output are complex data
     assert(in->dimensions == 3);
