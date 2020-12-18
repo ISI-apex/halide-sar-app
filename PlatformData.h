@@ -1,6 +1,7 @@
 #ifndef PLATFORM_DATA_H
 #define PLATFORM_DATA_H
 
+#include <optional>
 #include <string>
 
 #include <Halide.h>
