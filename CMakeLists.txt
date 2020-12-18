@@ -87,7 +87,7 @@ target_link_libraries(img_output_u8_test PRIVATE Halide::Halide
                                                  Cnpy::Cnpy
                                                  img_output_u8)
 
-add_executable(sarbp_test sarbp.cpp PlatformData.cpp ImgPlane.cpp)
+add_executable(sarbp_test sarbp.cpp dft.cpp PlatformData.cpp ImgPlane.cpp)
 target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
 target_include_directories(sarbp_test PRIVATE ${FFTW_INCLUDE_DIRS})
 target_link_directories(sarbp_test PRIVATE ${FFTW_LIBRARY_DIRS})
