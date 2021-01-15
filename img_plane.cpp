@@ -94,7 +94,7 @@ public:
 
         // produces shape {uv_extent, 2}
         Func b("b");
-        b(x, y) = select(y == 0, u(x % u_extent), v(x / v_extent));
+        b(x, y) = select(y == 0, u(x % u_extent), v(x / u_extent));
 
         // produces shapes {uv_extent, 3}
         RDom r(0, 2, "r");
