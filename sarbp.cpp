@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <chrono>
 #include <complex>
+#include <getopt.h>
 #include <iostream>
 
 #include <Halide.h>
@@ -32,20 +33,133 @@ using Halide::Runtime::Buffer;
 #define DEBUG_BP 0
 #define DEBUG_BP_DB 0
 
+#define SCHED_DEFAULT "cpu"
+// the following defaults are the same as RITSAR
+#define DB_MIN_DEFAULT 0
+#define DB_MAX_DEFAULT 0
+#define UPSAMPLE_DEFAULT 6
+#define TAYLOR_DEFAULT 20
+#define RES_FACTOR_DEFAULT RES_FACTOR
+#define ASPECT_DEFAULT ASPECT
+
+static const char short_options[] = "p:o:d:D:s:t:u:r:a:h";
+static const struct option long_options[] = {
+  {"platform-dir",    required_argument,  NULL, 'p'},
+  {"output",          required_argument,  NULL, 'o'},
+  {"db-min",          required_argument,  NULL, 'd'},
+  {"db-max",          required_argument,  NULL, 'D'},
+  {"schedule",        required_argument,  NULL, 's'},
+  {"taylor",          required_argument,  NULL, 't'},
+  {"upsample",        required_argument,  NULL, 'u'},
+  {"res-factor",      required_argument,  NULL, 'r'},
+  {"aspect",          required_argument,  NULL, 'a'},
+  {"help",            no_argument,        NULL, 'h'},
+  {0, 0, 0, 0}
+};
+
+static void print_usage(string prog, ostream& os) {
+    os << "Usage: " << prog << " -p DIR -o FILE [OPTION]..." << endl;
+    os << "Options:" << endl;
+    os << "  -p, --platform-dir=DIR  Platform input directory" << endl;
+    os << "  -o, --output=FILE       Output image file (PNG)" << endl;
+    os << "  -d, --db-min=REAL       Output image min dB" << endl;
+    os << "                          Default: " << DB_MIN_DEFAULT << endl;
+    os << "  -D, --db-max=REAL       Output image max dB" << endl;
+    os << "                          Default: " << DB_MAX_DEFAULT << endl;
+    os << "  -s, --schedule=NAME     One of: cpu|cuda|ritsar[-s|-p|-vp]" << endl;
+    os << "                          Default: " << SCHED_DEFAULT << endl;
+    os << "  -t, --taylor=INT        Taylor count" << endl;
+    os << "                          Default: " << TAYLOR_DEFAULT << endl;
+    os << "  -u, --upsample=INT      Upsample factor" << endl;
+    os << "                          Default: " << UPSAMPLE_DEFAULT << endl;
+    os << "  -r, --res-factor=REAL   Image res in units of theoretical resolution size" << endl;
+    os << "                          Default: " << RES_FACTOR_DEFAULT << endl;
+    os << "  -a, --aspect=REAL       Aspect ratio of range to cross range" << endl;
+    os << "                          Default: " << ASPECT_DEFAULT << endl;
+    os << "  -h, --help              Print this message and exit" << endl;
+}
+
 int main(int argc, char **argv) {
-    if (argc < 7) {
-        cerr << "Usage: " << argv[0] << " <platform_dir> <taylor> <upsample> <output_png> <dB_min> <dB_max> [cpu|cuda|ritsar]" << endl;
-        return 1;
+    string platform_dir = "";
+    string output_png = "";
+    string bp_sched = SCHED_DEFAULT;
+    int taylor = TAYLOR_DEFAULT;
+    int upsample = UPSAMPLE_DEFAULT;
+    double dB_min = DB_MIN_DEFAULT;
+    double dB_max = DB_MAX_DEFAULT;
+    double res_factor = RES_FACTOR_DEFAULT;
+    double aspect = ASPECT_DEFAULT;
+    while (1) {
+        switch (getopt_long(argc, argv, short_options, long_options, NULL)) {
+            case -1:
+                break;
+            case 'p':
+                platform_dir = string(optarg);
+                continue;
+            case 'o':
+                output_png = string(optarg);
+                continue;
+            case 'd':
+                dB_min = atof(optarg);
+                continue;
+            case 'D':
+                dB_max = atof(optarg);
+                continue;
+            case 's':
+                bp_sched = string(optarg);
+                continue;
+            case 't':
+                taylor = atoi(optarg);
+                continue;
+            case 'u':
+                upsample = atoi(optarg);
+                continue;
+            case 'r':
+                res_factor = atof(optarg);
+                continue;
+            case 'a':
+                aspect = atof(optarg);
+                continue;
+            case 'h':
+                print_usage(argv[0], cout);
+                return 0;
+            default:
+                print_usage(argv[0], cerr);
+                return EXIT_FAILURE;
+        }
+        break;
     }
-    string platform_dir = string(argv[1]);
-    int taylor = atoi(argv[2]);
-    int upsample = atoi(argv[3]);
-    string output_png = string(argv[4]);
-    double dB_min = atof(argv[5]);
-    double dB_max = atof(argv[6]);
-    string bp_sched = "cpu";
-    if (argc >= 8) {
-        bp_sched = string(argv[7]);
+    if (platform_dir.empty() || output_png.empty()) {
+        cerr << "Missing required parameters" << endl;
+        print_usage(argv[0], cerr);
+        return EXIT_FAILURE;
+    }
+    if (dB_min >= dB_max) {
+        // Can add support in img_output_u8(...) to avoid this constraint
+        cerr << "Constraint failed: dB_min < dB_max" << endl;
+        print_usage(argv[0], cerr);
+        return EXIT_FAILURE;
+    }
+    if (taylor < 1) {
+        cerr << "Constraint failed: taylor >= 1" << endl;
+        print_usage(argv[0], cerr);
+        return EXIT_FAILURE;
+    }
+    // TODO: How can upsample be disabled?
+    if (upsample < 1) {
+        cerr << "Constraint failed: upsample >= 1" << endl;
+        print_usage(argv[0], cerr);
+        return EXIT_FAILURE;
+    }
+    if (res_factor <= 0) {
+        cerr << "Constraint failed: res-factor > 0" << endl;
+        print_usage(argv[0], cerr);
+        return EXIT_FAILURE;
+    }
+    if (aspect <= 0) {
+        cerr << "Constraint failed: aspect > 0" << endl;
+        print_usage(argv[0], cerr);
+        return EXIT_FAILURE;
     }
 
     // determine which backprojection implementation to use
@@ -70,7 +184,8 @@ int main(int argc, char **argv) {
         cout << "Using RITSAR baseline (vectorize+parallel)" << endl;
     } else {
         cerr << "Unknown schedule: " << bp_sched << endl;
-        return -1;
+        print_usage(argv[0], cerr);
+        return EXIT_FAILURE;
     }
 
     auto start = high_resolution_clock::now();
@@ -83,7 +198,7 @@ int main(int argc, char **argv) {
 
     const float *n_hat = pd.n_hat.has_value() ? pd.n_hat.value().begin() : &N_HAT[0];
     start = high_resolution_clock::now();
-    ImgPlane ip = img_plane_create(pd, RES_FACTOR, n_hat);
+    ImgPlane ip = img_plane_create(pd, res_factor, n_hat, aspect, upsample);
     stop = high_resolution_clock::now();
     cout << "Computed image plane parameters in "
          << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
