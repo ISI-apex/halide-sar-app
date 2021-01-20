@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(halide-sar-app)
 
-find_package(MPI REQUIRED)
-
 # Set up language settings
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
@@ -19,6 +17,9 @@ find_package(Cnpy REQUIRED)
 
 # Find pkg-config
 find_package(PkgConfig REQUIRED)
+
+# Find MPI
+find_package(MPI REQUIRED)
 
 # Find FFTW3 double precision
 pkg_check_modules(FFTW fftw3 REQUIRED)
@@ -90,17 +91,18 @@ add_executable(img_output_u8_test img_output_u8_test.cpp)
 target_link_libraries(img_output_u8_test PRIVATE Halide::Halide
                                                  Halide::ImageIO
                                                  Cnpy::Cnpy
-                                                 img_output_u8
-                                                 ${MPI_CXX_LIBRARIES})
+                                                 ${MPI_CXX_LIBRARIES}
+                                                 img_output_u8)
 
 add_executable(sarbp_test sarbp.cpp dft.cpp PlatformData.cpp ImgPlane.cpp)
 target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
-target_include_directories(sarbp_test PRIVATE ${FFTW_INCLUDE_DIRS})
+target_include_directories(sarbp_test PRIVATE ${FFTW_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
 target_link_directories(sarbp_test PRIVATE ${FFTW_LIBRARY_DIRS})
 target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          Halide::ImageIO
                                          Cnpy::Cnpy
                                          ${FFTW_STATIC_LIBRARIES}
+                                         ${MPI_CXX_LIBRARIES}
                                          ip_uv
                                          ip_k
                                          ip_v_hat
@@ -114,5 +116,4 @@ target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          backprojection_ritsar_p
                                          backprojection_ritsar_vp
                                          img_output_u8
-                                         img_output_to_dB
-                                         ${MPI_CXX_LIBRARIES})
+                                         img_output_to_dB)
