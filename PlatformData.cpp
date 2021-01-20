@@ -257,9 +257,9 @@ PlatformData platform_load(string platform_dir, bool is_distributed) {
     if (npy_phs.shape.size() != 2 || npy_phs.shape[0] != npulses || npy_phs.shape[1] != nsamples) {
         throw runtime_error("Bad shape: phs");
     }
-    Buffer<float, 3> phs(3, nsamples, npulses);
+    Buffer<float, 3> phs(2, nsamples, npulses);
     if (is_distributed) {
-        phs.set_distributed({3, nsamples, npulses});
+        phs.set_distributed({2, nsamples, npulses});
     }
     if (npy_phs.word_size == sizeof(complex<float>)) {
         memcpy(phs.begin(), reinterpret_cast<float *>(npy_phs.data<complex<float>>()), npy_phs.num_bytes());
