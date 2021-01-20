@@ -87,24 +87,24 @@ target_link_libraries(img_output_u8_test PRIVATE Halide::Halide
                                                  Cnpy::Cnpy
                                                  img_output_u8)
 
-add_executable(sarbp_test sarbp.cpp dft.cpp PlatformData.cpp ImgPlane.cpp)
-target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
-target_include_directories(sarbp_test PRIVATE ${FFTW_INCLUDE_DIRS})
-target_link_directories(sarbp_test PRIVATE ${FFTW_LIBRARY_DIRS})
-target_link_libraries(sarbp_test PRIVATE Halide::Halide
-                                         Halide::ImageIO
-                                         Cnpy::Cnpy
-                                         ${FFTW_STATIC_LIBRARIES}
-                                         ip_uv
-                                         ip_k
-                                         ip_v_hat
-                                         ip_u_hat
-                                         ip_pixel_locs
-                                         backprojection
-                                         backprojection_cuda
-                                         backprojection_ritsar
-                                         backprojection_ritsar_s
-                                         backprojection_ritsar_p
-                                         backprojection_ritsar_vp
-                                         img_output_u8
-                                         img_output_to_dB)
+add_executable(sarbp sarbp.cpp dft.cpp PlatformData.cpp ImgPlane.cpp)
+target_compile_options(sarbp PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
+target_include_directories(sarbp PRIVATE ${FFTW_INCLUDE_DIRS})
+target_link_directories(sarbp PRIVATE ${FFTW_LIBRARY_DIRS})
+target_link_libraries(sarbp PRIVATE Halide::Halide
+                                    Halide::ImageIO
+                                    Cnpy::Cnpy
+                                    ${FFTW_STATIC_LIBRARIES}
+                                    ip_uv
+                                    ip_k
+                                    ip_v_hat
+                                    ip_u_hat
+                                    ip_pixel_locs
+                                    backprojection
+                                    backprojection_cuda
+                                    backprojection_ritsar
+                                    backprojection_ritsar_s
+                                    backprojection_ritsar_p
+                                    backprojection_ritsar_vp
+                                    img_output_u8
+                                    img_output_to_dB)
