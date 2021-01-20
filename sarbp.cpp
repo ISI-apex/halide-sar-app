@@ -9,6 +9,8 @@
 
 #include <cnpy.h>
 
+#include <mpi.h>
+
 #include "dft.h"
 #include "PlatformData.h"
 #include "ImgPlane.h"
@@ -16,6 +18,7 @@
 // Halide generators
 #include "backprojection_debug.h"
 #include "backprojection.h"
+#include "backprojection_distributed.h"
 #include "backprojection_cuda.h"
 #include "backprojection_ritsar.h"
 #include "backprojection_ritsar_s.h"
@@ -34,7 +37,7 @@ using Halide::Runtime::Buffer;
 
 int main(int argc, char **argv) {
     if (argc < 7) {
-        cerr << "Usage: " << argv[0] << " <platform_dir> <taylor> <upsample> <output_png> <dB_min> <dB_max> [cpu|cuda|ritsar]" << endl;
+        cerr << "Usage: " << argv[0] << " <platform_dir> <taylor> <upsample> <output_png> <dB_min> <dB_max> [cpu|cuda|cpu_distributed|ritsar]" << endl;
         return 1;
     }
     string platform_dir = string(argv[1]);
@@ -50,9 +53,14 @@ int main(int argc, char **argv) {
 
     // determine which backprojection implementation to use
     auto backprojection_impl = backprojection;
+    bool is_distributed = false;
     if (bp_sched == "cpu") {
         backprojection_impl = backprojection;
         cout << "Using schedule for CPU only" << endl;
+    } else if (bp_sched == "cpu_distributed") {
+        backprojection_impl = backprojection_distributed;
+        is_distributed = true;
+        cout << "Using schedule for distributed CPU" << endl;
     } else if (bp_sched == "cuda") {
         backprojection_impl = backprojection_cuda;
         cout << "Using schedule with CUDA" << endl;
@@ -73,8 +81,12 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    if (is_distributed) {
+        MPI_Init(&argc, &argv);
+    }
+
     auto start = high_resolution_clock::now();
-    PlatformData pd = platform_load(platform_dir);
+    PlatformData pd = platform_load(platform_dir, is_distributed);
     auto stop = high_resolution_clock::now();
     cout << "Loaded platform data in "
          << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
@@ -334,6 +346,10 @@ int main(int argc, char **argv) {
     stop = high_resolution_clock::now();
     cout << "Wrote " << output_png << " in "
          << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
+
+    if (is_distributed) {
+        MPI_Finalize();
+    }
 
     return rv;
 }

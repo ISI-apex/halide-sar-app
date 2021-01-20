@@ -14,6 +14,7 @@ public:
     GeneratorParam<int32_t> vectorsize {"vectorsize", 16};
     GeneratorParam<int32_t> blocksize {"blocksize", 64};
     GeneratorParam<bool> print_loop_nest {"print_loop_nest", false};
+    GeneratorParam<bool> is_distributed {"is_distributed", false};
 
     // 2-D complex data (3-D when handled as primitive data: {2, x, y})
     Input<Buffer<float>> phs {"phs", 3};
@@ -275,8 +276,14 @@ public:
             dr_i.reorder(pulse, pixel).reorder(pixel, pulse).compute_at(img.inner, pixel).store_at(img.inner, pixel).vectorize(pulse, vectorsize);
             Q_hat.inner.compute_at(img.inner, pixel).store_at(img.inner, pixel).vectorize(pixel, vectorsize);
             img.inner.compute_root().unroll(c).split(pixel, block, pixeli, blocksize).vectorize(pixeli, vectorsize).parallel(block, blocksize);
+            if (is_distributed) {
+                img.inner.distribute(block);
+            }
             img.inner.update(0).reorder(c, rnpulses, pixel).unroll(c).parallel(pixel, blocksize);
             fimg.inner.compute_root().bound(c, 0, 2).unroll(c).split(pixel, block, pixeli, blocksize).vectorize(pixeli, vectorsize).parallel(block, blocksize);
+            if (is_distributed) {
+                fimg.inner.distribute(block);
+            }
             output_img.compute_root().bound(c, 0, 2).unroll(c).parallel(y).vectorize(x, vectorsize);
             if (print_loop_nest) {
                 output_img.print_loop_nest();
@@ -309,4 +316,5 @@ private:
 };
 
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)
+HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_distributed)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda)

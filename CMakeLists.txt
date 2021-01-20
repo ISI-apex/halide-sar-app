@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(halide-sar-app)
 
+find_package(MPI REQUIRED)
 
 # Set up language settings
 set(CMAKE_CXX_STANDARD 17)
@@ -72,6 +73,10 @@ add_halide_library(backprojection_cuda FROM backprojection.generator
                                                 large_buffers
                                                 cuda
                                        PARAMS blocksize=1024)
+add_halide_library(backprojection_distributed FROM backprojection.generator
+                                              FEATURES c_plus_plus_name_mangling
+                                                       large_buffers
+                                              PARAMS is_distributed=true)
 
 add_executable(img_output.generator img_output.cpp)
 target_link_libraries(img_output.generator PRIVATE Halide::Generator)
@@ -85,7 +90,8 @@ add_executable(img_output_u8_test img_output_u8_test.cpp)
 target_link_libraries(img_output_u8_test PRIVATE Halide::Halide
                                                  Halide::ImageIO
                                                  Cnpy::Cnpy
-                                                 img_output_u8)
+                                                 img_output_u8
+                                                 ${MPI_CXX_LIBRARIES})
 
 add_executable(sarbp_test sarbp.cpp dft.cpp PlatformData.cpp ImgPlane.cpp)
 target_compile_options(sarbp_test PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
@@ -101,10 +107,12 @@ target_link_libraries(sarbp_test PRIVATE Halide::Halide
                                          ip_u_hat
                                          ip_pixel_locs
                                          backprojection
+                                         backprojection_distributed
                                          backprojection_cuda
                                          backprojection_ritsar
                                          backprojection_ritsar_s
                                          backprojection_ritsar_p
                                          backprojection_ritsar_vp
                                          img_output_u8
-                                         img_output_to_dB)
+                                         img_output_to_dB
+                                         ${MPI_CXX_LIBRARIES})

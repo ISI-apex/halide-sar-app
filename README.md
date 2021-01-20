@@ -46,6 +46,12 @@ or with a GPU CUDA schedule:
 ./sarbp_test ../data/AFRL/pass1/HH_npy 17 2 output.png -30.0 0.0 cuda
 ```
 
+or with a CPU distributed schedule:
+
+```sh
+./sarbp_test ../data/AFRL/pass1/HH_npy 17 2 output.png -30.0 0.0 cpu_distributed
+```
+
 ### Sandia
 
 To run the backprojection test with the Sandia dataset:

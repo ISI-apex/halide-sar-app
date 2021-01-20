@@ -18,7 +18,7 @@ static bool file_exists(const string& path) {
     return false;
 }
 
-PlatformData platform_load(string platform_dir) {
+PlatformData platform_load(string platform_dir, bool is_distributed) {
     // Load primitives
 
     optional<double> B = nullopt;
@@ -108,7 +108,6 @@ PlatformData platform_load(string platform_dir) {
     }
 
     // Load arrays
-
     optional<Buffer<float, 1>> freq = nullopt;
     if (file_exists(platform_dir + "/freq.npy")) {
         NpyArray npy_freq = npy_load(platform_dir + "/freq.npy");
@@ -116,6 +115,10 @@ PlatformData platform_load(string platform_dir) {
             throw runtime_error("Bad shape: freq");
         }
         freq.emplace(Buffer<float, 1>(nsamples));
+        if (is_distributed) {
+            freq.value().set_distributed({nsamples});
+        }
+        
         if (npy_freq.word_size == sizeof(float)) {
             memcpy(freq.value().begin(), npy_freq.data<float>(), npy_freq.num_bytes());
         } else if (npy_freq.word_size == sizeof(double)) {
@@ -136,6 +139,9 @@ PlatformData platform_load(string platform_dir) {
         throw runtime_error("Bad shape: k_r");
     }
     Buffer<float, 1> k_r(nsamples);
+    if (is_distributed) {
+        k_r.set_distributed({nsamples});
+    }
     if (npy_k_r.word_size == sizeof(float)) {
         memcpy(k_r.begin(), npy_k_r.data<float>(), npy_k_r.num_bytes());
     } else if (npy_k_r.word_size == sizeof(double)) {
@@ -160,6 +166,9 @@ PlatformData platform_load(string platform_dir) {
             throw runtime_error("Bad word size: k_y");
         }
         k_y.emplace(Buffer<double, 1>(npulses));
+        if (is_distributed) {
+            k_y.value().set_distributed({npulses});
+        }
         memcpy(k_y.value().begin(), npy_k_y.data<double>(), npy_k_y.num_bytes());
         k_y.value().set_host_dirty();
     }
@@ -174,6 +183,9 @@ PlatformData platform_load(string platform_dir) {
             throw runtime_error("Bad word size: n_hat");
         }
         n_hat.emplace(Buffer<float, 1>(3));
+        if (is_distributed) {
+            n_hat.value().set_distributed({3});
+        }
         memcpy(n_hat.value().begin(), npy_n_hat.data<float>(), npy_n_hat.num_bytes());
         n_hat.value().set_host_dirty();
     }
@@ -183,6 +195,9 @@ PlatformData platform_load(string platform_dir) {
         throw runtime_error("Bad shape: R_c");
     }
     Buffer<float, 1> R_c(3);
+    if (is_distributed) {
+        R_c.set_distributed({3});
+    }
     if (npy_R_c.word_size == sizeof(float)) {
         memcpy(R_c.begin(), npy_R_c.data<float>(), npy_R_c.num_bytes());
     } else if (npy_R_c.word_size == sizeof(double)) {
@@ -207,6 +222,9 @@ PlatformData platform_load(string platform_dir) {
             throw runtime_error("Bad word size: t");
         }
         t.emplace(Buffer<double, 1>(nsamples));
+        if (is_distributed) {
+            t.value().set_distributed({nsamples});
+        }
         memcpy(t.value().begin(), npy_t.data<double>(), npy_t.num_bytes());
         t.value().set_host_dirty();
     }
@@ -218,6 +236,9 @@ PlatformData platform_load(string platform_dir) {
         throw runtime_error("Bad shape: pos");
     }
     Buffer<float, 2> pos(3, npulses);
+    if (is_distributed) {
+        pos.set_distributed({3, npulses});
+    }
     if (npy_pos.word_size == sizeof(float)) {
         memcpy(pos.begin(), npy_pos.data<float>(), npy_pos.num_bytes());
     } else if (npy_pos.word_size == sizeof(double)) {
@@ -236,7 +257,10 @@ PlatformData platform_load(string platform_dir) {
     if (npy_phs.shape.size() != 2 || npy_phs.shape[0] != npulses || npy_phs.shape[1] != nsamples) {
         throw runtime_error("Bad shape: phs");
     }
-    Buffer<float, 3> phs(2, nsamples, npulses);
+    Buffer<float, 3> phs(3, nsamples, npulses);
+    if (is_distributed) {
+        phs.set_distributed({3, nsamples, npulses});
+    }
     if (npy_phs.word_size == sizeof(complex<float>)) {
         memcpy(phs.begin(), reinterpret_cast<float *>(npy_phs.data<complex<float>>()), npy_phs.num_bytes());
     } else if (npy_phs.word_size == sizeof(complex<double>)) {
