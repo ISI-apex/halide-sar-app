@@ -37,13 +37,13 @@ Two datasets are available for testing.
 To run the backprojection test with the AFRL dataset:
 
 ```sh
-./sarbp_test ../data/AFRL/pass1/HH_npy 17 2 output.png -30.0 0.0
+./sarbp -p ../data/AFRL/pass1/HH_npy -o AFRL.png -d -30.0 -D 0.0 -t 17 -u 2
 ```
 
 or with a GPU CUDA schedule:
 
 ```sh
-./sarbp_test ../data/AFRL/pass1/HH_npy 17 2 output.png -30.0 0.0 cuda
+./sarbp -p ../data/AFRL/pass1/HH_npy -o AFRL-cuda.png -d -30.0 -D 0.0 -t 17 -u 2 -s cuda
 ```
 
 or with a CPU distributed schedule:
@@ -56,11 +56,11 @@ mpirun -np 4 ./sarbp_test ../data/AFRL/pass1/HH_npy 17 2 output.png -30.0 0.0 cp
 
 To run the backprojection test with the Sandia dataset:
 ```sh
-./sarbp_test ../data/Sandia/npy 30 2 output-Sandia.png -45.0 0.0
+./sarbp -p ../data/Sandia/npy -o Sandia.png -d -45.0 -D 0.0 -t 30 -u 2
 ```
 
 or with a GPU CUDA schedule:
 
 ```sh
-./sarbp_test ../data/Sandia/npy 30 2 output-Sandia.png -45.0 0.0 cuda
+./sarbp -p ../data/Sandia/npy -o Sandia-cuda.png -d -45.0 -D 0.0 -t 30 -u 2 -s cuda
 ```
