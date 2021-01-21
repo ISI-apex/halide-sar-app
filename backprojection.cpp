@@ -77,7 +77,7 @@ public:
 #endif
 
     // 2-D complex data (3-D when handled as primitive data: {2, x, y})
-    Output<Buffer<double>> output_img{"output_img", 3};
+    Output<Buffer<double>> output_img{"output_img", 2};
 
     // xs: {nu*nv, npulses}
     // lsa, lsb, lsn: implicit linspace parameters (min, max, count)
@@ -209,7 +209,8 @@ public:
 #endif
 
         // output_img: produce shape {nu, nv}, but reverse row order
-        output_img(c, x, y) = fimg.inner(c, (nu * (nv - y - 1)) + x);
+        // output_img(c, x, y) = fimg.inner(c, (nu * (nv - y - 1)) + x);
+        output_img(c, pixel) = fimg.inner(c, pixel);
     }
 
     void schedule() {
@@ -248,8 +249,8 @@ public:
             Q_hat.inner.compute_inline();
             img.inner.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
             img.inner.update(0).reorder(c, rnpulses, pixel).gpu_tile(pixel, block, pixeli, blocksize);
-            fimg.inner.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
-            output_img.compute_root().bound(c, 0, 2).unroll(c).parallel(y).vectorize(x, vectorsize);
+            fimg.inner.compute_inline();
+            output_img.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
@@ -280,11 +281,11 @@ public:
                 img.inner.distribute(block);
             }
             img.inner.update(0).reorder(c, rnpulses, pixel).unroll(c).parallel(pixel, blocksize);
-            fimg.inner.compute_root().bound(c, 0, 2).unroll(c).split(pixel, block, pixeli, blocksize).vectorize(pixeli, vectorsize).parallel(block, blocksize);
+            output_img.compute_root().bound(c, 0, 2).unroll(c).split(pixel, block, pixeli, blocksize).vectorize(pixeli, vectorsize).parallel(block, blocksize);
             if (is_distributed) {
-                fimg.inner.distribute(block);
+                output_img.distribute(block);
             }
-            output_img.compute_root().bound(c, 0, 2).unroll(c).parallel(y).vectorize(x, vectorsize);
+            // output_img.compute_root().bound(c, 0, 2).unroll(c).parallel(y).vectorize(x, vectorsize);
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }

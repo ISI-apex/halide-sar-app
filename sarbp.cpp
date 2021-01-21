@@ -81,8 +81,11 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    int rank = 0, numprocs = 0;
     if (is_distributed) {
         MPI_Init(&argc, &argv);
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
     }
 
     auto start = high_resolution_clock::now();
@@ -95,7 +98,7 @@ int main(int argc, char **argv) {
 
     const float *n_hat = pd.n_hat.has_value() ? pd.n_hat.value().begin() : &N_HAT[0];
     start = high_resolution_clock::now();
-    ImgPlane ip = img_plane_create(pd, RES_FACTOR, n_hat);
+    ImgPlane ip = img_plane_create(pd, RES_FACTOR, n_hat, ASPECT, true /* upsample */, is_distributed);
     stop = high_resolution_clock::now();
     cout << "Computed image plane parameters in "
          << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
@@ -166,7 +169,15 @@ int main(int argc, char **argv) {
     Buffer<double, 2> buf_fimg(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
 #endif
 
-    Buffer<double, 3> buf_bp(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
+    Buffer<double, 2> buf_bp(nullptr, {2, ip.u.dim(0).extent() * ip.v.dim(0).extent()});
+    if (is_distributed) {
+        buf_bp.set_distributed({2, ip.u.dim(0).extent() * ip.v.dim(0).extent()});
+        // Query local buffer size
+        backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs, buf_bp);
+        buf_bp.allocate();
+    } else {
+        buf_bp = Buffer<double, 2>(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
+    }
     cout << "Halide backprojection start " << endl;
     start = high_resolution_clock::now();
     int rv = backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs,
@@ -224,6 +235,35 @@ int main(int argc, char **argv) {
          << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
     if (rv != 0) {
         return rv;
+    }
+
+    Buffer<double, 2> buf_bp_full(nullptr, 0);
+    if (is_distributed) {
+        // Send data to rank 0
+        buf_bp.copy_to_host();
+        if (rank == 0) {
+            buf_bp_full = Buffer<double, 2>(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
+            for (int r = 1; r < numprocs; r++) {
+                // Obtain the min & extent from the node
+                int r_min = 0, r_extent = 0;
+                MPI_Recv(&r_min, 1, MPI_INT, r, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                MPI_Recv(&r_extent, 1, MPI_INT, r, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                cout << "Received r_min = " << r_min << ", r_extent = " << r_extent << " from rank " << r << std::endl;
+                // Receving the actual content
+                MPI_Recv(buf_bp_full.data() + r_min * 2,
+                         r_extent * 2,
+                         MPI_DOUBLE,
+                         r, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            }
+        } else {
+            int r_min = buf_bp.dim(1).min(), r_extent = buf_bp.dim(1).extent();
+            MPI_Send(&r_min, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+            MPI_Send(&r_extent, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
+            // Sending the actual content
+            MPI_Send(buf_bp.data(), r_extent * 2, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
+        }
+    } else {
+        buf_bp_full = buf_bp;
     }
 
     // FFTW: clean up shared context
@@ -313,39 +353,41 @@ int main(int argc, char **argv) {
     cnpy::npy_save("sarbp_debug-bp.npy", (complex<double> *)buf_bp.begin(), shape_bp);
 #endif
 
-    // Convert to dB
-    Buffer<double, 2> buf_bp_dB(ip.u.dim(0).extent(), ip.v.dim(0).extent());
-    cout << "Halide dB conversion start" << endl;
-    start = high_resolution_clock::now();
-    rv = img_output_to_dB(buf_bp, buf_bp_dB);
-    stop = high_resolution_clock::now();
-    cout << "Halide dB conversion returned " << rv << " in "
-         << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
-    if (rv != 0) {
-        return rv;
-    }
-#if DEBUG_BP_DB
-    vector<size_t> shape_bp_dB { static_cast<size_t>(buf_bp_dB.dim(1).extent()),
-                                 static_cast<size_t>(buf_bp_dB.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-bp_dB.npy", (double *)buf_bp_dB.begin(), shape_bp_dB);
-#endif
+    if (!is_distributed || rank == 0) {
+        // Convert to dB
+        Buffer<double, 2> buf_bp_dB(ip.u.dim(0).extent(), ip.v.dim(0).extent());
+        cout << "Halide dB conversion start" << endl;
+        start = high_resolution_clock::now();
+        rv = img_output_to_dB(buf_bp_full, buf_bp_dB.width(), buf_bp_dB.height(), buf_bp_dB);
+        stop = high_resolution_clock::now();
+        cout << "Halide dB conversion returned " << rv << " in "
+             << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
+        if (rv != 0) {
+            return rv;
+        }
+    #if DEBUG_BP_DB
+        vector<size_t> shape_bp_dB { static_cast<size_t>(buf_bp_dB.dim(1).extent()),
+                                     static_cast<size_t>(buf_bp_dB.dim(0).extent()) };
+        cnpy::npy_save("sarbp_debug-bp_dB.npy", (double *)buf_bp_dB.begin(), shape_bp_dB);
+    #endif
 
-    // Produce output image
-    Buffer<uint8_t, 2> buf_bp_u8(buf_bp_dB.dim(0).extent(), buf_bp_dB.dim(1).extent());
-    cout << "Halide PNG production start" << endl;
-    start = high_resolution_clock::now();
-    rv = img_output_u8(buf_bp_dB, dB_min, dB_max, buf_bp_u8);
-    stop = high_resolution_clock::now();
-    cout << "Halide PNG production returned " << rv << " in "
-         << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
-    if (rv != 0) {
-        return rv;
+        // Produce output image
+        Buffer<uint8_t, 2> buf_bp_u8(buf_bp_dB.dim(0).extent(), buf_bp_dB.dim(1).extent());
+        cout << "Halide PNG production start" << endl;
+        start = high_resolution_clock::now();
+        rv = img_output_u8(buf_bp_dB, dB_min, dB_max, buf_bp_u8);
+        stop = high_resolution_clock::now();
+        cout << "Halide PNG production returned " << rv << " in "
+             << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
+        if (rv != 0) {
+            return rv;
+        }
+        start = high_resolution_clock::now();
+        Halide::Tools::convert_and_save_image(buf_bp_u8, output_png);
+        stop = high_resolution_clock::now();
+        cout << "Wrote " << output_png << " in "
+             << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
     }
-    start = high_resolution_clock::now();
-    Halide::Tools::convert_and_save_image(buf_bp_u8, output_png);
-    stop = high_resolution_clock::now();
-    cout << "Wrote " << output_png << " in "
-         << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
 
     if (is_distributed) {
         MPI_Finalize();
