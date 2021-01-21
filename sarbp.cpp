@@ -358,6 +358,8 @@ int main(int argc, char **argv) {
         buf_bp.copy_to_host();
         if (rank == 0) {
             buf_bp_full = Buffer<double, 2>(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
+            // Copy buf_bp to buf_bp_full
+            memcpy(buf_bp_full.data(), buf_bp.data(), sizeof(double) * buf_bp.dim(1).extent() * 2);
             for (int r = 1; r < numprocs; r++) {
                 // Obtain the min & extent from the node
                 int r_min = 0, r_extent = 0;
