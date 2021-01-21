@@ -49,7 +49,7 @@ or with a GPU CUDA schedule:
 or with a CPU distributed schedule:
 
 ```sh
-mpirun -np 4 ./sarbp_test ../data/AFRL/pass1/HH_npy 17 2 output.png -30.0 0.0 cpu_distributed
+mpirun -np 4 ./sarbp -p ../data/AFRL/pass1/HH_npy -o output.png -d -30.0 -D 0.0 -t 17 -u 2 -s cpu_distributed
 ```
 
 ### Sandia
