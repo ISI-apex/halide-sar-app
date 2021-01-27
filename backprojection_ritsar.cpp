@@ -164,7 +164,7 @@ public:
 #endif
 
         // norm(r0): produces shape {npulses}
-        norm_r0(x) = norm(pos(rnd, x));
+        norm_r0(x) = norm(pos(rnd, x), "norm_r0_norm");
 #if DEBUG_NORM_R0
         out_norm_r0(x) = norm_r0(x);
 #endif
@@ -176,7 +176,7 @@ public:
 #endif
 
         // norm(r - r0): produces shape {nu*nv, npulses}
-        norm_rr0(x, y) = norm(rr0(x, rnd, y));
+        norm_rr0(x, y) = norm(rr0(x, rnd, y), "norm_rr0_norm");
 #if DEBUG_NORM_RR0
         out_norm_rr0(x, y) = norm_rr0(x, y);
 #endif
