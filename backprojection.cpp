@@ -281,6 +281,7 @@ public:
                 img.inner.distribute(block);
             }
             img.inner.update(0).reorder(c, rnpulses, pixel).unroll(c).parallel(pixel, blocksize);
+            fimg.inner.compute_inline();
             output_img.compute_root().bound(c, 0, 2).unroll(c).split(pixel, block, pixeli, blocksize).vectorize(pixeli, vectorsize).parallel(block, blocksize);
             if (is_distributed) {
                 output_img.distribute(block);
