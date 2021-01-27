@@ -57,8 +57,8 @@ inline Expr log10(Expr x) {
     return log(x) / log(Expr(10));
 }
 
-inline Expr norm(Expr in) {
-    return sqrt(sum(in * in));
+inline Expr norm(Expr in, const std::string &inner_name_prefix = "norm") {
+    return sqrt(sum(in * in, inner_name_prefix + "_sum"));
 }
 
 inline Expr repeat1(Func a, Expr extent_a, Var x) {
