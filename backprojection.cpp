@@ -271,21 +271,44 @@ public:
             Q.inner.compute_root();
             norm_r0.compute_root().vectorize(pulse, vectorsize);
             rr0.compute_inline();
-            Func dr_i_in_fimg = dr_i.clone_in(fimg.inner).compute_inline();
-            norm_rr0.clone_in(dr_i_in_fimg).compute_inline();
-            norm_rr0.reorder(pulse, pixel).compute_at(img.inner, pixel).store_at(img.inner, pixel).vectorize(pulse, vectorsize);
-            dr_i.reorder(pulse, pixel).reorder(pixel, pulse).compute_at(img.inner, pixel).store_at(img.inner, pixel).vectorize(pulse, vectorsize);
-            Q_hat.inner.compute_at(img.inner, pixel).store_at(img.inner, pixel).vectorize(pixel, vectorsize);
-            img.inner.compute_root().unroll(c).split(pixel, block, pixeli, blocksize).vectorize(pixeli, vectorsize).parallel(block, blocksize);
-            if (is_distributed) {
-                img.inner.distribute(block);
-            }
-            img.inner.update(0).reorder(c, rnpulses, pixel).unroll(c).parallel(pixel, blocksize);
+
             output_img.compute_root().bound(c, 0, 2).unroll(c).split(pixel, block, pixeli, blocksize).vectorize(pixeli, vectorsize).parallel(block, blocksize);
             if (is_distributed) {
                 output_img.distribute(block);
             }
             // output_img.compute_root().bound(c, 0, 2).unroll(c).parallel(y).vectorize(x, vectorsize);
+            Func dr_i_in_fimg = dr_i.clone_in(fimg.inner).compute_inline();
+            img.inner.compute_root()
+                     .unroll(c)
+                     .split(pixel, block, pixeli, blocksize)
+                     .vectorize(pixeli, vectorsize)
+                     .parallel(block, blocksize);
+            img.inner.update(0)
+                     .reorder(c, rnpulses, pixel)
+                     .unroll(c)
+                     .split(pixel, block, pixeli, blocksize)
+                     .parallel(block, blocksize);
+            if (is_distributed) {
+                img.inner.distribute(block);
+                img.inner.update(0).distribute(block);
+            }
+            Q_hat.inner.split(pixel, block, pixeli, blocksize)
+                       .compute_at(img.inner, block)
+                       .store_at(img.inner, block)
+                       .vectorize(pixeli, vectorsize);
+            dr_i.reorder(pulse, pixel)
+                .reorder(pixel, pulse)
+                .split(pixel, block, pixeli, blocksize)
+                .compute_at(img.inner, block)
+                .store_at(img.inner, block)
+                .vectorize(pulse, vectorsize);
+            norm_rr0.clone_in(dr_i_in_fimg)
+                    .compute_inline();
+            norm_rr0.reorder(pulse, pixel)
+                    .split(pixel, block, pixeli, blocksize)
+                    .compute_at(img.inner, block)
+                    .store_at(img.inner, block)
+                    .vectorize(pulse, vectorsize);
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
