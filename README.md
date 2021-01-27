@@ -7,9 +7,10 @@ Based on the [RITSAR](https://github.com/dm6718/RITSAR) backprojection implement
 ## Prerequisites:
 
 * C/C++ compiler with C++17 support, including standard library features, e.g. GCC >= 7.3
-* [Halide](https://halide-lang.org/) (>= 10.0.0) and transitive dependencies (e.g., LLVM >= 9.x)
+* [Distributed Halide](https://github.com/BachiLi/Halide/tree/distributed) and transitive dependencies (e.g., LLVM 11 and MPI); see also [Halide](https://halide-lang.org/)
 * [cnpy](https://github.com/rogersce/cnpy)
 * [FFTW3](http://www.fftw.org/)
+* MPI, e.g., [OpenMPI](https://www.open-mpi.org/)
 
 
 ## Compiling
@@ -49,7 +50,7 @@ or with a GPU CUDA schedule:
 or with a CPU distributed schedule:
 
 ```sh
-mpirun -np 4 ./sarbp -p ../data/AFRL/pass1/HH_npy -o output.png -d -30.0 -D 0.0 -t 17 -u 2 -s cpu_distributed
+mpirun -np 4 ./sarbp -p ../data/AFRL/pass1/HH_npy -o AFRL-cpu_distributed.png -d -30.0 -D 0.0 -t 17 -u 2 -s cpu_distributed
 ```
 
 ### Sandia
