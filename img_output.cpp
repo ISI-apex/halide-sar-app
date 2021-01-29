@@ -9,24 +9,21 @@ using namespace Halide::Tools;
 
 class ImgOutputToDBGenerator : public Halide::Generator<ImgOutputToDBGenerator> {
 public:
-    Input<Buffer<double>> img {"img", 2}; // complex input
-    Input<int> nu{"nu"}, nv{"nv"};
+    Input<Buffer<double>> img {"img", 3}; // complex input
     Output<Buffer<double>> out{"out", 2};
 
     void generate() {
-        Var pixel{"pixel"};
         Var x{"x"}, y{"y"}, c{"c"};
 
         Func img_func("cimg");
         img_func = img;
         ComplexFunc cimg(c, img_func);
 
-        RDom r(0, img.dim(1).extent(), "r");
+        RDom r(0, img.dim(1).extent(), 0, img.dim(2).extent(), "r");
         Func m("m");
-        m() = maximum(abs(cimg(r.x)));
+        m() = maximum(abs(cimg(r.x, r.y)));
 
-        // output: produce shape {nu, nv}, but reverse row order
-        out(x, y) = Expr(10) * log10(abs(cimg((nu * (nv - y - 1)) + x)) / m());
+        out(x, y) = Expr(10) * log10(abs(cimg(x, y)) / m());
 
         m.compute_root();
     }

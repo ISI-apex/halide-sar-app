@@ -77,7 +77,7 @@ public:
 #endif
 
     // 2-D complex data (3-D when handled as primitive data: {2, x, y})
-    Output<Buffer<double>> output_img{"output_img", 2};
+    Output<Buffer<double>> output_img{"output_img", 3};
 
     // xs: {nu*nv, npulses}
     // lsa, lsb, lsn: implicit linspace parameters (min, max, count)
@@ -209,8 +209,7 @@ public:
 #endif
 
         // output_img: produce shape {nu, nv}, but reverse row order
-        // output_img(c, x, y) = fimg.inner(c, (nu * (nv - y - 1)) + x);
-        output_img(c, pixel) = fimg.inner(c, pixel);
+        output_img(c, x, y) = fimg.inner(c, (nu * (nv - y - 1)) + x);
     }
 
     void schedule() {
@@ -250,7 +249,7 @@ public:
             img.inner.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
             img.inner.update(0).reorder(c, rnpulses, pixel).gpu_tile(pixel, block, pixeli, blocksize);
             fimg.inner.compute_inline();
-            output_img.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
+            output_img.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(y, block, pixeli, blocksize);
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
@@ -272,42 +271,25 @@ public:
             norm_r0.compute_root().vectorize(pulse, vectorsize);
             rr0.compute_inline();
 
-            output_img.compute_root().bound(c, 0, 2).unroll(c).split(pixel, block, pixeli, blocksize).vectorize(pixeli, vectorsize).parallel(block, blocksize);
+            output_img.compute_root().bound(c, 0, 2).unroll(c).split(y, block, y, blocksize).vectorize(x, vectorsize).parallel(block);
             if (is_distributed) {
                 output_img.distribute(block);
             }
             // output_img.compute_root().bound(c, 0, 2).unroll(c).parallel(y).vectorize(x, vectorsize);
             Func dr_i_in_fimg = dr_i.clone_in(fimg.inner).compute_inline();
-            img.inner.compute_root()
-                     .unroll(c)
-                     .split(pixel, block, pixeli, blocksize)
-                     .vectorize(pixeli, vectorsize)
-                     .parallel(block, blocksize);
-            img.inner.update(0)
-                     .reorder(c, rnpulses, pixel)
-                     .unroll(c)
-                     .split(pixel, block, pixeli, blocksize)
-                     .parallel(block, blocksize);
-            if (is_distributed) {
-                img.inner.distribute(block);
-                img.inner.update(0).distribute(block);
-            }
-            Q_hat.inner.split(pixel, block, pixeli, blocksize)
-                       .compute_at(img.inner, block)
-                       .store_at(img.inner, block)
-                       .vectorize(pixeli, vectorsize);
+            img.inner.compute_inline();
             dr_i.reorder(pulse, pixel)
                 .reorder(pixel, pulse)
                 .split(pixel, block, pixeli, blocksize)
-                .compute_at(img.inner, block)
-                .store_at(img.inner, block)
+                .compute_at(output_img, y)
+                .store_at(output_img, y)
                 .vectorize(pulse, vectorsize);
             norm_rr0.clone_in(dr_i_in_fimg)
                     .compute_inline();
             norm_rr0.reorder(pulse, pixel)
                     .split(pixel, block, pixeli, blocksize)
-                    .compute_at(img.inner, block)
-                    .store_at(img.inner, block)
+                    .compute_at(output_img, y)
+                    .store_at(output_img, y)
                     .vectorize(pulse, vectorsize);
             if (print_loop_nest) {
                 output_img.print_loop_nest();

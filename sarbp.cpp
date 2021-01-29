@@ -284,14 +284,14 @@ int main(int argc, char **argv) {
     Buffer<double, 2> buf_fimg(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
 #endif
 
-    Buffer<double, 2> buf_bp(nullptr, {2, ip.u.dim(0).extent() * ip.v.dim(0).extent()});
+    Buffer<double, 2> buf_bp(nullptr, {2, ip.u.dim(0).extent(), ip.v.dim(0).extent()});
     if (is_distributed) {
-        buf_bp.set_distributed({2, ip.u.dim(0).extent() * ip.v.dim(0).extent()});
+        buf_bp.set_distributed({2, ip.u.dim(0).extent(), ip.v.dim(0).extent()});
         // Query local buffer size
         backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs, buf_bp);
         buf_bp.allocate();
     } else {
-        buf_bp = Buffer<double, 2>(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
+        buf_bp = Buffer<double, 3>(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
     }
     cout << "Halide backprojection start " << endl;
     start = high_resolution_clock::now();
@@ -357,9 +357,9 @@ int main(int argc, char **argv) {
         // Send data to rank 0
         buf_bp.copy_to_host();
         if (rank == 0) {
-            buf_bp_full = Buffer<double, 2>(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
+            buf_bp_full = Buffer<double, 3>(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
             // Copy buf_bp to buf_bp_full
-            memcpy(buf_bp_full.data(), buf_bp.data(), sizeof(double) * buf_bp.dim(1).extent() * 2);
+            memcpy(buf_bp_full.data(), buf_bp.data(), sizeof(double) * buf_bp.dim(1).extent() * buf_bp.dim(2).extent() * 2);
             for (int r = 1; r < numprocs; r++) {
                 // Obtain the min & extent from the node
                 int r_min = 0, r_extent = 0;
@@ -373,7 +373,7 @@ int main(int argc, char **argv) {
                          r, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             }
         } else {
-            int r_min = buf_bp.dim(1).min(), r_extent = buf_bp.dim(1).extent();
+            int r_min = buf_bp.dim(2).min() * buf_bp.dim(1).extent(), r_extent = buf_bp.dim(2).extent() * buf_bp.dim(1).extent();
             MPI_Send(&r_min, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
             MPI_Send(&r_extent, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
             // Sending the actual content
@@ -475,7 +475,7 @@ int main(int argc, char **argv) {
         Buffer<double, 2> buf_bp_dB(ip.u.dim(0).extent(), ip.v.dim(0).extent());
         cout << "Halide dB conversion start" << endl;
         start = high_resolution_clock::now();
-        rv = img_output_to_dB(buf_bp_full, buf_bp_dB.width(), buf_bp_dB.height(), buf_bp_dB);
+        rv = img_output_to_dB(buf_bp_full, buf_bp_dB);
         stop = high_resolution_clock::now();
         cout << "Halide dB conversion returned " << rv << " in "
              << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
