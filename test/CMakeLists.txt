@@ -43,39 +43,33 @@ add_halide_library(taylor FROM taylor.generator)
 
 add_executable(arange_test arange_test.cpp)
 target_link_libraries(arange_test PRIVATE Halide::Halide
-                                          arange
-                                          ${MPI_CXX_LIBRARIES})
+                                          arange)
 add_test(arange arange_test)
 
 add_executable(cross_test cross_test.cpp)
 target_link_libraries(cross_test PRIVATE Halide::Halide
-                                         cross
-                                         ${MPI_CXX_LIBRARIES})
+                                         cross)
 add_test(cross cross_test)
 
 add_executable(interp_test interp_test.cpp)
 target_link_libraries(interp_test PRIVATE Halide::Halide
-                                          interp
-                                          ${MPI_CXX_LIBRARIES})
+                                          interp)
 add_test(interp interp_test)
 
 add_executable(linspace_test linspace_test.cpp)
 target_link_libraries(linspace_test PRIVATE Halide::Halide
-                                            linspace
-                                            ${MPI_CXX_LIBRARIES})
+                                            linspace)
 add_test(linspace linspace_test)
 
 add_executable(norm_test norm_test.cpp)
 target_link_libraries(norm_test PRIVATE Halide::Halide
                                         norm1d
-                                        norm2d
-                                        ${MPI_CXX_LIBRARIES})
+                                        norm2d)
 add_test(norm norm_test)
 
 add_executable(repeat_test repeat_test.cpp)
 target_link_libraries(repeat_test PRIVATE Halide::Halide
-                                          repeat1
-                                          ${MPI_CXX_LIBRARIES})
+                                          repeat1)
 add_test(repeat repeat_test)
 
 add_executable(stack_test stack_test.cpp)
@@ -83,12 +77,10 @@ target_link_libraries(stack_test PRIVATE Halide::Halide
                                          hstack1
                                          hstack2
                                          vstack1
-                                         vstack2
-                                         ${MPI_CXX_LIBRARIES})
+                                         vstack2)
 add_test(stack stack_test)
 
 add_executable(taylor_test taylor_test.cpp)
 target_link_libraries(taylor_test PRIVATE Halide::Halide
-                                          taylor
-                                          ${MPI_CXX_LIBRARIES})
+                                          taylor)
 add_test(taylor taylor_test)

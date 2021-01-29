@@ -91,7 +91,6 @@ add_executable(img_output_u8_test img_output_u8_test.cpp)
 target_link_libraries(img_output_u8_test PRIVATE Halide::Halide
                                                  Halide::ImageIO
                                                  Cnpy::Cnpy
-                                                 ${MPI_CXX_LIBRARIES}
                                                  img_output_u8)
 
 add_executable(sarbp sarbp.cpp dft.cpp PlatformData.cpp ImgPlane.cpp)
