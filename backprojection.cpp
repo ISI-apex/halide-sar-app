@@ -25,7 +25,7 @@ public:
     Input<Buffer<double>> u {"u", 1};
     Input<Buffer<double>> v {"v", 1};
     Input<Buffer<float>> pos {"pos", 2};
-    Input<Buffer<double>> r {"r", 2};
+    Input<Buffer<double>> r_in {"r", 2};
 
 #if DEBUG_WIN
     Output<Buffer<double>> out_win{"out_win", 2};
@@ -107,6 +107,9 @@ public:
         Expr nd = pos.dim(0).extent(); // nd = 3 (spatial dimensions)
         rnpulses = RDom(0, npulses, "rnpulses");
         rnd = RDom(0, nd, "rnd");
+
+        // Boundary conditions
+        r = BoundaryConditions::constant_exterior(r_in, Expr(0.0));
 
         // Create window: produces shape {nsamples, npulses}
         win_sample(sample) = taylor(nsamples, taylor_s_l, sample, "win_sample");
@@ -314,6 +317,7 @@ private:
     Func rr0{"rr0"};
     Func norm_rr0{"norm_rr0"};
     Func dr_i{"dr_i"};
+    Func r{"r"};
     ComplexFunc Q_hat{c, "Q_hat"};
     ComplexFunc img{c, "img"};
     ComplexFunc fimg{c, "fimg"};
