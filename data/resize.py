@@ -16,6 +16,10 @@ def resize(idir, odir, p, s, scale_p=1.0, scale_s=1.0):
 
     delta_r = np.load(os.path.join(idir, 'delta_r.npy'))
     k_r = np.load(os.path.join(idir, 'k_r.npy'))
+    try:
+        n_hat = np.load(os.path.join(idir, 'n_hat.npy'))
+    except FileNotFoundError:
+        n_hat = None
     npulses = np.load(os.path.join(idir, 'npulses.npy'))
     nsamples = np.load(os.path.join(idir, 'nsamples.npy'))
     phs = np.load(os.path.join(idir, 'phs.npy'))
@@ -44,6 +48,7 @@ def resize(idir, odir, p, s, scale_p=1.0, scale_s=1.0):
     delta_r = delta_r / scale_s
     # k_r values are a function of freq, so both values and shape must be adjusted
     k_r = transform.resize(k_r * scale_s, (s,), preserve_range=True)
+    # Nothing to do for n_hat
     npulses = p
     nsamples = s
     # transform.resize does not work for complex types
@@ -56,6 +61,8 @@ def resize(idir, odir, p, s, scale_p=1.0, scale_s=1.0):
     os.mkdir(odir)
     np.save(os.path.join(odir, 'delta_r.npy'), delta_r)
     np.save(os.path.join(odir, 'k_r.npy'), k_r)
+    if n_hat is not None:
+        np.save(os.path.join(odir, 'n_hat.npy'), n_hat)
     np.save(os.path.join(odir, 'npulses.npy'), npulses)
     np.save(os.path.join(odir, 'nsamples.npy'), nsamples)
     np.save(os.path.join(odir, 'phs.npy'), phs)
