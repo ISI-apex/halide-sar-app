@@ -64,7 +64,8 @@ int call_dft(halide_buffer_t *in, int N_fft, halide_buffer_t *out) {
         cout << "call_dft: FFTW: processing vectors ["
              << out->dim[2].min << ", " << out->dim[2].min + out->dim[2].extent << ")" << endl;
 #endif
-        for (int i = out->dim[2].min; i < out->dim[2].min + out->dim[2].extent; i++) {
+        int upper_bound = min(in->dim[2].min + in->dim[2].extent, out->dim[2].min + out->dim[2].extent);
+        for (int i = out->dim[2].min; i < upper_bound; i++) {
             int coords[3] = {0, 0, i};
             fftw_complex *fft_in = (fftw_complex *)in->address_of(coords);
             fftw_complex *fft_out = (fftw_complex *)out->address_of(coords);
@@ -76,4 +77,3 @@ int call_dft(halide_buffer_t *in, int N_fft, halide_buffer_t *out) {
     }
     return 0;
 }
-
