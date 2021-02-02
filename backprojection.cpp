@@ -310,16 +310,15 @@ public:
             Q_hat.inner.compute_inline();
             img.inner.compute_at(output_img, x_vo);
             img.inner.update(0).reorder(c, pixel, rnpulses.x);
-            // if(is_distributed)
-            //     img.inner.distribute(y_vo);
             fimg.inner.compute_inline();
             output_img.compute_root()
                       .split(x, x_vo, x_vi, vectorsize)
                       .split(y, y_vo, y_vi, blocksize)
                       .vectorize(x_vi)
                       .parallel(y_vi);
-            if(is_distributed)
+            if (is_distributed) {
                 output_img.distribute(y_vo);
+            }
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
