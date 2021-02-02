@@ -11,7 +11,7 @@ using namespace Halide::Tools;
 
 class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator> {
 public:
-    GeneratorParam<int32_t> vectorsize {"vectorsize", 16};
+    GeneratorParam<int32_t> vectorsize {"vectorsize", 4};
     GeneratorParam<int32_t> blocksize {"blocksize", 64};
     GeneratorParam<bool> print_loop_nest {"print_loop_nest", false};
     GeneratorParam<bool> is_distributed {"is_distributed", false};
@@ -25,7 +25,7 @@ public:
     Input<Buffer<double>> u {"u", 1};
     Input<Buffer<double>> v {"v", 1};
     Input<Buffer<float>> pos {"pos", 2};
-    Input<Buffer<double>> r {"r", 2};
+    Input<Buffer<double>> r_in {"r", 2};
 
 #if DEBUG_WIN
     Output<Buffer<double>> out_win{"out_win", 2};
@@ -77,7 +77,7 @@ public:
 #endif
 
     // 2-D complex data (3-D when handled as primitive data: {2, x, y})
-    Output<Buffer<double>> output_img{"output_img", 2};
+    Output<Buffer<double>> output_img{"output_img", 3};
 
     // xs: {nu*nv, npulses}
     // lsa, lsb, lsn: implicit linspace parameters (min, max, count)
@@ -107,6 +107,9 @@ public:
         Expr nd = pos.dim(0).extent(); // nd = 3 (spatial dimensions)
         rnpulses = RDom(0, npulses, "rnpulses");
         rnd = RDom(0, nd, "rnd");
+
+        // Boundary conditions
+        r = BoundaryConditions::constant_exterior(r_in, Expr(0.0));
 
         // Create window: produces shape {nsamples, npulses}
         win_sample(sample) = taylor(nsamples, taylor_s_l, sample, "win_sample");
@@ -157,7 +160,9 @@ public:
 #endif
 
         // norm(r0): produces shape {npulses}
-        norm_r0(pulse) = norm(pos(rnd, pulse), "norm_r0_norm");
+        norm_r0(pulse) = Expr(0.0);
+        norm_r0(pulse) += pos(rnd, pulse) * pos(rnd, pulse);
+        norm_r0(pulse) = sqrt(norm_r0(pulse));
 #if DEBUG_NORM_R0
         out_norm_r0(pulse) = norm_r0(pulse);
 #endif
@@ -169,7 +174,9 @@ public:
 #endif
 
         // norm(r - r0): produces shape {nu*nv, npulses}
-        norm_rr0(pixel, pulse) = norm(rr0(pixel, rnd, pulse), "norm_rr0_norm");
+        norm_rr0(pixel, pulse) = Expr(0.0);
+        norm_rr0(pixel, pulse) += rr0(pixel, rnd, pulse) * rr0(pixel, rnd, pulse);
+        norm_rr0(pixel, pulse) = sqrt(norm_rr0(pixel, pulse));
 #if DEBUG_NORM_RR0
         out_norm_rr0(pixel, pulse) = norm_rr0(pixel, pulse);
 #endif
@@ -209,25 +216,23 @@ public:
 #endif
 
         // output_img: produce shape {nu, nv}, but reverse row order
-        // output_img(c, x, y) = fimg.inner(c, (nu * (nv - y - 1)) + x);
-        output_img(c, pixel) = fimg.inner(c, pixel);
+        output_img(c, x, y) = fimg.inner(c, (nu * (nv - y - 1)) + x);
     }
 
     void schedule() {
         Target tgt(target);
         if(auto_schedule) {
             std::cout << "setting size/scalar estimates for autoscheduler" << std::endl;
-            phs.set_estimates({{0, 2}, {0, 424}, {0, 469}});
-            k_r.set_estimates({{0, 424}});
-            u.set_estimates({{0, 512}});
-            v.set_estimates({{0, 512}});
-            pos.set_estimates({{0, 3}, {0, 469}});
-            r.set_estimates({{0, 262144}, {0, 3}});
-            output_img.set_estimates({{0, 2}, {0, 512}, {0, 512}});
-            delta_r.set_estimate(0.240851);
-            N_fft.set_estimate(1024);
-            taylor_s_l.set_estimate(17);
-            fftsh.inner.compute_root(); // helps the Mullapudi2016 autoscheduler pass full vectors of input to DFT
+            phs.set_estimates({{0, 2}, {0, 1800}, {0, 1999}});
+            k_r.set_estimates({{0, 1800}});
+            u.set_estimates({{0, 2048}});
+            v.set_estimates({{0, 2048}});
+            pos.set_estimates({{0, 3}, {0, 1999}});
+            r_in.set_estimates({{0, 4194304}, {0, 3}});
+            output_img.set_estimates({{0, 2}, {0, 2048}, {0, 2048}});
+            delta_r.set_estimate(0.539505);
+            N_fft.set_estimate(4096);
+            taylor_s_l.set_estimate(30);
         } else if(tgt.has_gpu_feature()) {
             // GPU target
             std::cout << "Scheduling for GPU: " << tgt << std::endl
@@ -250,7 +255,7 @@ public:
             img.inner.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
             img.inner.update(0).reorder(c, rnpulses, pixel).gpu_tile(pixel, block, pixeli, blocksize);
             fimg.inner.compute_inline();
-            output_img.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
+            output_img.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(y, block, pixeli, blocksize);
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
@@ -259,56 +264,62 @@ public:
             std::cout << "Scheduling for CPU: " << tgt << std::endl
                       << "Block size: " << blocksize.value() << std::endl
                       << "Vector size: " << vectorsize.value() << std::endl;
-            Var pixeli{"pixeli"}, block{"block"};
-            win_sample.compute_root();
-            win_pulse.compute_root();
+            Var x_vo{"x_vo"}, x_vi{"x_vi"};
+            Var y_vo{"y_vo"}, y_vi{"y_vi"};
+            Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
+            Var pulse_vo{"pulse_vo"}, pulse_vi{"pulse_vi"};
+            win_sample.compute_root()
+                      .vectorize(sample, vectorsize)
+                      .parallel(sample, blocksize);
+            win_pulse.compute_root()
+                     .vectorize(pulse, vectorsize)
+                     .parallel(pulse, blocksize);
             win.compute_root();
             filt.compute_root();
             phs_filt.inner.compute_root();
             phs_pad.inner.compute_root();
             fftsh.inner.compute_root();
             dft.inner.compute_root().parallel(pulse);
-            Q.inner.compute_root();
-            norm_r0.compute_root().vectorize(pulse, vectorsize);
+            Q.inner.compute_root()
+                   .split(sample, sample_vo, sample_vi, vectorsize)
+                   .vectorize(sample_vi)
+                   .parallel(pulse);
+            norm_r0.compute_root()
+                   .split(pulse, pulse_vo, pulse_vi, vectorsize)
+                   .vectorize(pulse_vi)
+                   .parallel(pulse_vo);
+            norm_r0.update(0)
+                   .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
+                   .vectorize(pulse_vi)
+                   .parallel(pulse_vo);
+            norm_r0.update(1)
+                   .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
+                   .vectorize(pulse_vi)
+                   .parallel(pulse_vo);
             rr0.compute_inline();
-
-            output_img.compute_root().bound(c, 0, 2).unroll(c).split(pixel, block, pixeli, blocksize).vectorize(pixeli, vectorsize).parallel(block, blocksize);
-            if (is_distributed) {
-                output_img.distribute(block);
-            }
-            // output_img.compute_root().bound(c, 0, 2).unroll(c).parallel(y).vectorize(x, vectorsize);
-            Func dr_i_in_fimg = dr_i.clone_in(fimg.inner).compute_inline();
-            img.inner.compute_root()
-                     .unroll(c)
-                     .split(pixel, block, pixeli, blocksize)
-                     .vectorize(pixeli, vectorsize)
-                     .parallel(block, blocksize);
-            img.inner.update(0)
-                     .reorder(c, rnpulses, pixel)
-                     .unroll(c)
-                     .split(pixel, block, pixeli, blocksize)
-                     .parallel(block, blocksize);
-            if (is_distributed) {
-                img.inner.distribute(block);
-                img.inner.update(0).distribute(block);
-            }
-            Q_hat.inner.split(pixel, block, pixeli, blocksize)
-                       .compute_at(img.inner, block)
-                       .store_at(img.inner, block)
-                       .vectorize(pixeli, vectorsize);
-            dr_i.reorder(pulse, pixel)
-                .reorder(pixel, pulse)
-                .split(pixel, block, pixeli, blocksize)
-                .compute_at(img.inner, block)
-                .store_at(img.inner, block)
-                .vectorize(pulse, vectorsize);
-            norm_rr0.clone_in(dr_i_in_fimg)
-                    .compute_inline();
-            norm_rr0.reorder(pulse, pixel)
-                    .split(pixel, block, pixeli, blocksize)
-                    .compute_at(img.inner, block)
-                    .store_at(img.inner, block)
-                    .vectorize(pulse, vectorsize);
+            norm_rr0.compute_at(output_img, x_vo)
+                    .split(pulse, pulse_vo, pulse_vi, vectorsize)
+                    .vectorize(pulse_vi);
+            norm_rr0.update(0)
+                    .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
+                    .vectorize(pulse_vi);
+            norm_rr0.update(1)
+                    .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
+                    .vectorize(pulse_vi);
+            dr_i.compute_inline();
+            Q_hat.inner.compute_inline();
+            img.inner.compute_at(output_img, x_vo);
+            img.inner.update(0).reorder(c, pixel, rnpulses.x);
+            // if(is_distributed)
+            //     img.inner.distribute(y_vo);
+            fimg.inner.compute_inline();
+            output_img.compute_root()
+                      .split(x, x_vo, x_vi, vectorsize)
+                      .split(y, y_vo, y_vi, blocksize)
+                      .vectorize(x_vi)
+                      .parallel(y_vi);
+            if(is_distributed)
+                output_img.distribute(y_vo);
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
@@ -332,6 +343,7 @@ private:
     Func rr0{"rr0"};
     Func norm_rr0{"norm_rr0"};
     Func dr_i{"dr_i"};
+    Func r{"r"};
     ComplexFunc Q_hat{c, "Q_hat"};
     ComplexFunc img{c, "img"};
     ComplexFunc fimg{c, "fimg"};
@@ -342,3 +354,4 @@ private:
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_distributed)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda)
+HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_auto_m16)

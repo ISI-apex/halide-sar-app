@@ -74,6 +74,10 @@ add_halide_library(backprojection_cuda FROM backprojection.generator
                                                 large_buffers
                                                 cuda
                                        PARAMS blocksize=1024)
+add_halide_library(backprojection_auto_m16 FROM backprojection.generator
+                                           FEATURES c_plus_plus_name_mangling
+                                                    large_buffers
+                                           AUTOSCHEDULER Halide::Mullapudi2016)
 add_halide_library(backprojection_distributed FROM backprojection.generator
                                               FEATURES c_plus_plus_name_mangling
                                                        large_buffers
@@ -114,5 +118,6 @@ target_link_libraries(sarbp PRIVATE Halide::Halide
                                     backprojection_ritsar_s
                                     backprojection_ritsar_p
                                     backprojection_ritsar_vp
+                                    backprojection_auto_m16
                                     img_output_u8
                                     img_output_to_dB)
