@@ -254,8 +254,8 @@ public:
             Q_hat.inner.compute_inline();
             img.inner.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
             img.inner.update(0).reorder(c, rnpulses, pixel).gpu_tile(pixel, block, pixeli, blocksize);
-            fimg.inner.compute_inline();
-            output_img.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(y, block, pixeli, blocksize);
+            fimg.inner.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
+            output_img.compute_root().bound(c, 0, 2).unroll(c).parallel(y).vectorize(x, vectorsize);
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
