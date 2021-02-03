@@ -221,7 +221,7 @@ public:
 
     void schedule() {
         Target tgt(target);
-        if(auto_schedule) {
+        if (auto_schedule) {
             std::cout << "setting size/scalar estimates for autoscheduler" << std::endl;
             phs.set_estimates({{0, 2}, {0, 1800}, {0, 1999}});
             k_r.set_estimates({{0, 1800}});
@@ -233,19 +233,24 @@ public:
             delta_r.set_estimate(0.539505);
             N_fft.set_estimate(4096);
             taylor_s_l.set_estimate(30);
-        } else if(tgt.has_gpu_feature()) {
+        } else if (tgt.has_gpu_feature()) {
             // GPU target
             std::cout << "Scheduling for GPU: " << tgt << std::endl
-                      << "Block size: " << blocksize.value() << std::endl;
+                      << "Block size: " << blocksize.value() << std::endl
+                      << "Vector size: " << vectorsize.value() << std::endl;
             Var pixeli{"pixeli"}, block{"block"};
-            win_sample.compute_root();
-            win_pulse.compute_root();
+            win_sample.compute_root()
+                      .vectorize(sample, vectorsize)
+                      .parallel(sample, blocksize);
+            win_pulse.compute_root()
+                     .vectorize(pulse, vectorsize)
+                     .parallel(pulse, blocksize);
             win.compute_root();
             filt.compute_root();
             phs_filt.inner.compute_root();
             phs_pad.inner.compute_root();
             fftsh.inner.compute_root();
-            dft.inner.compute_root();
+            dft.inner.compute_root().parallel(pulse);
             Q.inner.compute_root();
             norm_r0.compute_root().vectorize(pulse, vectorsize);
             rr0.compute_inline();
