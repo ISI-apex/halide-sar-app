@@ -238,6 +238,8 @@ public:
             std::cout << "Scheduling for GPU: " << tgt << std::endl
                       << "Block size: " << blocksize.value() << std::endl
                       << "Vector size: " << vectorsize.value() << std::endl;
+            Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
+            Var pulse_vo{"pulse_vo"}, pulse_vi{"pulse_vi"};
             Var pixeli{"pixeli"}, block{"block"};
             win_sample.compute_root()
                       .vectorize(sample, vectorsize)
@@ -251,8 +253,22 @@ public:
             phs_pad.inner.compute_root();
             fftsh.inner.compute_root();
             dft.inner.compute_root().parallel(pulse);
-            Q.inner.compute_root();
-            norm_r0.compute_root().vectorize(pulse, vectorsize);
+            Q.inner.compute_root()
+                   .split(sample, sample_vo, sample_vi, vectorsize)
+                   .vectorize(sample_vi)
+                   .parallel(pulse);
+            norm_r0.compute_root()
+                   .split(pulse, pulse_vo, pulse_vi, vectorsize)
+                   .vectorize(pulse_vi)
+                   .parallel(pulse_vo);
+            norm_r0.update(0)
+                   .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
+                   .vectorize(pulse_vi)
+                   .parallel(pulse_vo);
+            norm_r0.update(1)
+                   .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
+                   .vectorize(pulse_vi)
+                   .parallel(pulse_vo);
             rr0.compute_inline();
             norm_rr0.compute_inline();
             dr_i.compute_inline();
