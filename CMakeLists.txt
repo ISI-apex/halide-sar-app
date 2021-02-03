@@ -40,7 +40,8 @@ add_halide_library(ip_uv FROM img_plane.generator)
 add_halide_library(ip_k FROM img_plane.generator)
 add_halide_library(ip_v_hat FROM img_plane.generator)
 add_halide_library(ip_u_hat FROM img_plane.generator)
-add_halide_library(ip_pixel_locs FROM img_plane.generator)
+add_halide_library(ip_pixel_locs FROM img_plane.generator
+                                 FEATURES large_buffers)
 
 add_executable(backprojection_ritsar.generator backprojection_ritsar.cpp)
 target_link_libraries(backprojection_ritsar.generator PRIVATE Halide::Generator)
