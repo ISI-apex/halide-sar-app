@@ -86,8 +86,10 @@ add_halide_library(backprojection_distributed FROM backprojection.generator
 
 add_executable(img_output.generator img_output.cpp)
 target_link_libraries(img_output.generator PRIVATE Halide::Generator)
-add_halide_library(img_output_to_dB FROM img_output.generator)
-add_halide_library(img_output_u8 FROM img_output.generator)
+add_halide_library(img_output_to_dB FROM img_output.generator
+                                    FEATURES large_buffers)
+add_halide_library(img_output_u8 FROM img_output.generator
+                                 FEATURES large_buffers)
 
 
 # Executables
