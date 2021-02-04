@@ -36,7 +36,7 @@ echo
 
 START=$(date +%s)
 CMD=(
-  jsrun -n ${NUM_RS} -a ${TASKS_PER_RS} -c ${CPUS_PER_RS} -r ${RS_PER_HOST} -b ${BIND}
+  jsrun -n ${NUM_RS} -a ${TASKS_PER_RS} -c ${CPUS_PER_RS} -r ${RS_PER_HOST} -b ${BIND} -e prepended
   sarbp -p ${DATA} -o ${PNG} -d -45.0 -D 0.0 -t 30 -u 2 -r ${RES_FACTOR} -s cpu_distributed
 )
 echo "${CMD[*]}"
