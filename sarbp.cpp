@@ -361,6 +361,8 @@ int main(int argc, char **argv) {
         // Send data to rank 0
         buf_bp.copy_to_host();
         if (rank == 0) {
+            cout << "MPI full backprojection receive start" << endl;
+            start = high_resolution_clock::now();
             buf_bp_full = Buffer<double, 3>(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
             // Copy buf_bp to buf_bp_full
             memcpy(buf_bp_full.data(), buf_bp.data(), sizeof(double) * buf_bp.dim(1).extent() * buf_bp.dim(2).extent() * 2);
@@ -376,12 +378,20 @@ int main(int argc, char **argv) {
                          MPI_DOUBLE,
                          r, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             }
+            stop = high_resolution_clock::now();
+            cout << "MPI full backprojection receive completed in "
+                 << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
         } else {
+            cout << "MPI local backprojection send start" << endl;
+            start = high_resolution_clock::now();
             int r_min = buf_bp.dim(2).min() * buf_bp.dim(1).extent(), r_extent = buf_bp.dim(2).extent() * buf_bp.dim(1).extent();
             MPI_Send(&r_min, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
             MPI_Send(&r_extent, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
             // Sending the actual content
             MPI_Send(buf_bp.data(), r_extent * 2, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
+            stop = high_resolution_clock::now();
+            cout << "MPI local backprojection send completed in "
+                 << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
         }
     } else {
         buf_bp_full = buf_bp;
