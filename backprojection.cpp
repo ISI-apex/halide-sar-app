@@ -251,8 +251,14 @@ public:
             win.compute_root();
             filt.compute_root();
             phs_filt.inner.compute_root();
-            phs_pad.inner.compute_root();
-            fftsh.inner.compute_root();
+            phs_pad.inner.compute_root()
+                         .bound(c, 0, 2).unroll(c)
+                         .vectorize(sample, vectorsize)
+                         .parallel(pulse, blocksize);
+            fftsh.inner.compute_root()
+                       .bound(c, 0, 2).unroll(c)
+                       .vectorize(sample, vectorsize)
+                       .parallel(pulse, blocksize);
             dft.inner.compute_root().parallel(pulse);
             Q.inner.compute_root()
                    .split(sample, sample_vo, sample_vi, vectorsize)
@@ -302,8 +308,14 @@ public:
             win.compute_root();
             filt.compute_root();
             phs_filt.inner.compute_root();
-            phs_pad.inner.compute_root();
-            fftsh.inner.compute_root();
+            phs_pad.inner.compute_root()
+                         .bound(c, 0, 2).unroll(c)
+                         .vectorize(sample, vectorsize)
+                         .parallel(pulse, blocksize);
+            fftsh.inner.compute_root()
+                       .bound(c, 0, 2).unroll(c)
+                       .vectorize(sample, vectorsize)
+                       .parallel(pulse, blocksize);
             dft.inner.compute_root().parallel(pulse);
             Q.inner.compute_root()
                    .split(sample, sample_vo, sample_vi, vectorsize)
