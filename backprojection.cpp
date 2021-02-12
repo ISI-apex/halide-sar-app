@@ -13,6 +13,7 @@ class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator
 public:
     GeneratorParam<int32_t> vectorsize {"vectorsize", 4};
     GeneratorParam<int32_t> blocksize {"blocksize", 64};
+    GeneratorParam<int32_t> blocksize_distributed {"blocksize_distributed", 64};
     GeneratorParam<bool> print_loop_nest {"print_loop_nest", false};
     GeneratorParam<bool> is_distributed {"is_distributed", false};
 
@@ -285,6 +286,9 @@ public:
             std::cout << "Scheduling for CPU: " << tgt << std::endl
                       << "Block size: " << blocksize.value() << std::endl
                       << "Vector size: " << vectorsize.value() << std::endl;
+            if (is_distributed) {
+                std::cout << "Block size (distributed): " << blocksize_distributed.value() << std::endl;
+            }
             Var x_vo{"x_vo"}, x_vi{"x_vi"};
             Var y_vo{"y_vo"}, y_vi{"y_vi"};
             Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
@@ -334,7 +338,7 @@ public:
             fimg.inner.compute_inline();
             output_img.compute_root()
                       .split(x, x_vo, x_vi, vectorsize)
-                      .split(y, y_vo, y_vi, blocksize)
+                      .split(y, y_vo, y_vi, blocksize_distributed)
                       .vectorize(x_vi)
                       .parallel(y_vi);
             if (is_distributed) {
