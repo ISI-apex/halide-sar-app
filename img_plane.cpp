@@ -76,6 +76,8 @@ public:
 
 class ImgPlanePixelLocsGenerator : public Halide::Generator<ImgPlanePixelLocsGenerator> {
 public:
+    GeneratorParam<int32_t> vectorsize {"vectorsize", 4};
+
     Input<Buffer<double>> u {"u", 1};
     Input<Buffer<double>> v {"v", 1};
     Input<Buffer<double>> u_hat {"u_hat", 1};
@@ -83,7 +85,6 @@ public:
     Output<Buffer<double>> pixel_locs {"pixel_locs", 2};
 
     void generate() {
-        Var x{"x"}, y{"y"};
         Expr u_extent = u.dim(0).extent();
         Expr v_extent = v.dim(0).extent();
         Expr uv_extent = u_extent * v_extent;
@@ -100,6 +101,15 @@ public:
         RDom r(0, 2, "r");
         pixel_locs(x, y) = sum(A(r, y) * b(x, r));
     }
+
+    void schedule() {
+        pixel_locs.compute_root()
+                  .vectorize(x, vectorsize)
+                  .parallel(y); // only 3 threads
+    }
+
+private:
+    Var x{"x"}, y{"y"};
 };
 
 HALIDE_REGISTER_GENERATOR(ImgPlaneUVGenerator, ip_uv)
