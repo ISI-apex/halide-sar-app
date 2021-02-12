@@ -13,7 +13,7 @@ class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator
 public:
     GeneratorParam<int32_t> vectorsize {"vectorsize", 4};
     GeneratorParam<int32_t> blocksize {"blocksize", 64};
-    GeneratorParam<int32_t> blocksize_distributed {"blocksize_distributed", 64};
+    GeneratorParam<int32_t> blocksize_distributed {"blocksize_distributed", 32};
     GeneratorParam<bool> print_loop_nest {"print_loop_nest", false};
     GeneratorParam<bool> is_distributed {"is_distributed", false};
 
