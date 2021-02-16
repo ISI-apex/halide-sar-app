@@ -25,7 +25,7 @@ public:
     Input<double> delta_r {"delta_r"};
     Input<Buffer<double>> u {"u", 1};
     Input<Buffer<double>> v {"v", 1};
-    Input<Buffer<float>> pos {"pos", 2};
+    Input<Buffer<float>> pos_in {"pos", 2};
     Input<Buffer<double>> r_in {"r", 2};
 
 #if DEBUG_WIN
@@ -105,12 +105,13 @@ public:
         Expr npulses = phs.dim(2).extent();
         Expr nu = u.dim(0).extent();
         Expr nv = v.dim(0).extent();
-        Expr nd = pos.dim(0).extent(); // nd = 3 (spatial dimensions)
+        Expr nd = pos_in.dim(0).extent(); // nd = 3 (spatial dimensions)
         rnpulses = RDom(0, npulses, "rnpulses");
         rnd = RDom(0, nd, "rnd");
 
         // Boundary conditions
         r = BoundaryConditions::constant_exterior(r_in, Expr(0.0));
+        pos = BoundaryConditions::constant_exterior(pos_in, Halide::ConciseCasts::f32(Expr(0.0)));
 
         // Create window: produces shape {nsamples, npulses}
         win_sample(sample) = taylor(nsamples, taylor_s_l, sample, "win_sample");
@@ -210,14 +211,17 @@ public:
         out_img(c, pixel) = img.inner(c, pixel);
 #endif
 
+        // mapping from image (x,y) coordinates to elements in the per-pixel vectors
+        Expr xy_to_pixel = (nu * (nv - y - 1)) + x;
+
         // finally...
-        fimg(pixel) = img(pixel) * expj(c, k_c * dr_i(pixel, npulses / 2));
+        fimg(x, y) = img(xy_to_pixel) * expj(c, k_c * dr_i(xy_to_pixel, npulses / 2));
 #if DEBUG_FIMG
-        out_fimg(c, pixel) = fimg.inner(c, pixel);
+        out_fimg(c, xy_to_pixel) = fimg.inner(c, x, y);
 #endif
 
         // output_img: produce shape {nu, nv}, but reverse row order
-        output_img(c, x, y) = fimg.inner(c, (nu * (nv - y - 1)) + x);
+        output_img(c, x, y) = fimg.inner(c, x, y);
     }
 
     void schedule() {
@@ -228,7 +232,7 @@ public:
             k_r.set_estimates({{0, 1800}});
             u.set_estimates({{0, 2048}});
             v.set_estimates({{0, 2048}});
-            pos.set_estimates({{0, 3}, {0, 1999}});
+            pos_in.set_estimates({{0, 3}, {0, 1999}});
             r_in.set_estimates({{0, 4194304}, {0, 3}});
             output_img.set_estimates({{0, 2}, {0, 2048}, {0, 2048}});
             delta_r.set_estimate(0.539505);
@@ -241,6 +245,8 @@ public:
                       << "Vector size: " << vectorsize.value() << std::endl;
             Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
             Var pulse_vo{"pulse_vo"}, pulse_vi{"pulse_vi"};
+            Var x_vo{"x_vo"}, x_vi{"x_vi"};
+            Var y_vo{"y_vo"}, y_vi{"y_vi"};
             Var pixeli{"pixeli"}, block{"block"};
             win_sample.compute_root()
                       .vectorize(sample, vectorsize)
@@ -264,26 +270,40 @@ public:
                    .split(sample, sample_vo, sample_vi, vectorsize)
                    .vectorize(sample_vi)
                    .parallel(pulse);
+                   //.gpu_tile(pulse, pulse_vo, pulse_vi, blocksize); // causes dft to segfault
             norm_r0.compute_root()
-                   .split(pulse, pulse_vo, pulse_vi, vectorsize)
-                   .vectorize(pulse_vi)
-                   .parallel(pulse_vo);
+                   .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize);
             norm_r0.update(0)
-                   .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
-                   .vectorize(pulse_vi)
-                   .parallel(pulse_vo);
+                   .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize);
             norm_r0.update(1)
-                   .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
-                   .vectorize(pulse_vi)
-                   .parallel(pulse_vo);
+                   .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize);
             rr0.compute_inline();
-            norm_rr0.compute_inline();
+            norm_rr0.compute_at(fimg.inner, x_vi)
+                    .reorder(pulse, pixel)
+                    .reorder_storage(pulse, pixel);
             dr_i.compute_inline();
             Q_hat.inner.compute_inline();
-            img.inner.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
-            img.inner.update(0).reorder(c, rnpulses, pixel).gpu_tile(pixel, block, pixeli, blocksize);
-            fimg.inner.compute_root().bound(c, 0, 2).unroll(c).gpu_tile(pixel, block, pixeli, blocksize);
-            output_img.compute_root().bound(c, 0, 2).unroll(c).parallel(y).vectorize(x, vectorsize);
+            img.inner.compute_at(fimg.inner, x_vi);
+            img.inner.update(0)
+                     .reorder(c, pixel, rnpulses.x);
+            fimg.inner.compute_root()
+                      .bound(c, 0, 2)
+                      .unroll(c)
+                      .split(x, x_vo, x_vi, blocksize)
+                      .split(y, y_vo, y_vi, blocksize)
+                      .gpu_lanes(x_vi)
+                      .gpu_blocks(y_vo)
+                      .gpu_threads(y_vi);
+            output_img.compute_root()
+                      .bound(c, 0, 2)
+                      .unroll(c)
+                      .split(y, y_vo, y_vi, blocksize)
+                      .vectorize(x, vectorsize)
+                      .parallel(y_vo, blocksize);
+            if (is_distributed) {
+                output_img.distribute(y_vo);
+                fimg.inner.distribute(y_vo);
+            }
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
@@ -380,6 +400,7 @@ private:
     Func norm_rr0{"norm_rr0"};
     Func dr_i{"dr_i"};
     Func r{"r"};
+    Func pos{"pos"};
     ComplexFunc Q_hat{c, "Q_hat"};
     ComplexFunc img{c, "img"};
     ComplexFunc fimg{c, "fimg"};
@@ -390,4 +411,5 @@ private:
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_distributed)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda)
+HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda_distributed)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_auto_m16)
