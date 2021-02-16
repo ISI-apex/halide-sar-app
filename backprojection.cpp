@@ -110,8 +110,8 @@ public:
         rnd = RDom(0, nd, "rnd");
 
         // Boundary conditions
+        pos = BoundaryConditions::constant_exterior(pos_in, ConciseCasts::f32(Expr(0.0)));
         r = BoundaryConditions::constant_exterior(r_in, Expr(0.0));
-        pos = BoundaryConditions::constant_exterior(pos_in, Halide::ConciseCasts::f32(Expr(0.0)));
 
         // Create window: produces shape {nsamples, npulses}
         win_sample(sample) = taylor(nsamples, taylor_s_l, sample, "win_sample");

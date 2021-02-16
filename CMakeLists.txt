@@ -70,24 +70,25 @@ target_link_libraries(backprojection.generator PRIVATE Halide::Generator)
 add_halide_library(backprojection FROM backprojection.generator
                                   FEATURES c_plus_plus_name_mangling
                                            large_buffers)
+add_halide_library(backprojection_distributed FROM backprojection.generator
+                                              FEATURES c_plus_plus_name_mangling
+                                                       large_buffers
+                                              PARAMS is_distributed=true)
 add_halide_library(backprojection_cuda FROM backprojection.generator
                                        FEATURES c_plus_plus_name_mangling
                                                 large_buffers
                                                 cuda
                                        PARAMS blocksize=16)
 add_halide_library(backprojection_cuda_distributed FROM backprojection.generator
-                                       FEATURES c_plus_plus_name_mangling
-                                                large_buffers
-                                                cuda
-                                       PARAMS blocksize=16 is_distributed=true)
+                                                   FEATURES c_plus_plus_name_mangling
+                                                            large_buffers
+                                                            cuda
+                                                   PARAMS blocksize=16
+                                                          is_distributed=true)
 add_halide_library(backprojection_auto_m16 FROM backprojection.generator
                                            FEATURES c_plus_plus_name_mangling
                                                     large_buffers
                                            AUTOSCHEDULER Halide::Mullapudi2016)
-add_halide_library(backprojection_distributed FROM backprojection.generator
-                                              FEATURES c_plus_plus_name_mangling
-                                                       large_buffers
-                                              PARAMS is_distributed=true)
 
 add_executable(img_output.generator img_output.cpp)
 target_link_libraries(img_output.generator PRIVATE Halide::Generator)
