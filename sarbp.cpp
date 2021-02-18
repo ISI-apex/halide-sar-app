@@ -71,7 +71,9 @@ static void print_usage(string prog, ostream& os) {
     os << "                          Default: " << DB_MIN_DEFAULT << endl;
     os << "  -D, --db-max=REAL       Output image max dB" << endl;
     os << "                          Default: " << DB_MAX_DEFAULT << endl;
-    os << "  -s, --schedule=NAME     One of: cpu|cuda|cpu_distributed|ritsar[-s|-p|-vp]" << endl;
+    os << "  -s, --schedule=NAME     One of: cpu[_distributed]" << endl;
+    os << "                                  cuda[_distributed]" << endl;
+    os << "                                  ritsar[-s|-p|-vp]" << endl;
     os << "                          Default: " << SCHED_DEFAULT << endl;
     os << "  -t, --taylor=INT        Taylor count" << endl;
     os << "                          Default: " << TAYLOR_DEFAULT << endl;
