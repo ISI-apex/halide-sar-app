@@ -179,13 +179,13 @@ int main(int argc, char **argv) {
         backprojection_impl = backprojection_distributed;
         is_distributed = true;
         cout << "Using schedule for distributed CPU" << endl;
+    } else if (bp_sched == "cuda") {
+        backprojection_impl = backprojection_cuda;
+        cout << "Using schedule with CUDA" << endl;
     } else if (bp_sched == "cuda_distributed") {
         backprojection_impl = backprojection_cuda_distributed;
         is_distributed = true;
         cout << "Using schedule for distributed CUDA" << endl;
-    } else if (bp_sched == "cuda") {
-        backprojection_impl = backprojection_cuda;
-        cout << "Using schedule with CUDA" << endl;
     } else if (bp_sched == "ritsar") {
         backprojection_impl = backprojection_ritsar;
         cout << "Using RITSAR baseline (vectorize)" << endl;
