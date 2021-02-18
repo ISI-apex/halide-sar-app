@@ -40,7 +40,7 @@ To submit a job, use `bsub`, e.g.:
 
 ```sh
 export PATH=/path/to/halide-sar-app/build:$PATH
-bsub sar-AFRL-4096x4096-1-debug.lsf
+bsub sar-AFRL-4096x4096-1.lsf
 ```
 
 Monitor queued and running jobs with `bjobs`.
