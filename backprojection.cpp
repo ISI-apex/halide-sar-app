@@ -246,7 +246,6 @@ public:
             Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
             Var pulse_vo{"pulse_vo"}, pulse_vi{"pulse_vi"};
             Var x_vo{"x_vo"}, x_vi{"x_vi"};
-            Var y_vo{"y_vo"}, y_vi{"y_vi"};
             Var pixeli{"pixeli"}, block{"block"};
             win_sample.compute_root()
                       .vectorize(sample, vectorsize)
@@ -290,19 +289,16 @@ public:
                       .bound(c, 0, 2)
                       .unroll(c)
                       .split(x, x_vo, x_vi, blocksize)
-                      .split(y, y_vo, y_vi, blocksize)
-                      .gpu_lanes(x_vi)
-                      .gpu_blocks(y_vo)
-                      .gpu_threads(y_vi);
+                      .gpu_blocks(y)
+                      .gpu_threads(x_vi);
             output_img.compute_root()
                       .bound(c, 0, 2)
                       .unroll(c)
-                      .split(y, y_vo, y_vi, blocksize)
                       .vectorize(x, vectorsize)
-                      .parallel(y_vo, blocksize);
+                      .parallel(y);
             if (is_distributed) {
-                output_img.distribute(y_vo);
-                fimg.inner.distribute(y_vo);
+                output_img.distribute(y);
+                fimg.inner.distribute(y);
             }
             if (print_loop_nest) {
                 output_img.print_loop_nest();
@@ -316,7 +312,6 @@ public:
                 std::cout << "Block size (distributed): " << blocksize_distributed.value() << std::endl;
             }
             Var x_vo{"x_vo"}, x_vi{"x_vi"};
-            Var y_vo{"y_vo"}, y_vi{"y_vi"};
             Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
             Var pulse_vo{"pulse_vo"}, pulse_vi{"pulse_vi"};
             win_sample.compute_root()
@@ -370,11 +365,10 @@ public:
             fimg.inner.compute_inline();
             output_img.compute_root()
                       .split(x, x_vo, x_vi, vectorsize)
-                      .split(y, y_vo, y_vi, blocksize_distributed)
                       .vectorize(x_vi)
-                      .parallel(y_vi);
+                      .parallel(y);
             if (is_distributed) {
-                output_img.distribute(y_vo);
+                output_img.distribute(y);
             }
             if (print_loop_nest) {
                 output_img.print_loop_nest();
