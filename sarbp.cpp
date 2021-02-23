@@ -74,6 +74,7 @@ static void print_usage(string prog, ostream& os) {
     os << "  -s, --schedule=NAME     One of: cpu[_distributed]" << endl;
     os << "                                  cuda[_distributed]" << endl;
     os << "                                  ritsar[-s|-p|-vp]" << endl;
+    os << "                                  auto-m16" << endl;
     os << "                          Default: " << SCHED_DEFAULT << endl;
     os << "  -t, --taylor=INT        Taylor count" << endl;
     os << "                          Default: " << TAYLOR_DEFAULT << endl;
