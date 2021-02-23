@@ -6,7 +6,7 @@ This directory contains launch scripts for evaluating the application on Summit 
 ## Prerequisites
 
 The `sarbp` application needs to be compiled and available on `$PATH`.
-Otherwise. modify the scripts to point directly to the `sarbp` application you want to use.
+However, nodes sometimes fail to find the application on `$PATH`, so it's actually best to just modify the scripts to point directly (use the full path) to the `sarbp` application you want to use.
 
 If you used different `gcc` and `cuda` module versions, modify the job scripts appropriately.
 
