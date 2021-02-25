@@ -1,0 +1,219 @@
+Resetting modules to system default. Reseting $MODULEPATH back to system default. All extra directories will be removed from $MODULEPATH.
+
+Lmod is automatically replacing "xl/16.1.1-5" with "gcc/10.2.0".
+
+
+Due to MODULEPATH changes, the following have been reloaded:
+  1) spectrum-mpi/10.3.1.2-20200121
+
+
+
+LMOD_FAMILY_COMPILER_VERSION=10.2.0
+MANPATH=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc/share/man:/sw/summit/cuda/10.1.243/doc/man:/sw/summit/gcc/10.2.0/share/man:/sw/sources/hpss/man:/sw/summit/lmod/8.2.10/share/man:/opt/ibm/spectrumcomputing/lsf/10.1.0.9/man::/opt/puppetlabs/puppet/share/man
+XDG_SESSION_ID=20629
+XALT_ETC_DIR=/sw/summit/xalt/1.2.1/etc
+LSB_EXEC_CLUSTER=summit
+_ModuleTable003_=bi1ydW50aW1lIix9LGdjYz17WyJmbiJdPSIvc3cvc3VtbWl0L21vZHVsZWZpbGVzL3NpdGUvbGludXgtcmhlbDctcHBjNjRsZS9Db3JlL2djYy8xMC4yLjAubHVhIixbImZ1bGxOYW1lIl09ImdjYy8xMC4yLjAiLFsibG9hZE9yZGVyIl09Nixwcm9wVD17fSxbInN0YWNrRGVwdGgiXT0wLFsic3RhdHVzIl09ImFjdGl2ZSIsWyJ1c2VyTmFtZSJdPSJnY2MvMTAuMi4wIix9LGhzaT17WyJmbiJdPSIvc3cvc3VtbWl0L21vZHVsZWZpbGVzL3NpdGUvbGludXgtcmhlbDctcHBjNjRsZS9Db3JlL2hzaS81LjAuMi5wNS5sdWEiLFsiZnVsbE5hbWUiXT0iaHNpLzUuMC4yLnA1IixbImxvYWRPcmRlciJdPTEscHJvcFQ9e30sWyJzdGFja0RlcHRoIl09MSxbInN0YXR1cyJdPSJhY3RpdmUi
+HOSTNAME=batch1
+LSB_EFFECTIVE_RSRCREQ=1*{select[((LN) && (type == any))] order[r15s:pg] span[hosts=1] cu[type=rack:pref=config]}+42*{select[((CN) && (type == any))] order[r15s:pg] span[ptile=42] cu[type=rack:pref=config]}
+LSF_LOGDIR=/var/log/lsf
+LSF_LIM_API_NTRIES=1
+__LMOD_REF_COUNT_MODULEPATH=/autofs/nccs-svm1_sw/summit/modulefiles/site/linux-rhel7-ppc64le/spectrum-mpi/10.3.1.2-20200121-4pokcfv/gcc/10.2.0:1;/sw/summit/modulefiles/site/linux-rhel7-ppc64le/gcc/10.2.0:1;/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core:1;/sw/summit/modulefiles/core:1
+SHELL=/bin/bash
+LSB_BATCH_JID=763157
+LMOD_ROOT=/sw/summit/lmod
+HISTSIZE=1000
+SSH_CLIENT=10.134.0.34 53984 22
+MODULEPATH_ROOT=/sw/summit/modulefiles
+LMOD_SYSTEM_DEFAULT_MODULES=DefApps
+LIBRARY_PATH=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc/lib:/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/darshan-runtime-3.1.7-cnvxicgf5j4ap64qi6v5gxp67hmrjz43/lib
+LSB_TRAPSIGS=trap # 15 10 12 2 1
+LS_EXECCWD=/ccs/home/cimes/casper/jobs-darpa-demo2
+PAMI_IBV_ADAPTER_AFFINITY=1
+LS_JOBPID=47208
+LMOD_PKG=/sw/summit/lmod/8.2.10
+LSB_MAX_NUM_PROCESSORS=43
+LSB_JOBRES_CALLBACK=44065@batch1
+LSF_SERVERDIR=/opt/ibm/spectrumcomputing/lsf/10.1.0.9/linux3.10-glibc2.17-ppc64le-csm/etc
+PAMI_ENABLE_STRIPING=0
+LSB_JOBID=763157
+LSB_JOB_EXECUSER=cimes
+OMPI_FC=gfortran
+LMOD_VERSION=8.2.10
+LSB_JOBRES_PID=47208
+SSH_TTY=/dev/pts/193
+OLCF_DARSHAN_RUNTIME_ROOT=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/darshan-runtime-3.1.7-cnvxicgf5j4ap64qi6v5gxp67hmrjz43
+LSB_JOBNAME=SARBP-Sandia-1
+__LMOD_REF_COUNT_CMAKE_PREFIX_PATH=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc:1;/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/darshan-runtime-3.1.7-cnvxicgf5j4ap64qi6v5gxp67hmrjz43:1
+__LMOD_REF_COUNT_LOADEDMODULES=hsi/5.0.2.p5:1;xalt/1.2.1:1;lsf-tools/2.0:1;darshan-runtime/3.1.7:1;DefApps:1;gcc/10.2.0:1;cuda/10.1.243:1;spectrum-mpi/10.3.1.2-20200121:1
+BSUB_BLOCK_EXEC_HOST=
+LSF_LIBDIR=/opt/ibm/spectrumcomputing/lsf/10.1.0.9/linux3.10-glibc2.17-ppc64le-csm/lib
+CUDA_TOOLKIT_ROOT_DIR=/sw/summit/cuda/10.1.243
+OPAL_PREFIX=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc
+LSB_PROJECT_NAME=CSC436
+USER=cimes
+LS_COLORS=rs=0:di=38;5;27:ln=38;5;51:mh=44;38;5;15:pi=40;38;5;11:so=38;5;13:do=38;5;5:bd=48;5;232;38;5;11:cd=48;5;232;38;5;3:or=48;5;232;38;5;9:mi=05;48;5;232;38;5;15:su=48;5;196;38;5;15:sg=48;5;11;38;5;16:ca=48;5;196;38;5;226:tw=48;5;10;38;5;16:ow=48;5;10;38;5;21:st=48;5;21;38;5;15:ex=38;5;34:*.tar=38;5;9:*.tgz=38;5;9:*.arc=38;5;9:*.arj=38;5;9:*.taz=38;5;9:*.lha=38;5;9:*.lz4=38;5;9:*.lzh=38;5;9:*.lzma=38;5;9:*.tlz=38;5;9:*.txz=38;5;9:*.tzo=38;5;9:*.t7z=38;5;9:*.zip=38;5;9:*.z=38;5;9:*.Z=38;5;9:*.dz=38;5;9:*.gz=38;5;9:*.lrz=38;5;9:*.lz=38;5;9:*.lzo=38;5;9:*.xz=38;5;9:*.bz2=38;5;9:*.bz=38;5;9:*.tbz=38;5;9:*.tbz2=38;5;9:*.tz=38;5;9:*.deb=38;5;9:*.rpm=38;5;9:*.jar=38;5;9:*.war=38;5;9:*.ear=38;5;9:*.sar=38;5;9:*.rar=38;5;9:*.alz=38;5;9:*.ace=38;5;9:*.zoo=38;5;9:*.cpio=38;5;9:*.7z=38;5;9:*.rz=38;5;9:*.cab=38;5;9:*.jpg=38;5;13:*.jpeg=38;5;13:*.gif=38;5;13:*.bmp=38;5;13:*.pbm=38;5;13:*.pgm=38;5;13:*.ppm=38;5;13:*.tga=38;5;13:*.xbm=38;5;13:*.xpm=38;5;13:*.tif=38;5;13:*.tiff=38;5;13:*.png=38;5;13:*.svg=38;5;13:*.svgz=38;5;13:*.mng=38;5;13:*.pcx=38;5;13:*.mov=38;5;13:*.mpg=38;5;13:*.mpeg=38;5;13:*.m2v=38;5;13:*.mkv=38;5;13:*.webm=38;5;13:*.ogm=38;5;13:*.mp4=38;5;13:*.m4v=38;5;13:*.mp4v=38;5;13:*.vob=38;5;13:*.qt=38;5;13:*.nuv=38;5;13:*.wmv=38;5;13:*.asf=38;5;13:*.rm=38;5;13:*.rmvb=38;5;13:*.flc=38;5;13:*.avi=38;5;13:*.fli=38;5;13:*.flv=38;5;13:*.gl=38;5;13:*.dl=38;5;13:*.xcf=38;5;13:*.xwd=38;5;13:*.yuv=38;5;13:*.cgm=38;5;13:*.emf=38;5;13:*.axv=38;5;13:*.anx=38;5;13:*.ogv=38;5;13:*.ogx=38;5;13:*.aac=38;5;45:*.au=38;5;45:*.flac=38;5;45:*.mid=38;5;45:*.midi=38;5;45:*.mka=38;5;45:*.mp3=38;5;45:*.mpc=38;5;45:*.ogg=38;5;45:*.ra=38;5;45:*.wav=38;5;45:*.axa=38;5;45:*.oga=38;5;45:*.spx=38;5;45:*.xspf=38;5;45:
+LMOD_sys=Linux
+LD_LIBRARY_PATH=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc/lib:/sw/summit/cuda/10.1.243/lib64:/sw/summit/gcc/10.2.0/lib64:/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/darshan-runtime-3.1.7-cnvxicgf5j4ap64qi6v5gxp67hmrjz43/lib:/opt/ibm/spectrumcomputing/lsf/10.1.0.9/linux3.10-glibc2.17-ppc64le-csm/lib
+SBD_KRB5CCNAME_VAL=
+PAMI_IBV_ENABLE_OOO_AR=1
+LSB_EEXEC_REAL_UID=
+LMOD_MPI_NAME=spectrum-mpi
+CPATH=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc/include:/sw/summit/cuda/10.1.243/include
+_ModuleTable004_=LFsidXNlck5hbWUiXT0iaHNpIix9LFsibHNmLXRvb2xzIl09e1siZm4iXT0iL3N3L3N1bW1pdC9tb2R1bGVmaWxlcy9zaXRlL2xpbnV4LXJoZWw3LXBwYzY0bGUvQ29yZS9sc2YtdG9vbHMvMi4wLmx1YSIsWyJmdWxsTmFtZSJdPSJsc2YtdG9vbHMvMi4wIixbImxvYWRPcmRlciJdPTMscHJvcFQ9e30sWyJzdGFja0RlcHRoIl09MSxbInN0YXR1cyJdPSJhY3RpdmUiLFsidXNlck5hbWUiXT0ibHNmLXRvb2xzIix9LFsic3BlY3RydW0tbXBpIl09e1siZm4iXT0iL3N3L3N1bW1pdC9tb2R1bGVmaWxlcy9zaXRlL2xpbnV4LXJoZWw3LXBwYzY0bGUvZ2NjLzEwLjIuMC9zcGVjdHJ1bS1tcGkvMTAuMy4xLjItMjAyMDAxMjEubHVhIixbImZ1bGxOYW1lIl09InNwZWN0cnVtLW1waS8x
+HOSTTYPE=LINUXPPC64LE
+__LMOD_REF_COUNT__LMFILES_=/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/hsi/5.0.2.p5.lua:1;/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/xalt/1.2.1.lua:1;/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/lsf-tools/2.0.lua:1;/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/darshan-runtime/3.1.7.lua:1;/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/DefApps.lua:1;/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/gcc/10.2.0.lua:1;/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/cuda/10.1.243:1;/sw/summit/modulefiles/site/linux-rhel7-ppc64le/gcc/10.2.0/spectrum-mpi/10.3.1.2-20200121.lua:1
+LSF_INVOKE_CMD=bsub
+OLCF_LMOD_ROOT=/sw/summit
+LS_EXEC_T=START
+CUDA_DIR=/sw/summit/cuda/10.1.243
+OLCF_FAMILY_MPI_VERSION=10.3.1.2-20200121
+PROJWORK=/gpfs/alpine/proj-shared
+LSF_VERSION=34
+LS_SUBCWD=/ccs/home/cimes/casper/jobs-darpa-demo2
+LSB_SUB_RES_REQ=1*{select[LN]span[hosts=1]} + 42*{select[CN]span[ptile=42]}
+LSB_UNIXGROUP_INT=cimes
+LMOD_FAMILY_MPI_VERSION=10.3.1.2-20200121
+LSB_HOSTS=batch1 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13 a33n13
+OLCF_FAMILY_MPI=spectrum-mpi
+LSB_JOBFILENAME=/ccs/home/cimes/.lsbatch/1614281192.763157
+_ModuleTable001_=X01vZHVsZVRhYmxlXz17WyJNVHZlcnNpb24iXT0zLFsiY19yZWJ1aWxkVGltZSJdPWZhbHNlLFsiY19zaG9ydFRpbWUiXT1mYWxzZSxkZXB0aFQ9e30sZmFtaWx5PXtbImNvbXBpbGVyIl09ImdjYyIsWyJtcGkiXT0ic3BlY3RydW0tbXBpIix9LG1UPXtEZWZBcHBzPXtbImZuIl09Ii9zdy9zdW1taXQvbW9kdWxlZmlsZXMvc2l0ZS9saW51eC1yaGVsNy1wcGM2NGxlL0NvcmUvRGVmQXBwcy5sdWEiLFsiZnVsbE5hbWUiXT0iRGVmQXBwcyIsWyJsb2FkT3JkZXIiXT01LHByb3BUPXt9LFsic3RhY2tEZXB0aCJdPTAsWyJzdGF0dXMiXT0iYWN0aXZlIixbInVzZXJOYW1lIl09IkRlZkFwcHMiLH0sY3VkYT17WyJmbiJdPSIvc3cvc3VtbWl0L21vZHVsZWZpbGVzL3NpdGUvbGludXgt
+PATH=/sw/sources/lsf-tools/2.0/summit/bin:/sw/summit/xalt/1.2.1/bin:/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc/bin:/sw/summit/cuda/10.1.243/bin:/sw/summit/gcc/10.2.0/bin:/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/darshan-runtime-3.1.7-cnvxicgf5j4ap64qi6v5gxp67hmrjz43/bin:/sw/sources/hpss/bin:/opt/ibm/spectrumcomputing/lsf/10.1.0.9/linux3.10-glibc2.17-ppc64le-csm/bin:/opt/ibm/spectrumcomputing/lsf/10.1.0.9/linux3.10-glibc2.17-ppc64le-csm/etc:/opt/ibm/csm/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/ibm/flightlog/bin:/opt/ibutils/bin:/opt/ibm/spectrum_mpi/jsm_pmix/bin:/opt/puppetlabs/bin:/usr/lpp/mmfs/bin
+MAIL=/var/spool/mail/cimes
+LSB_JOBINDEX=0
+PAMI_IBV_QP_SERVICE_LEVEL=8
+OPAL_LIBDIR=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc/lib
+LSB_EXIT_PRE_ABORT=99
+LSB_JOBEXIT_STAT=0
+OMPI_DIR=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc
+PAMI_CUDA_AWARE_THRESH=320000
+PWD=/ccs/home/cimes/casper/jobs-darpa-demo2
+_LMFILES_=/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/hsi/5.0.2.p5.lua:/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/xalt/1.2.1.lua:/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/lsf-tools/2.0.lua:/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/darshan-runtime/3.1.7.lua:/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/DefApps.lua:/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/gcc/10.2.0.lua:/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core/cuda/10.1.243:/sw/summit/modulefiles/site/linux-rhel7-ppc64le/gcc/10.2.0/spectrum-mpi/10.3.1.2-20200121.lua
+OLCF_CUDA_ROOT=/sw/summit/cuda/10.1.243
+OLCF_MODULEPATH_ROOT=/sw/summit/modulefiles
+__LMOD_REF_COUNT_PYTHONPATH=/sw/summit/xalt/1.2.1/site:1;/sw/summit/xalt/1.2.1/libexec:1
+LSB_RES_GET_FANOUT_INFO=Y
+MODULEPATH=/autofs/nccs-svm1_sw/summit/modulefiles/site/linux-rhel7-ppc64le/spectrum-mpi/10.3.1.2-20200121-4pokcfv/gcc/10.2.0:/sw/summit/modulefiles/site/linux-rhel7-ppc64le/gcc/10.2.0:/sw/summit/modulefiles/site/linux-rhel7-ppc64le/Core:/sw/summit/modulefiles/core
+LSB_CHKFILENAME=/ccs/home/cimes/.lsbatch/1614281192.763157
+OLCF_FAMILY_COMPILER_VERSION=10.2.0
+LOADEDMODULES=hsi/5.0.2.p5:xalt/1.2.1:lsf-tools/2.0:darshan-runtime/3.1.7:DefApps:gcc/10.2.0:cuda/10.1.243:spectrum-mpi/10.3.1.2-20200121
+_ModuleTable_Sz_=6
+LMOD_SYSTEM_NAME=summit
+LSB_DJOB_HOSTFILE=/ccs/home/cimes/.lsbatch/1614281192.763157.hostfile
+OLCF_FAMILY_COMPILER=gcc
+OMPI_LD_PRELOAD_PREPEND=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/darshan-runtime-3.1.7-cnvxicgf5j4ap64qi6v5gxp67hmrjz43/lib/libdarshan.so
+LSF_JOB_TIMESTAMP_VALUE=1614281312
+_ModuleTable005_=MC4zLjEuMi0yMDIwMDEyMSIsWyJsb2FkT3JkZXIiXT04LHByb3BUPXt9LFsic3RhY2tEZXB0aCJdPTAsWyJzdGF0dXMiXT0iYWN0aXZlIixbInVzZXJOYW1lIl09InNwZWN0cnVtLW1waSIsfSx4YWx0PXtbImZuIl09Ii9zdy9zdW1taXQvbW9kdWxlZmlsZXMvc2l0ZS9saW51eC1yaGVsNy1wcGM2NGxlL0NvcmUveGFsdC8xLjIuMS5sdWEiLFsiZnVsbE5hbWUiXT0ieGFsdC8xLjIuMSIsWyJsb2FkT3JkZXIiXT0yLHByb3BUPXt9LFsic3RhY2tEZXB0aCJdPTEsWyJzdGF0dXMiXT0iYWN0aXZlIixbInVzZXJOYW1lIl09InhhbHQiLH0sfSxtcGF0aEE9eyIvYXV0b2ZzL25jY3Mtc3ZtMV9zdy9zdW1taXQvbW9kdWxlZmlsZXMvc2l0ZS9saW51eC1yaGVsNy1wcGM2NGxlL3NwZWN0
+LMOD_CMD=/sw/summit/lmod/8.2.10/libexec/lmod
+LSB_AFFINITY_HOSTFILE=/ccs/home/cimes/.lsbatch/1614281192.763157.hostAffinityFile
+LSF_BINDIR=/opt/ibm/spectrumcomputing/lsf/10.1.0.9/linux3.10-glibc2.17-ppc64le-csm/bin
+LSB_EXEC_HOSTTYPE=LINUXPPC64LE
+LSB_DJOB_NUMPROC=43
+HL_NUM_THREADS=42
+HISTCONTROL=ignoredups
+WORLDWORK=/gpfs/alpine/world-shared
+SHLVL=4
+MEMBERWORK=/gpfs/alpine/scratch/cimes
+HOME=/ccs/home/cimes
+OMPI_CC=gcc
+__LMOD_REF_COUNT_PATH=/sw/sources/lsf-tools/2.0/summit/bin:2;/sw/summit/xalt/1.2.1/bin:1;/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc/bin:1;/sw/summit/cuda/10.1.243/bin:1;/sw/summit/gcc/10.2.0/bin:1;/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/darshan-runtime-3.1.7-cnvxicgf5j4ap64qi6v5gxp67hmrjz43/bin:1;/sw/sources/hpss/bin:1;/opt/ibm/spectrumcomputing/lsf/10.1.0.9/linux3.10-glibc2.17-ppc64le-csm/bin:1;/opt/ibm/spectrumcomputing/lsf/10.1.0.9/linux3.10-glibc2.17-ppc64le-csm/etc:1;/opt/ibm/csm/bin:1;/usr/local/bin:1;/usr/bin:1;/usr/local/sbin:1;/usr/sbin:1;/opt/ibm/flightlog/bin:1;/opt/ibutils/bin:1;/opt/ibm/spectrum_mpi/jsm_pmix/bin:1;/opt/puppetlabs/bin:1;/usr/lpp/mmfs/bin:1
+LSB_APPLICATION_NAME=small
+__LMOD_REF_COUNT_CPATH=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc/include:1;/sw/summit/cuda/10.1.243/include:1
+JOB_TERMINATE_INTERVAL=10
+_ModuleTable002_=cmhlbDctcHBjNjRsZS9Db3JlL2N1ZGEvMTAuMS4yNDMiLFsiZnVsbE5hbWUiXT0iY3VkYS8xMC4xLjI0MyIsWyJsb2FkT3JkZXIiXT03LHByb3BUPXt9LFsic3RhY2tEZXB0aCJdPTAsWyJzdGF0dXMiXT0iYWN0aXZlIixbInVzZXJOYW1lIl09ImN1ZGEvMTAuMS4yNDMiLH0sWyJkYXJzaGFuLXJ1bnRpbWUiXT17WyJmbiJdPSIvc3cvc3VtbWl0L21vZHVsZWZpbGVzL3NpdGUvbGludXgtcmhlbDctcHBjNjRsZS9Db3JlL2RhcnNoYW4tcnVudGltZS8zLjEuNy5sdWEiLFsiZnVsbE5hbWUiXT0iZGFyc2hhbi1ydW50aW1lLzMuMS43IixbImxvYWRPcmRlciJdPTQscHJvcFQ9e30sWyJzdGFja0RlcHRoIl09MSxbInN0YXR1cyJdPSJhY3RpdmUiLFsidXNlck5hbWUiXT0iZGFyc2hh
+BINARY_TYPE_HPC=
+CSM_ALLOCATION_ID=1832742
+LSB_ACCT_FILE=/tmp/763157.tmpdir/.1614281192.763157.acct
+LSB_SUB_HOST=login2
+OLCF_HSI_ROOT=/sw/sources/hpss
+BASH_ENV=/sw/summit/lmod/8.2.10/init/bash
+LSFUSER=cimes
+LSB_SUB_USER=cimes
+__LSF_JOB_TMPDIR__=/tmp/763157.tmpdir
+MPI_ROOT=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc
+LOGNAME=cimes
+PYTHONPATH=/sw/summit/xalt/1.2.1/site:/sw/summit/xalt/1.2.1/libexec
+PAMI_IBV_ENABLE_DCT=1
+LSB_OUTPUTFILE=SARBP-Sandia-1.763157
+LSB_MCPU_HOSTS=batch1 1 a33n13 42 
+LSB_QUEUE=batch
+LSB_OUTDIR=/ccs/home/cimes/casper/jobs-darpa-demo2
+OLCF_SPECTRUM_MPI_ROOT=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc
+CVS_RSH=ssh
+OLCF_GCC_ROOT=/sw/summit/gcc/10.2.0
+SSH_CONNECTION=10.134.0.34 53984 10.134.0.32 22
+XLSF_UIDDIR=/opt/ibm/spectrumcomputing/lsf/10.1.0.9/linux3.10-glibc2.17-ppc64le-csm/lib/uid
+__LMOD_REF_COUNT_LIBRARY_PATH=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc/lib:1;/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/darshan-runtime-3.1.7-cnvxicgf5j4ap64qi6v5gxp67hmrjz43/lib:1
+MODULESHOME=/sw/summit/lmod/8.2.10
+JSM_JSRUN_NO_WARN_TOPOLOGY=1
+LSB_ECHKPNT_RSH_CMD=ssh -o 'PasswordAuthentication no' -o 'StrictHostKeyChecking no'
+PKG_CONFIG_PATH=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/darshan-runtime-3.1.7-cnvxicgf5j4ap64qi6v5gxp67hmrjz43/lib/pkgconfig
+OMPI_CXX=g++
+__LMOD_REF_COUNT_LD_LIBRARY_PATH=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc/lib:1;/sw/summit/cuda/10.1.243/lib64:1;/sw/summit/gcc/10.2.0/lib64:1;/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/darshan-runtime-3.1.7-cnvxicgf5j4ap64qi6v5gxp67hmrjz43/lib:1;/opt/ibm/spectrumcomputing/lsf/10.1.0.9/linux3.10-glibc2.17-ppc64le-csm/lib:1
+LESSOPEN=||/usr/bin/lesspipe.sh %s
+LMOD_SETTARG_FULL_SUPPORT=no
+LSF_CGROUP_TOPDIR_KEY=summit
+LMOD_MPI_VERSION=10.3.1.2-20200121-4pokcfv
+OMPI_MCA_io=romio321
+__Init_Default_Modules=1
+LMOD_FAMILY_COMPILER=gcc
+LSB_XFER_OP=
+CMAKE_PREFIX_PATH=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc:/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/darshan-runtime-3.1.7-cnvxicgf5j4ap64qi6v5gxp67hmrjz43
+XDG_RUNTIME_DIR=/run/user/16379
+XALT_OLCF=1
+XL_LINKER=/sw/summit/xalt/1.2.1/bin/ld
+__LMOD_REF_COUNT_PKG_CONFIG_PATH=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-4.8.5/darshan-runtime-3.1.7-cnvxicgf5j4ap64qi6v5gxp67hmrjz43/lib/pkgconfig:1
+LSB_EEXEC_REAL_GID=
+CUDAPATH=/sw/summit/cuda/10.1.243
+__LMOD_REF_COUNT_MANPATH=/autofs/nccs-svm1_sw/summit/.swci/1-compute/opt/spack/20180914/linux-rhel7-ppc64le/gcc-10.2.0/spectrum-mpi-10.3.1.2-20200121-4pokcfvq4efu6vh7gofiiszc7t7iyzqc/share/man:1;/sw/summit/cuda/10.1.243/doc/man:1;/sw/summit/gcc/10.2.0/share/man:1;/sw/sources/hpss/man:1;/sw/summit/lmod/8.2.10/share/man:1;/opt/ibm/spectrumcomputing/lsf/10.1.0.9/man:1;/opt/puppetlabs/puppet/share/man:1
+_ModuleTable006_=cnVtLW1waS8xMC4zLjEuMi0yMDIwMDEyMS00cG9rY2Z2L2djYy8xMC4yLjAiLCIvc3cvc3VtbWl0L21vZHVsZWZpbGVzL3NpdGUvbGludXgtcmhlbDctcHBjNjRsZS9nY2MvMTAuMi4wIiwiL3N3L3N1bW1pdC9tb2R1bGVmaWxlcy9zaXRlL2xpbnV4LXJoZWw3LXBwYzY0bGUvQ29yZSIsIi9zdy9zdW1taXQvbW9kdWxlZmlsZXMvY29yZSIsfSxbInN5c3RlbUJhc2VNUEFUSCJdPSIvc3cvc3VtbWl0L21vZHVsZWZpbGVzL3NpdGUvbGludXgtcmhlbDctcHBjNjRsZS9Db3JlOi9zdy9zdW1taXQvbW9kdWxlZmlsZXMvY29yZSIsfQ==
+LMOD_DIR=/sw/summit/lmod/8.2.10/libexec
+LSF_ENVDIR=/opt/ibm/spectrumcomputing/lsf/conf
+__LMOD_Priority_PATH=/sw/sources/lsf-tools/2.0/summit/bin:-9999;/sw/summit/xalt/1.2.1/bin:-9999
+LMOD_FAMILY_MPI=spectrum-mpi
+LSB_DJOB_RANKFILE=/ccs/home/cimes/.lsbatch/1614281192.763157.hostfile
+BASH_FUNC_module()=() {  eval $($LMOD_CMD bash "$@") && eval $(${LMOD_SETTARG_CMD:-:} -s sh)
+}
+BASH_FUNC_ml()=() {  eval $($LMOD_DIR/ml_cmd "$@")
+}
+_=/usr/bin/env
+
+
+jsrun -n 1 -a 1 -c 42 -r 1 -b rs -e prepended /ccs/home/cimes/casper/halide-sar-app-demo2-adapt/build/sarbp -p /gpfs/alpine/proj-shared/csc436/SAR-data/Sandia -o /gpfs/alpine/scratch/cimes/csc436/Sandia-1.png -d -45.0 -D 0.0 -t 30 -u 2
+1: 0: Using schedule for CPU only
+1: 0: PlatformData: downcasting B_IF from double to float
+1: 0: PlatformData: downcasting k_r from double to float
+1: 0: PlatformData: downcasting phs from complex<double> to complex<float>
+1: 0: Loaded platform data in 181 ms
+1: 0: Number of pulses: 1999
+1: 0: Pulse sample size: 1800
+1: 0: Computed image plane parameters in 139 ms
+1: 0: X length: 2048
+1: 0: Y length: 2048
+1: 0: Halide backprojection start 
+1: 0: Halide backprojection returned 0 in 35528 ms
+1: 0: Halide backprojection start 
+1: 0: Halide backprojection returned 0 in 17448 ms
+1: 0: Halide dB conversion start
+1: 0: Halide dB conversion returned 0 in 41 ms
+1: 0: Halide PNG production start
+1: 0: Halide PNG production returned 0 in 16 ms
+1: 0: Wrote /gpfs/alpine/scratch/cimes/csc436/Sandia-1.png in 421 ms
+Exit code: 0
+Total time (s): 54
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@batch1>
+Subject: Job 763157: <SARBP-Sandia-1> in cluster <summit> Done
+
+Job <SARBP-Sandia-1> was submitted from host <login2> by user <cimes> in cluster <summit> at Thu Feb 25 14:26:32 2021
+Job was executed on host(s) <1*batch1>, in queue <batch>, as user <cimes> in cluster <summit> at Thu Feb 25 14:28:32 2021
+                            <42*a33n13>
+</ccs/home/cimes> was used as the home directory.
+</ccs/home/cimes/casper/jobs-darpa-demo2> was used as the working directory.
+Started at Thu Feb 25 14:28:32 2021
+Terminated at Thu Feb 25 14:29:43 2021
+Results reported at Thu Feb 25 14:29:43 2021
+
+The output (if any) is above this job summary.
+

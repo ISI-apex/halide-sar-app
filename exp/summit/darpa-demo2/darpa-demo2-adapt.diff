@@ -1,0 +1,32 @@
+diff --git a/sarbp.cpp b/sarbp.cpp
+index 63d4391..a6c0cbc 100644
+--- a/sarbp.cpp
++++ b/sarbp.cpp
+@@ -305,9 +305,18 @@ int main(int argc, char **argv) {
+     } else {
+         buf_bp = Buffer<double, 3>(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
+     }
++    int rv = 0;
++    for (int i = 0; i < 2; i++) {
++    if (i == 1) {
++        // in practice, we would loop over the entire application like it's
++        // handling streaming workloads.
++        // Appropriate threading would be determined by a decision engine
++        // based on timing measurements.
++        halide_set_num_threads(168); // use all hardware threads for 2nd iter
++    }
+     cout << "Halide backprojection start " << endl;
+     start = high_resolution_clock::now();
+-    int rv = backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs,
++    rv = backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs,
+ #if DEBUG_WIN
+         buf_win,
+ #endif
+@@ -363,6 +372,7 @@ int main(int argc, char **argv) {
+     if (rv != 0) {
+         return rv;
+     }
++    }
+ 
+     Buffer<double, 2> buf_bp_full(nullptr, 0);
+     if (is_distributed) {
