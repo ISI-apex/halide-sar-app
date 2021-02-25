@@ -238,7 +238,7 @@ int main(int argc, char **argv) {
     // FFTW: init shared context
     dft_init_fftw(static_cast<size_t>(N_fft));
 
-    // backprojection - pre-FFT
+    // backprojection
 #if DEBUG_WIN
     Buffer<double, 2> buf_win(pd.phs.dim(1).extent(), pd.phs.dim(2).extent());
 #endif
