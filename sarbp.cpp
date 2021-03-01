@@ -296,15 +296,13 @@ int main(int argc, char **argv) {
     Buffer<double, 2> buf_fimg(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
 #endif
 
-    Buffer<double, 2> buf_bp(nullptr, {2, ip.u.dim(0).extent(), ip.v.dim(0).extent()});
+    Buffer<double, 3> buf_bp(nullptr, {2, ip.u.dim(0).extent(), ip.v.dim(0).extent()});
     if (is_distributed) {
         buf_bp.set_distributed({2, ip.u.dim(0).extent(), ip.v.dim(0).extent()});
         // Query local buffer size
         backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs, buf_bp);
-        buf_bp.allocate();
-    } else {
-        buf_bp = Buffer<double, 3>(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
     }
+    buf_bp.allocate();
     cout << "Halide backprojection start " << endl;
     start = high_resolution_clock::now();
     int rv = backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs,
