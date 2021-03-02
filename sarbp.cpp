@@ -10,7 +10,9 @@
 
 #include <cnpy.h>
 
+#if defined(WITH_MPI)
 #include <mpi.h>
+#endif // WITH_MPI
 
 #include "dft.h"
 #include "PlatformData.h"
@@ -19,9 +21,11 @@
 // Halide generators
 #include "backprojection_debug.h"
 #include "backprojection.h"
-#include "backprojection_distributed.h"
 #include "backprojection_cuda.h"
+#if defined(WITH_DISTRIBUTE)
+#include "backprojection_distributed.h"
 #include "backprojection_cuda_distributed.h"
+#endif // WITH_DISTRIBUTE
 #include "backprojection_ritsar.h"
 #include "backprojection_ritsar_s.h"
 #include "backprojection_ritsar_p.h"
@@ -177,16 +181,26 @@ int main(int argc, char **argv) {
         backprojection_impl = backprojection;
         cout << "Using schedule for CPU only" << endl;
     } else if (bp_sched == "cpu_distributed") {
+#if defined(WITH_DISTRIBUTE)
         backprojection_impl = backprojection_distributed;
         is_distributed = true;
         cout << "Using schedule for distributed CPU" << endl;
+#else
+        cerr << "Distributed schedules require distributed support in Halide" << endl;
+        return EXIT_FAILURE;
+#endif // WITH_DISTRIBUTE
     } else if (bp_sched == "cuda") {
         backprojection_impl = backprojection_cuda;
         cout << "Using schedule with CUDA" << endl;
     } else if (bp_sched == "cuda_distributed") {
+#if defined(WITH_DISTRIBUTE)
         backprojection_impl = backprojection_cuda_distributed;
         is_distributed = true;
         cout << "Using schedule for distributed CUDA" << endl;
+#else
+        cerr << "Distributed schedules require distributed support in Halide" << endl;
+        return EXIT_FAILURE;
+#endif // WITH_DISTRIBUTE
     } else if (bp_sched == "ritsar") {
         backprojection_impl = backprojection_ritsar;
         cout << "Using RITSAR baseline (vectorize)" << endl;
@@ -209,11 +223,13 @@ int main(int argc, char **argv) {
     }
 
     int rank = 0, numprocs = 0;
+#if defined(WITH_MPI)
     if (is_distributed) {
         MPI_Init(&argc, &argv);
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
     }
+#endif // WITH_MPI
 
     auto start = high_resolution_clock::now();
     PlatformData pd = platform_load(platform_dir, is_distributed);
@@ -297,11 +313,13 @@ int main(int argc, char **argv) {
 #endif
 
     Buffer<double, 3> buf_bp(nullptr, {2, ip.u.dim(0).extent(), ip.v.dim(0).extent()});
+#if defined(WITH_DISTRIBUTE)
     if (is_distributed) {
         buf_bp.set_distributed({2, ip.u.dim(0).extent(), ip.v.dim(0).extent()});
         // Query local buffer size
         backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs, buf_bp);
     }
+#endif // WITH_DISTRIBUTE
     buf_bp.allocate();
     cout << "Halide backprojection start " << endl;
     start = high_resolution_clock::now();
@@ -364,6 +382,7 @@ int main(int argc, char **argv) {
 
     Buffer<double, 2> buf_bp_full(nullptr, 0);
     if (is_distributed) {
+#if defined(WITH_MPI)
         // Send data to rank 0
         buf_bp.copy_to_host();
         if (rank == 0) {
@@ -399,6 +418,7 @@ int main(int argc, char **argv) {
             cout << "MPI local backprojection send completed in "
                  << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
         }
+#endif // WITH_MPI
     } else {
         buf_bp_full = buf_bp;
     }
@@ -526,9 +546,11 @@ int main(int argc, char **argv) {
              << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
     }
 
+#if defined(WITH_MPI)
     if (is_distributed) {
         MPI_Finalize();
     }
+#endif // WITH_MPI
 
     return rv;
 }

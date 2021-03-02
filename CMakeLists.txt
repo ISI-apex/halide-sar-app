@@ -15,7 +15,7 @@ include(CheckHalideDistributed)
 check_halide_set_distributed(Halide_HAS_DISTRIBUTE)
 
 # Find MPI
-find_package(MPI REQUIRED)
+find_package(MPI)
 
 # Find cnpy
 find_package(Cnpy REQUIRED)
