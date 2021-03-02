@@ -11,15 +11,17 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # Find Halide
 find_package(Halide REQUIRED)
+include(CheckHalideDistributed)
+check_halide_set_distributed(Halide_HAS_DISTRIBUTE)
+
+# Find MPI
+find_package(MPI REQUIRED)
 
 # Find cnpy
 find_package(Cnpy REQUIRED)
 
 # Find pkg-config
 find_package(PkgConfig REQUIRED)
-
-# Find MPI
-find_package(MPI REQUIRED)
 
 # Find FFTW3 double precision
 pkg_check_modules(FFTW fftw3 REQUIRED)
@@ -66,25 +68,28 @@ add_halide_library(backprojection_ritsar_vp FROM backprojection_ritsar.generator
                                             PARAMS schedule=vp)
 
 add_executable(backprojection.generator backprojection.cpp)
+target_compile_definitions(backprojection.generator PRIVATE $<$<BOOL:${Halide_HAS_DISTRIBUTE}>:WITH_DISTRIBUTE>)
 target_link_libraries(backprojection.generator PRIVATE Halide::Generator)
 add_halide_library(backprojection FROM backprojection.generator
                                   FEATURES c_plus_plus_name_mangling
                                            large_buffers)
-add_halide_library(backprojection_distributed FROM backprojection.generator
-                                              FEATURES c_plus_plus_name_mangling
-                                                       large_buffers
-                                              PARAMS is_distributed=true)
 add_halide_library(backprojection_cuda FROM backprojection.generator
                                        FEATURES c_plus_plus_name_mangling
                                                 large_buffers
                                                 cuda
                                        PARAMS blocksize=16)
-add_halide_library(backprojection_cuda_distributed FROM backprojection.generator
-                                                   FEATURES c_plus_plus_name_mangling
-                                                            large_buffers
-                                                            cuda
-                                                   PARAMS blocksize=16
-                                                          is_distributed=true)
+if (Halide_HAS_DISTRIBUTE)
+    add_halide_library(backprojection_distributed FROM backprojection.generator
+                                                  FEATURES c_plus_plus_name_mangling
+                                                           large_buffers
+                                                  PARAMS is_distributed=true)
+    add_halide_library(backprojection_cuda_distributed FROM backprojection.generator
+                                                       FEATURES c_plus_plus_name_mangling
+                                                                large_buffers
+                                                                cuda
+                                                       PARAMS blocksize=16
+                                                              is_distributed=true)
+endif()
 add_halide_library(backprojection_auto_m16 FROM backprojection.generator
                                            FEATURES c_plus_plus_name_mangling
                                                     large_buffers
@@ -108,12 +113,11 @@ target_link_libraries(img_output_u8_test PRIVATE Halide::Halide
 
 add_executable(sarbp sarbp.cpp dft.cpp PlatformData.cpp ImgPlane.cpp)
 target_compile_options(sarbp PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
-target_include_directories(sarbp PRIVATE ${FFTW_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_DIRS})
+target_include_directories(sarbp PRIVATE ${FFTW_INCLUDE_DIRS})
 target_link_directories(sarbp PRIVATE ${FFTW_LIBRARY_DIRS})
 target_link_libraries(sarbp PRIVATE Halide::Halide
                                     Halide::ImageIO
                                     Cnpy::Cnpy
-                                    MPI::MPI_CXX
                                     ${FFTW_STATIC_LIBRARIES}
                                     ip_uv
                                     ip_k
@@ -121,9 +125,7 @@ target_link_libraries(sarbp PRIVATE Halide::Halide
                                     ip_u_hat
                                     ip_pixel_locs
                                     backprojection
-                                    backprojection_distributed
                                     backprojection_cuda
-                                    backprojection_cuda_distributed
                                     backprojection_ritsar
                                     backprojection_ritsar_s
                                     backprojection_ritsar_p
@@ -131,3 +133,13 @@ target_link_libraries(sarbp PRIVATE Halide::Halide
                                     backprojection_auto_m16
                                     img_output_u8
                                     img_output_to_dB)
+if (Halide_HAS_DISTRIBUTE)
+    target_compile_definitions(sarbp PRIVATE WITH_DISTRIBUTE)
+    target_link_libraries(sarbp PRIVATE backprojection_distributed
+                                        backprojection_cuda_distributed)
+endif()
+if (MPI_FOUND)
+    target_compile_definitions(sarbp PRIVATE WITH_MPI)
+    target_include_directories(sarbp PRIVATE ${MPI_CXX_INCLUDE_DIRS})
+    target_link_libraries(sarbp PRIVATE MPI::MPI_CXX)
+endif()
