@@ -12,7 +12,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 # Find Halide
 find_package(Halide REQUIRED)
 include(CheckHalideDistributed)
-check_halide_set_distributed(Halide_HAS_DISTRIBUTE)
+check_halide_set_distributed(Halide_HAS_DISTRIBUTE Halide::shared::Halide)
 
 # Find MPI
 find_package(MPI)

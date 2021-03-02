@@ -1,6 +1,6 @@
 # Provides macros to check for distributed support in Halide
 
-macro(CHECK_HALIDE_SET_DISTRIBUTED VARIABLE)
+macro(CHECK_HALIDE_SET_DISTRIBUTED VARIABLE LIBRARIES)
     if (NOT DEFINED "${VARIABLE}" OR "x${${VARIABLE}}" STREQUAL "x${VARIABLE}")
         if(NOT CMAKE_REQUIRED_QUIET)
             message(STATUS "Checking for Halide set_distributed")
@@ -9,7 +9,7 @@ macro(CHECK_HALIDE_SET_DISTRIBUTED VARIABLE)
         try_compile(${VARIABLE}
                     ${CMAKE_BINARY_DIR}
                     SOURCES ${PROJECT_SOURCE_DIR}/cmake/CheckHalideDistributed/test_set_distributed.cpp
-                    LINK_LIBRARIES Halide::Halide
+                    LINK_LIBRARIES ${LIBRARIES}
                     OUTPUT_VARIABLE OUTPUT)
         if(${VARIABLE})
             if(NOT CMAKE_REQUIRED_QUIET)
