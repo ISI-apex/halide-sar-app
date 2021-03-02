@@ -1,7 +1,7 @@
 #!/bin/bash
 #BSUB -P CSC436
 #BSUB -q debug
-#BSUB -W 1:00
+#BSUB -W 0:10
 #BSUB -nnodes 128
 #BSUB -J SARBP-Sandia-128
 #BSUB -o SARBP-Sandia-128.%J
