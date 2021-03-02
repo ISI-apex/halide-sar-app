@@ -14,7 +14,9 @@ public:
     GeneratorParam<int32_t> vectorsize {"vectorsize", 4};
     GeneratorParam<int32_t> blocksize {"blocksize", 64};
     GeneratorParam<bool> print_loop_nest {"print_loop_nest", false};
+#if defined(WITH_DISTRIBUTE)
     GeneratorParam<bool> is_distributed {"is_distributed", false};
+#endif // WITH_DISTRIBUTE
 
     // 2-D complex data (3-D when handled as primitive data: {2, x, y})
     Input<Buffer<float>> phs {"phs", 3};
@@ -295,10 +297,12 @@ public:
                       .unroll(c)
                       .vectorize(x, vectorsize)
                       .parallel(y);
+#if defined(WITH_DISTRIBUTE)
             if (is_distributed) {
                 output_img.distribute(y);
                 fimg.inner.distribute(y);
             }
+#endif // WITH_DISTRIBUTE
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
@@ -363,9 +367,11 @@ public:
                       .split(x, x_vo, x_vi, vectorsize)
                       .vectorize(x_vi)
                       .parallel(y);
+#if defined(WITH_DISTRIBUTE)
             if (is_distributed) {
                 output_img.distribute(y);
             }
+#endif // WITH_DISTRIBUTE
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
