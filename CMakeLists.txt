@@ -29,8 +29,8 @@ pkg_check_modules(FFTW fftw3 REQUIRED)
 
 option(HALIDE_SAR_TESTS "Enable tests" ON)
 if(HALIDE_SAR_TESTS)
-  enable_testing()
-  add_subdirectory(test)
+    enable_testing()
+    add_subdirectory(test)
 endif()
 
 
@@ -78,7 +78,7 @@ add_halide_library(backprojection_cuda FROM backprojection.generator
                                                 large_buffers
                                                 cuda
                                        PARAMS blocksize=16)
-if (Halide_HAS_DISTRIBUTE)
+if(Halide_HAS_DISTRIBUTE)
     add_halide_library(backprojection_distributed FROM backprojection.generator
                                                   FEATURES c_plus_plus_name_mangling
                                                            large_buffers
@@ -133,12 +133,12 @@ target_link_libraries(sarbp PRIVATE Halide::Halide
                                     backprojection_auto_m16
                                     img_output_u8
                                     img_output_to_dB)
-if (Halide_HAS_DISTRIBUTE)
+if(Halide_HAS_DISTRIBUTE)
     target_compile_definitions(sarbp PRIVATE WITH_DISTRIBUTE)
     target_link_libraries(sarbp PRIVATE backprojection_distributed
                                         backprojection_cuda_distributed)
 endif()
-if (MPI_FOUND)
+if(MPI_FOUND)
     target_compile_definitions(sarbp PRIVATE WITH_MPI)
     target_include_directories(sarbp PRIVATE ${MPI_CXX_INCLUDE_DIRS})
     target_link_libraries(sarbp PRIVATE MPI::MPI_CXX)
