@@ -24,7 +24,7 @@ DATA=${PROJWORK}/csc436/SAR-data/Sandia_P${PULSES}_S${SAMPLES}
 PNG=${MEMBERWORK}/csc436/Sandia_P${PULSES}_S${SAMPLES}-r${RES_FACTOR}-${NODES}.png
 
 module reset
-module load gcc/10.2.0 cuda/10.1.243
+module load gcc/10.2.0
 
 # Restrict Halide threads to number of CPUs per task
 export HL_NUM_THREADS=$((CPUS_PER_RS / TASKS_PER_RS))

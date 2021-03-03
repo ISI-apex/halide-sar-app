@@ -8,7 +8,7 @@ This directory contains launch scripts for evaluating the application on Summit 
 The `sarbp` application needs to be compiled and available on `$PATH`.
 However, nodes sometimes fail to find the application on `$PATH`, so it's actually best to just modify the scripts to point directly (use the full path) to the `sarbp` application you want to use.
 
-If you used different `gcc` and `cuda` module versions, modify the job scripts appropriately.
+If you use a different `gcc` (or other compiler) module version as your base compiler, modify the job scripts appropriately to load the correct module(s).
 
 The input data directories must be available in project directory at `${PROJWORK}/csc436/SAR-data/`.
 If they are not available, use the resize script in this project's `data` directory to produce the required input directories with the correct naming convention.
