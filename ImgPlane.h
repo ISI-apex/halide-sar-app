@@ -6,7 +6,7 @@
 #include "PlatformData.h"
 
 struct ImgPlane {
-    ImgPlane(int nu, int nv, int d_u, int d_v,
+    ImgPlane(int nu, int nv, double d_u, double d_v,
              Halide::Runtime::Buffer<double, 1> u,
              Halide::Runtime::Buffer<double, 1> v,
              Halide::Runtime::Buffer<double, 1> k_u,
@@ -20,8 +20,8 @@ struct ImgPlane {
 
     int nu;
     int nv;
-    int d_u;
-    int d_v;
+    double d_u;
+    double d_v;
     Halide::Runtime::Buffer<double, 1> u;
     Halide::Runtime::Buffer<double, 1> v;
     Halide::Runtime::Buffer<double, 1> k_u;
