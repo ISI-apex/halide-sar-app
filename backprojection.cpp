@@ -163,11 +163,12 @@ public:
 #endif
 
         // norm(r0): produces shape {npulses}
+        // f32 in RITSAR, but f64 produces better image with negligible performance impact
         norm_r0(pulse) = Expr(0.0);
         norm_r0(pulse) += pos(rnd, pulse) * pos(rnd, pulse);
         norm_r0(pulse) = sqrt(norm_r0(pulse));
 #if DEBUG_NORM_R0
-        out_norm_r0(pulse) = norm_r0(pulse);
+        out_norm_r0(pulse) = ConciseCasts::f32(norm_r0(pulse));
 #endif
 
         // r - r0: produces shape {nu*nv, nd, npulses}
