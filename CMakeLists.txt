@@ -10,7 +10,7 @@ set(CMAKE_CXX_EXTENSIONS NO)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 # Find Halide
-find_package(Halide REQUIRED)
+find_package(Halide REQUIRED COMPONENTS Halide PNG)
 include(CheckHalideDistributed)
 check_halide_set_distributed(Halide_HAS_DISTRIBUTE Halide::shared::Halide)
 
