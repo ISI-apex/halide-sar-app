@@ -245,10 +245,10 @@ public:
         } else if (tgt.has_gpu_feature()) {
             // GPU target
             std::cout << "Scheduling for GPU: " << tgt << std::endl
+                      << "Vector size: " << vectorsize.value() << std::endl
                       << "Block size: " << blocksize.value() << std::endl
                       << "Block size GPU tile: " << blocksize_gpu_tile.value() << std::endl
-                      << "Block size GPU split x: " << blocksize_gpu_split_x.value() << std::endl
-                      << "Vector size: " << vectorsize.value() << std::endl;
+                      << "Block size GPU split x: " << blocksize_gpu_split_x.value() << std::endl;
             Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
             Var pulse_vo{"pulse_vo"}, pulse_vi{"pulse_vi"};
             Var x_vo{"x_vo"}, x_vi{"x_vi"};
@@ -314,8 +314,8 @@ public:
         } else {
             // CPU target
             std::cout << "Scheduling for CPU: " << tgt << std::endl
-                      << "Block size: " << blocksize.value() << std::endl
-                      << "Vector size: " << vectorsize.value() << std::endl;
+                      << "Vector size: " << vectorsize.value() << std::endl
+                      << "Block size: " << blocksize.value() << std::endl;
             Var x_vo{"x_vo"}, x_vi{"x_vi"};
             Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
             Var pulse_vo{"pulse_vo"}, pulse_vi{"pulse_vi"};
