@@ -13,6 +13,8 @@ class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator
 public:
     GeneratorParam<int32_t> vectorsize {"vectorsize", 4};
     GeneratorParam<int32_t> blocksize {"blocksize", 64};
+    GeneratorParam<int32_t> blocksize_gpu_tile {"blocksize_gpu_tile", 64};
+    GeneratorParam<int32_t> blocksize_gpu_split_x {"blocksize_gpu_split_x", 64};
     GeneratorParam<bool> print_loop_nest {"print_loop_nest", false};
 #if defined(WITH_DISTRIBUTE)
     GeneratorParam<bool> is_distributed {"is_distributed", false};
@@ -244,6 +246,8 @@ public:
             // GPU target
             std::cout << "Scheduling for GPU: " << tgt << std::endl
                       << "Block size: " << blocksize.value() << std::endl
+                      << "Block size GPU tile: " << blocksize_gpu_tile.value() << std::endl
+                      << "Block size GPU split x: " << blocksize_gpu_split_x.value() << std::endl
                       << "Vector size: " << vectorsize.value() << std::endl;
             Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
             Var pulse_vo{"pulse_vo"}, pulse_vi{"pulse_vi"};
@@ -271,13 +275,13 @@ public:
                    .split(sample, sample_vo, sample_vi, vectorsize)
                    .vectorize(sample_vi)
                    .parallel(pulse);
-                   //.gpu_tile(pulse, pulse_vo, pulse_vi, blocksize); // causes dft to segfault
+                   //.gpu_tile(pulse, pulse_vo, pulse_vi, blocksize_gpu_tile); // causes dft to segfault
             norm_r0.compute_root()
-                   .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize);
+                   .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize_gpu_tile);
             norm_r0.update(0)
-                   .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize);
+                   .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize_gpu_tile);
             norm_r0.update(1)
-                   .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize);
+                   .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize_gpu_tile);
             rr0.compute_inline();
             norm_rr0.compute_at(fimg.inner, x_vi)
                     .reorder(pulse, pixel)
@@ -290,7 +294,7 @@ public:
             fimg.inner.compute_root()
                       .bound(c, 0, 2)
                       .unroll(c)
-                      .split(x, x_vo, x_vi, blocksize)
+                      .split(x, x_vo, x_vi, blocksize_gpu_split_x)
                       .gpu_blocks(y)
                       .gpu_threads(x_vi);
             output_img.compute_root()

@@ -77,7 +77,9 @@ add_halide_library(backprojection_cuda FROM backprojection.generator
                                        FEATURES c_plus_plus_name_mangling
                                                 large_buffers
                                                 cuda
-                                       PARAMS blocksize=16)
+                                       PARAMS blocksize=16
+                                              blocksize_gpu_tile=16
+                                              blocksize_gpu_split_x=16)
 if(Halide_HAS_DISTRIBUTE)
     add_halide_library(backprojection_distributed FROM backprojection.generator
                                                   FEATURES c_plus_plus_name_mangling
@@ -88,6 +90,8 @@ if(Halide_HAS_DISTRIBUTE)
                                                                 large_buffers
                                                                 cuda
                                                        PARAMS blocksize=16
+                                                              blocksize_gpu_tile=16
+                                                              blocksize_gpu_split_x=16
                                                               is_distributed=true)
 endif()
 add_halide_library(backprojection_auto_m16 FROM backprojection.generator
