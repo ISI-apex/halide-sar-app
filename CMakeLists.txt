@@ -72,27 +72,29 @@ target_compile_definitions(backprojection.generator PRIVATE $<$<BOOL:${Halide_HA
 target_link_libraries(backprojection.generator PRIVATE Halide::Generator)
 add_halide_library(backprojection FROM backprojection.generator
                                   FEATURES c_plus_plus_name_mangling
-                                           large_buffers)
+                                           large_buffers
+                                  PARAMS schedule=cpu)
 add_halide_library(backprojection_cuda FROM backprojection.generator
                                        FEATURES c_plus_plus_name_mangling
                                                 large_buffers
                                                 cuda
-                                       PARAMS blocksize=16
+                                       PARAMS schedule=gpu
+                                              blocksize=16
                                               blocksize_gpu_tile=16
                                               blocksize_gpu_split_x=16)
 if(Halide_HAS_DISTRIBUTE)
     add_halide_library(backprojection_distributed FROM backprojection.generator
                                                   FEATURES c_plus_plus_name_mangling
                                                            large_buffers
-                                                  PARAMS is_distributed=true)
+                                                  PARAMS schedule=cpu-distributed)
     add_halide_library(backprojection_cuda_distributed FROM backprojection.generator
                                                        FEATURES c_plus_plus_name_mangling
                                                                 large_buffers
                                                                 cuda
-                                                       PARAMS blocksize=16
+                                                       PARAMS schedule=gpu-distributed
+                                                              blocksize=16
                                                               blocksize_gpu_tile=16
-                                                              blocksize_gpu_split_x=16
-                                                              is_distributed=true)
+                                                              blocksize_gpu_split_x=16)
 endif()
 add_halide_library(backprojection_auto_m16 FROM backprojection.generator
                                            FEATURES c_plus_plus_name_mangling

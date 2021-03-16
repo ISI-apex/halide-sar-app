@@ -11,14 +11,26 @@ using namespace Halide::Tools;
 
 class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator> {
 public:
+    enum class Schedule { CPU,
+                          GPU,
+                          CPUDistributed,
+                          GPUDistributed,
+                        };
+    GeneratorParam<Schedule> sched {"schedule",
+                                    Schedule::CPU,
+                                    {{"cpu", Schedule::CPU},
+                                     {"gpu", Schedule::GPU},
+#if defined(WITH_DISTRIBUTE)
+                                     {"cpu-distributed", Schedule::CPUDistributed},
+                                     {"gpu-distributed", Schedule::GPUDistributed},
+#endif // WITH_DISTRIBUTE
+                                    }
+                                   };
     GeneratorParam<int32_t> vectorsize {"vectorsize", 4};
     GeneratorParam<int32_t> blocksize {"blocksize", 64};
     GeneratorParam<int32_t> blocksize_gpu_tile {"blocksize_gpu_tile", 64};
     GeneratorParam<int32_t> blocksize_gpu_split_x {"blocksize_gpu_split_x", 64};
     GeneratorParam<bool> print_loop_nest {"print_loop_nest", false};
-#if defined(WITH_DISTRIBUTE)
-    GeneratorParam<bool> is_distributed {"is_distributed", false};
-#endif // WITH_DISTRIBUTE
 
     // 2-D complex data (3-D when handled as primitive data: {2, x, y})
     Input<Buffer<float>> phs {"phs", 3};
@@ -242,17 +254,25 @@ public:
             delta_r.set_estimate(0.539505);
             N_fft.set_estimate(4096);
             taylor_s_l.set_estimate(30);
-        } else if (tgt.has_gpu_feature()) {
+            return;
+        }
+        Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
+        Var pulse_vo{"pulse_vo"}, pulse_vi{"pulse_vi"};
+        Var x_vo{"x_vo"}, x_vi{"x_vi"};
+        switch (sched) {
+        case Schedule::GPU:
+#if defined(WITH_DISTRIBUTE)
+        case Schedule::GPUDistributed:
+#endif // WITH_DISTRIBUTE
+            if (!tgt.has_gpu_feature()) {
+                throw std::runtime_error("GPU schedules require GPU feature");
+            }
             // GPU target
             std::cout << "Scheduling for GPU: " << tgt << std::endl
                       << "Vector size: " << vectorsize.value() << std::endl
                       << "Block size: " << blocksize.value() << std::endl
                       << "Block size GPU tile: " << blocksize_gpu_tile.value() << std::endl
                       << "Block size GPU split x: " << blocksize_gpu_split_x.value() << std::endl;
-            Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
-            Var pulse_vo{"pulse_vo"}, pulse_vi{"pulse_vi"};
-            Var x_vo{"x_vo"}, x_vi{"x_vi"};
-            Var pixeli{"pixeli"}, block{"block"};
             win_sample.compute_root()
                       .vectorize(sample, vectorsize)
                       .parallel(sample, blocksize);
@@ -303,7 +323,7 @@ public:
                       .vectorize(x, vectorsize)
                       .parallel(y);
 #if defined(WITH_DISTRIBUTE)
-            if (is_distributed) {
+            if (sched == Schedule::GPUDistributed) {
                 output_img.distribute(y);
                 fimg.inner.distribute(y);
             }
@@ -311,14 +331,15 @@ public:
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
-        } else {
+            break;
+        case Schedule::CPU:
+#if defined(WITH_DISTRIBUTE)
+        case Schedule::CPUDistributed:
+#endif // WITH_DISTRIBUTE
             // CPU target
             std::cout << "Scheduling for CPU: " << tgt << std::endl
                       << "Vector size: " << vectorsize.value() << std::endl
                       << "Block size: " << blocksize.value() << std::endl;
-            Var x_vo{"x_vo"}, x_vi{"x_vi"};
-            Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
-            Var pulse_vo{"pulse_vo"}, pulse_vi{"pulse_vi"};
             win_sample.compute_root()
                       .vectorize(sample, vectorsize)
                       .parallel(sample, blocksize);
@@ -373,13 +394,16 @@ public:
                       .vectorize(x_vi)
                       .parallel(y);
 #if defined(WITH_DISTRIBUTE)
-            if (is_distributed) {
+            if (sched == Schedule::CPUDistributed) {
                 output_img.distribute(y);
             }
 #endif // WITH_DISTRIBUTE
             if (print_loop_nest) {
                 output_img.print_loop_nest();
             }
+            break;
+        default:
+            throw std::runtime_error("Unknown schedule: " + sched.name());
         }
     }
 
