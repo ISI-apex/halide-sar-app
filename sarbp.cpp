@@ -19,7 +19,6 @@
 #include "ImgPlane.h"
 
 // Halide generators
-#include "backprojection_debug.h"
 #include "backprojection.h"
 #include "backprojection_cuda.h"
 #if defined(WITH_DISTRIBUTE)
@@ -255,63 +254,6 @@ int main(int argc, char **argv) {
     dft_init_fftw(static_cast<size_t>(N_fft));
 
     // backprojection
-#if DEBUG_WIN
-    Buffer<double, 2> buf_win(pd.phs.dim(1).extent(), pd.phs.dim(2).extent());
-#endif
-#if DEBUG_FILT
-    Buffer<float, 1> buf_filt(pd.phs.dim(1).extent());
-#endif
-#if DEBUG_PHS_FILT
-    Buffer<double, 3> buf_phs_filt(2, pd.phs.dim(1).extent(), pd.phs.dim(2).extent());
-#endif
-#if DEBUG_PHS_PAD
-    Buffer<double, 3> buf_phs_pad(2, N_fft, pd.phs.dim(2).extent());
-#endif
-#if DEBUG_PRE_FFT
-    Buffer<double, 3> buf_pre_fft(2, N_fft, pd.phs.dim(2).extent());
-#endif
-#if DEBUG_POST_FFT
-    Buffer<double, 3> buf_post_fft(2, N_fft, pd.phs.dim(2).extent());
-#endif
-#if DEBUG_Q
-    Buffer<double, 3> buf_q(2, N_fft, buf_post_fft.dim(2).extent());
-#endif
-#if DEBUG_NORM_R0
-    Buffer<float, 1> buf_norm_r0(buf_post_fft.dim(2).extent());
-#endif
-#if DEBUG_RR0
-    Buffer<double, 3> buf_rr0(ip.u.dim(0).extent() * ip.v.dim(0).extent(),
-                              pd.pos.dim(0).extent(),
-                              buf_post_fft.dim(2).extent());
-#endif
-#if DEBUG_NORM_RR0
-    Buffer<double, 2> buf_norm_rr0(ip.u.dim(0).extent() * ip.v.dim(0).extent(),
-                                   buf_post_fft.dim(2).extent());
-#endif
-#if DEBUG_DR_I
-    Buffer<double, 2> buf_dr_i(ip.u.dim(0).extent() * ip.v.dim(0).extent(),
-                               buf_post_fft.dim(2).extent());
-#endif
-#if DEBUG_Q_REAL
-    Buffer<double, 2> buf_q_real(ip.u.dim(0).extent() * ip.v.dim(0).extent(),
-                                 buf_post_fft.dim(2).extent());
-#endif
-#if DEBUG_Q_IMAG
-    Buffer<double, 2> buf_q_imag(ip.u.dim(0).extent() * ip.v.dim(0).extent(),
-                                 buf_post_fft.dim(2).extent());
-#endif
-#if DEBUG_Q_HAT
-    Buffer<double, 3> buf_q_hat(2,
-                                ip.u.dim(0).extent() * ip.v.dim(0).extent(),
-                                buf_post_fft.dim(2).extent());
-#endif
-#if DEBUG_IMG
-    Buffer<double, 2> buf_img(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
-#endif
-#if DEBUG_FIMG
-    Buffer<double, 2> buf_fimg(2, ip.u.dim(0).extent() * ip.v.dim(0).extent());
-#endif
-
     Buffer<double, 3> buf_bp(nullptr, {2, ip.u.dim(0).extent(), ip.v.dim(0).extent()});
 #if defined(WITH_DISTRIBUTE)
     if (is_distributed) {
@@ -323,56 +265,7 @@ int main(int argc, char **argv) {
     buf_bp.allocate();
     cout << "Halide backprojection start " << endl;
     start = high_resolution_clock::now();
-    int rv = backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs,
-#if DEBUG_WIN
-        buf_win,
-#endif
-#if DEBUG_FILT
-        buf_filt,
-#endif
-#if DEBUG_PHS_FILT
-        buf_phs_filt,
-#endif
-#if DEBUG_PHS_PAD
-        buf_phs_pad,
-#endif
-#if DEBUG_PRE_FFT
-        buf_pre_fft,
-#endif
-#if DEBUG_POST_FFT
-        buf_post_fft,
-#endif
-#if DEBUG_Q
-        buf_q,
-#endif
-#if DEBUG_NORM_R0
-        buf_norm_r0,
-#endif
-#if DEBUG_RR0
-        buf_rr0,
-#endif
-#if DEBUG_NORM_RR0
-        buf_norm_rr0,
-#endif
-#if DEBUG_DR_I
-        buf_dr_i,
-#endif
-#if DEBUG_Q_REAL
-        buf_q_real,
-#endif
-#if DEBUG_Q_IMAG
-        buf_q_imag,
-#endif
-#if DEBUG_Q_HAT
-        buf_q_hat,
-#endif
-#if DEBUG_IMG
-        buf_img,
-#endif
-#if DEBUG_FIMG
-        buf_fimg,
-#endif
-        buf_bp);
+    int rv = backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs, buf_bp);
     stop = high_resolution_clock::now();
     cout << "Halide backprojection returned " << rv << " in "
          << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
@@ -422,93 +315,14 @@ int main(int argc, char **argv) {
     } else {
         buf_bp_full = buf_bp;
     }
+#if DEBUG_BP
+    vector<size_t> shape_bp { static_cast<size_t>(buf_bp_full.dim(2).extent()),
+                              static_cast<size_t>(buf_bp_full.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-bp.npy", (complex<double> *)buf_bp_full.begin(), shape_bp);
+#endif
 
     // FFTW: clean up shared context
     dft_destroy_fftw();
-
-    // write debug output
-#if DEBUG_WIN
-    vector<size_t> shape_win { static_cast<size_t>(buf_win.dim(1).extent()),
-                               static_cast<size_t>(buf_win.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-win.npy", (double *)buf_win.begin(), shape_win);
-#endif
-#if DEBUG_FILT
-    vector<size_t> shape_filt { static_cast<size_t>(buf_filt.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-filt.npy", (float *)buf_filt.begin(), shape_filt);
-#endif
-#if DEBUG_PHS_FILT
-    vector<size_t> shape_phs_filt { static_cast<size_t>(buf_phs_filt.dim(2).extent()),
-                                    static_cast<size_t>(buf_phs_filt.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-phs_filt.npy", (complex<double> *)buf_phs_filt.begin(), shape_phs_filt);
-#endif
-#if DEBUG_PHS_PAD
-    vector<size_t> shape_phs_pad { static_cast<size_t>(buf_phs_pad.dim(2).extent()),
-                                   static_cast<size_t>(buf_phs_pad.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-phs_pad.npy", (complex<double> *)buf_phs_pad.begin(), shape_phs_pad);
-#endif
-#if DEBUG_PRE_FFT
-    vector<size_t> shape_pre_fft { static_cast<size_t>(buf_pre_fft.dim(2).extent()),
-                                   static_cast<size_t>(buf_pre_fft.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-pre_fft.npy", (complex<double> *)buf_pre_fft.begin(), shape_pre_fft);
-#endif
-#if DEBUG_POST_FFT
-    vector<size_t> shape_post_fft { static_cast<size_t>(buf_post_fft.dim(2).extent()),
-                                    static_cast<size_t>(buf_post_fft.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-post_fft.npy", (complex<double> *)buf_post_fft.begin(), shape_post_fft);
-#endif
-#if DEBUG_Q
-    vector<size_t> shape_q { static_cast<size_t>(buf_q.dim(2).extent()),
-                             static_cast<size_t>(buf_q.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-q.npy", (complex<double> *)buf_q.begin(), shape_q);
-#endif
-#if DEBUG_NORM_R0
-    vector<size_t> shape_norm_r0 { static_cast<size_t>(buf_norm_r0.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-norm_r0.npy", (float *)buf_norm_r0.begin(), shape_norm_r0);
-#endif
-#if DEBUG_RR0
-    vector<size_t> shape_rr0 { static_cast<size_t>(buf_rr0.dim(2).extent()),
-                               static_cast<size_t>(buf_rr0.dim(1).extent()),
-                               static_cast<size_t>(buf_rr0.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-rr0.npy", (double *)buf_rr0.begin(), shape_rr0);
-#endif
-#if DEBUG_NORM_RR0
-    vector<size_t> shape_norm_rr0 { static_cast<size_t>(buf_norm_rr0.dim(1).extent()),
-                                    static_cast<size_t>(buf_norm_rr0.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-norm_rr0.npy", (double *)buf_norm_rr0.begin(), shape_norm_rr0);
-#endif
-#if DEBUG_DR_I
-    vector<size_t> shape_dr_i { static_cast<size_t>(buf_dr_i.dim(1).extent()),
-                                static_cast<size_t>(buf_dr_i.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-dr_i.npy", (double *)buf_dr_i.begin(), shape_dr_i);
-#endif
-#if DEBUG_Q_REAL
-    vector<size_t> shape_q_real { static_cast<size_t>(buf_q_real.dim(1).extent()),
-                                  static_cast<size_t>(buf_q_real.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-q_real.npy", (double *)buf_q_real.begin(), shape_q_real);
-#endif
-#if DEBUG_Q_IMAG
-    vector<size_t> shape_q_imag { static_cast<size_t>(buf_q_imag.dim(1).extent()),
-                                  static_cast<size_t>(buf_q_imag.dim(0).extent()) };
-    cnpy::npy_save("sarbp_debug-q_imag.npy", (double *)buf_q_imag.begin(), shape_q_imag);
-#endif
-#if DEBUG_Q_HAT
-    vector<size_t> shape_q_hat { static_cast<size_t>(buf_q_hat.dim(2).extent()),
-                                 static_cast<size_t>(buf_q_hat.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-q_hat.npy", (complex<double> *)buf_q_hat.begin(), shape_q_hat);
-#endif
-#if DEBUG_IMG
-    vector<size_t> shape_img { static_cast<size_t>(buf_img.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-img.npy", (complex<double> *)buf_img.begin(), shape_img);
-#endif
-#if DEBUG_FIMG
-    vector<size_t> shape_fimg { static_cast<size_t>(buf_fimg.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-fimg.npy", (complex<double> *)buf_fimg.begin(), shape_fimg);
-#endif
-#if DEBUG_BP
-    vector<size_t> shape_bp { static_cast<size_t>(buf_bp.dim(2).extent()),
-                              static_cast<size_t>(buf_bp.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-bp.npy", (complex<double> *)buf_bp.begin(), shape_bp);
-#endif
 
     if (!is_distributed || rank == 0) {
         // Convert to dB
@@ -522,11 +336,11 @@ int main(int argc, char **argv) {
         if (rv != 0) {
             return rv;
         }
-    #if DEBUG_BP_DB
+#if DEBUG_BP_DB
         vector<size_t> shape_bp_dB { static_cast<size_t>(buf_bp_dB.dim(1).extent()),
                                      static_cast<size_t>(buf_bp_dB.dim(0).extent()) };
         cnpy::npy_save("sarbp_debug-bp_dB.npy", (double *)buf_bp_dB.begin(), shape_bp_dB);
-    #endif
+#endif
 
         // Produce output image
         Buffer<uint8_t, 2> buf_bp_u8(buf_bp_dB.dim(0).extent(), buf_bp_dB.dim(1).extent());

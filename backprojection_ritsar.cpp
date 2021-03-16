@@ -1,6 +1,5 @@
 #include <Halide.h>
 
-#include "backprojection_debug.h"
 #include "halide_complexfunc.h"
 #include "signal.h"
 #include "signal_complex.h"
@@ -33,55 +32,6 @@ public:
     Input<Buffer<double>> v {"v", 1};
     Input<Buffer<float>> pos {"pos", 2};
     Input<Buffer<double>> r {"r", 2};
-
-#if DEBUG_WIN
-    Output<Buffer<double>> out_win{"out_win", 2};
-#endif
-#if DEBUG_FILT
-    Output<Buffer<float>> out_filt{"out_filt", 1};
-#endif
-#if DEBUG_PHS_FILT
-    Output<Buffer<double>> out_phs_filt{"out_phs_filt", 3}; // complex
-#endif
-#if DEBUG_PHS_PAD
-    Output<Buffer<double>> out_phs_pad{"out_phs_pad", 3}; // complex
-#endif
-#if DEBUG_PRE_FFT
-    Output<Buffer<double>> out_pre_fft{"out_pre_fft", 3};
-#endif
-#if DEBUG_POST_FFT
-    Output<Buffer<double>> out_post_fft{"out_post_fft", 3};
-#endif
-#if DEBUG_Q
-    Output<Buffer<double>> out_Q{"out_Q", 3};
-#endif
-#if DEBUG_NORM_R0
-    Output<Buffer<float>> out_norm_r0{"out_norm_r0", 1};
-#endif
-#if DEBUG_RR0
-    Output<Buffer<double>> out_rr0{"out_rr0", 3};
-#endif
-#if DEBUG_NORM_RR0
-    Output<Buffer<double>> out_norm_rr0{"out_norm_rr0", 2};
-#endif
-#if DEBUG_DR_I
-    Output<Buffer<double>> out_dr_i{"out_dr_i", 2};
-#endif
-#if DEBUG_Q_REAL
-    Output<Buffer<double>> out_q_real{"out_q_real", 2};
-#endif
-#if DEBUG_Q_IMAG
-    Output<Buffer<double>> out_q_imag{"out_q_imag", 2};
-#endif
-#if DEBUG_Q_HAT
-    Output<Buffer<double>> out_q_hat{"out_q_hat", 3};
-#endif
-#if DEBUG_IMG
-    Output<Buffer<double>> out_img{"out_img", 2};
-#endif
-#if DEBUG_FIMG
-    Output<Buffer<double>> out_fimg{"out_fimg", 2};
-#endif
 
     // 2-D complex data (3-D when handled as primitive data: {2, x, y})
     Output<Buffer<double>> output_img{"output_img", 3};
@@ -119,89 +69,45 @@ public:
         win_x(x) = taylor(nsamples, taylor_s_l, x, "win_x");
         win_y(y) = taylor(npulses, taylor_s_l, y, "win_y");
         win(x, y) = win_x(x) * win_y(y);
-#if DEBUG_WIN
-        out_win(x, y) = win(x, y);
-#endif
 
         // Filter phase history: produces shape {nsamples}
         filt(x) = abs(k_r(x));
-#if DEBUG_FILT
-        out_filt(x) = filt(x);
-#endif
 
         // phs_filt: produces shape {nsamples, npulses}
         Func phs_func = phs;
         ComplexFunc phs_cmplx(c, phs_func);
         phs_filt(x, y) = phs_cmplx(x, y) * filt(x) * win(x, y);
-#if DEBUG_PHS_FILT
-        out_phs_filt(c, x, y) = phs_filt.inner(c, x, y);
-#endif
 
         // Zero pad phase history: produces shape {N_fft, npulses}
         phs_pad(x, y) = pad(phs_filt, nsamples, npulses,
                             ComplexExpr(c, Expr(0.0), Expr(0.0)),
                             N_fft, npulses, c, x, y);
-#if DEBUG_PHS_PAD
-        out_phs_pad(c, x, y) = phs_pad.inner(c, x, y);
-#endif
 
         // shift: produces shape {N_fft, npulses}
         fftsh(x, y) = fftshift(phs_pad, N_fft, npulses, x, y);
-#if DEBUG_PRE_FFT
-        out_pre_fft(c, x, y) = fftsh.inner(c, x, y);
-#endif
 
         // dft: produces shape {N_fft, npulses}
         dft.inner.define_extern("call_dft", {fftsh.inner, N_fft}, Float(64), {c, x, y});
-#if DEBUG_POST_FFT
-        out_post_fft(c, x, y) = dft.inner(c, x, y);
-#endif
 
         // Q: produces shape {N_fft, npulses}
         Q(x, y) = fftshift(dft, N_fft, npulses, x, y);
-#if DEBUG_Q
-        out_Q(c, x, y) = Q.inner(c, x, y);
-#endif
 
         // norm(r0): produces shape {npulses}
         norm_r0(x) = norm(pos(rnd, x), "norm_r0_norm");
-#if DEBUG_NORM_R0
-        out_norm_r0(x) = norm_r0(x);
-#endif
 
         // r - r0: produces shape {nu*nv, nd, npulses}
         rr0(x, y, z) = r(x, y) - pos(y, z);
-#if DEBUG_RR0
-        out_rr0(x, y, z) = rr0(x, y, z);
-#endif
 
         // norm(r - r0): produces shape {nu*nv, npulses}
         norm_rr0(x, y) = norm(rr0(x, rnd, y), "norm_rr0_norm");
-#if DEBUG_NORM_RR0
-        out_norm_rr0(x, y) = norm_rr0(x, y);
-#endif
 
         // dr_i: produces shape {nu*nv, npulses}
         dr_i(x, y) = norm_r0(y) - norm_rr0(x, y);
-#if DEBUG_DR_I
-        out_dr_i(x, y) = dr_i(x, y);
-#endif
 
         // Q_{real,imag,hat}: produce shape {nu*nv, npulses}
         Q_real(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 0, x, y);
-#if DEBUG_Q_REAL
-        out_q_real(x, y) = Q_real(x, y);
-#endif
         Q_imag(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, 1, x, y);
-#if DEBUG_Q_IMAG
-        out_q_imag(x, y) = Q_imag(x, y);
-#endif
-        // NOTE: it is possible to do this, directly
-        //Q_hat(x, y) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, c);
         Q_hat(x, y) = ComplexExpr(c, Q_real(x, y), Q_imag(x, y));
-#if DEBUG_Q_HAT
-        out_q_hat(c, x, y) = Q_hat.inner(c, x, y);
-#endif
 
         // k_c: produces scalar
         Expr k_c = k_r(nsamples / 2);
@@ -209,16 +115,10 @@ public:
         // img: produces shape {nu*nv}
         img(x) = ComplexExpr(c, Expr(0.0), Expr(0.0));
         img(x) += Q_hat(x, rnpulses) * exp(ComplexExpr(c, Expr(0.0), Expr(-1.0)) * k_c * dr_i(x, rnpulses));
-#if DEBUG_IMG
-        out_img(c, x) = img.inner(c, x);
-#endif
 
         // finally...
         Expr fdr_i = norm_r0(npulses / 2) - norm_rr0(x, npulses / 2);
         fimg(x) = img(x) * exp(ComplexExpr(c, Expr(0.0), Expr(1.0)) * k_c * fdr_i);
-#if DEBUG_FIMG
-        out_fimg(c, x) = fimg.inner(c, x);
-#endif
 
         // output_img: produce shape {nu, nv}, but reverse row order
         output_img(c, x, y) = fimg.inner(c, (nu * (nv - y - 1)) + x);
