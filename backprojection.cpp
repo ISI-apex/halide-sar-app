@@ -244,6 +244,7 @@ public:
         Target tgt(target);
         if (auto_schedule) {
             std::cout << "setting size/scalar estimates for autoscheduler" << std::endl;
+            // Dimension sizes based on Sandia dataset
             phs.set_estimates({{0, 2}, {0, 1800}, {0, 1999}});
             k_r.set_estimates({{0, 1800}});
             u.set_estimates({{0, 2048}});
