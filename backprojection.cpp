@@ -128,7 +128,7 @@ public:
         pos = BoundaryConditions::constant_exterior(pos_in, Expr(0.0f));
         r = BoundaryConditions::constant_exterior(r_in, Expr(0.0));
 
-        // Create window: produces shape {nsamples, npulses}
+        // Create window: produces f64, shape {nsamples, npulses}
         win_sample(sample) = taylor(nsamples, taylor_s_l, sample, "win_sample");
         win_pulse(pulse) = taylor(npulses, taylor_s_l, pulse, "win_pulse");
         win(sample, pulse) = win_sample(sample) * win_pulse(pulse);
@@ -136,13 +136,13 @@ public:
         out_win(sample, pulse) = win(sample, pulse);
 #endif
 
-        // Filter phase history: produces shape {nsamples}
+        // Filter phase history: produces f32, shape {nsamples}
         filt(x) = abs(k_r(x));
 #if DEBUG_FILT
         out_filt(x) = filt(x);
 #endif
 
-        // phs_filt: produces shape {nsamples, npulses}
+        // phs_filt: produces complex f64, shape {nsamples, npulses}
         Func phs_func = phs;
         ComplexFunc phs_cmplx(c, phs_func);
         phs_filt(x, pulse) = phs_cmplx(x, pulse) * filt(x) * win(x, pulse);
@@ -150,7 +150,7 @@ public:
         out_phs_filt(c, x, pulse) = phs_filt.inner(c, x, pulse);
 #endif
 
-        // Zero pad phase history: produces shape {N_fft, npulses}
+        // Zero pad phase history: produces complex f64, shape {N_fft, npulses}
         phs_pad(sample, pulse) = pad(phs_filt, nsamples, npulses,
                                      ComplexExpr(c, Expr(0.0), Expr(0.0)),
                                      N_fft, npulses, c, sample, pulse);
@@ -158,25 +158,25 @@ public:
         out_phs_pad(c, sample, pulse) = phs_pad.inner(c, sample, pulse);
 #endif
 
-        // shift: produces shape {N_fft, npulses}
+        // shift: produces complex f64, shape {N_fft, npulses}
         fftsh(sample, pulse) = fftshift(phs_pad, N_fft, npulses, sample, pulse);
 #if DEBUG_PRE_FFT
         out_pre_fft(c, sample, pulse) = fftsh.inner(c, sample, pulse);
 #endif
 
-        // dft: produces shape {N_fft, npulses}
+        // dft: produces f64, shape {N_fft, npulses}
         dft.inner.define_extern("call_dft", {fftsh.inner, N_fft}, Float(64), {c, sample, pulse});
 #if DEBUG_POST_FFT
         out_post_fft(c, sample, pulse) = dft.inner(c, sample, pulse);
 #endif
 
-        // Q: produces shape {N_fft, npulses}
+        // Q: produces complex f64, shape {N_fft, npulses}
         Q(sample, pulse) = fftshift(dft, N_fft, npulses, sample, pulse);
 #if DEBUG_Q
         out_Q(c, sample, pulse) = Q.inner(c, sample, pulse);
 #endif
 
-        // norm(r0): produces shape {npulses}
+        // norm(r0): produces f64, shape {npulses}
         // f32 in RITSAR, but f64 produces better image with negligible performance impact
         norm_r0(pulse) = Expr(0.0);
         norm_r0(pulse) += pos(rnd, pulse) * pos(rnd, pulse);
@@ -185,13 +185,13 @@ public:
         out_norm_r0(pulse) = ConciseCasts::f32(norm_r0(pulse));
 #endif
 
-        // r - r0: produces shape {nu*nv, nd, npulses}
+        // r - r0: produces f64, shape {nu*nv, nd, npulses}
         rr0(pixel, dim, pulse) = r(pixel, dim) - pos(dim, pulse);
 #if DEBUG_RR0
         out_rr0(pixel, dim, pulse) = rr0(pixel, dim, pulse);
 #endif
 
-        // norm(r - r0): produces shape {nu*nv, npulses}
+        // norm(r - r0): produces f64, shape {nu*nv, npulses}
         norm_rr0(pixel, pulse) = Expr(0.0);
         norm_rr0(pixel, pulse) += rr0(pixel, rnd, pulse) * rr0(pixel, rnd, pulse);
         norm_rr0(pixel, pulse) = sqrt(norm_rr0(pixel, pulse));
@@ -199,13 +199,13 @@ public:
         out_norm_rr0(pixel, pulse) = norm_rr0(pixel, pulse);
 #endif
 
-        // dr_i: produces shape {nu*nv, npulses}
+        // dr_i: produces f64, shape {nu*nv, npulses}
         dr_i(pixel, pulse) = norm_r0(pulse) - norm_rr0(pixel, pulse);
 #if DEBUG_DR_I
         out_dr_i(pixel, pulse) = dr_i(pixel, pulse);
 #endif
 
-        // Q_hat: produces shape {nu*nv, npulses}
+        // Q_hat: produces complex f64, shape {nu*nv, npulses}
         Q_hat.inner(c, pixel, pulse) = interp(dr_i, floor(-nsamples * delta_r / 2), floor(nsamples * delta_r / 2), N_fft, Q, c, pixel, pulse);
 #if DEBUG_Q_REAL
         out_q_real(pixel, pulse) = Q_hat.inner(0, pixel, pulse);
@@ -217,10 +217,10 @@ public:
         out_q_hat(c, pixel, pulse) = Q_hat.inner(c, pixel, pulse);
 #endif
 
-        // k_c: produces scalar
+        // k_c: produces f32 scalar
         Expr k_c = k_r(nsamples / 2);
 
-        // img: produces shape {nu*nv}
+        // img: produces complex f64, shape {nu*nv}
         img(pixel) = ComplexExpr(c, Expr(0.0), Expr(0.0));
         img(pixel) += Q_hat(pixel, rnpulses) * expj(c, -k_c * dr_i(pixel, rnpulses));
 #if DEBUG_IMG
@@ -231,12 +231,14 @@ public:
         Expr xy_to_pixel = (nu * (nv - y - 1)) + x;
 
         // finally...
+        // fimg: produces complex f64, shape {nu, nv}
+        // Updates img in RITSAR, but we need a separate Func which is also easier to schedule
         fimg(x, y) = img(xy_to_pixel) * expj(c, k_c * dr_i(xy_to_pixel, npulses / 2));
 #if DEBUG_FIMG
         out_fimg(c, xy_to_pixel) = fimg.inner(c, x, y);
 #endif
 
-        // output_img: produce shape {nu, nv}, but reverse row order
+        // output_img: produce complex f64, shape {nu, nv}, but reverse row order
         output_img(c, x, y) = fimg.inner(c, x, y);
     }
 
