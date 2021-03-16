@@ -137,17 +137,17 @@ public:
 #endif
 
         // Filter phase history: produces f32, shape {nsamples}
-        filt(x) = abs(k_r(x));
+        filt(sample) = abs(k_r(sample));
 #if DEBUG_FILT
-        out_filt(x) = filt(x);
+        out_filt(sample) = filt(sample);
 #endif
 
         // phs_filt: produces complex f64, shape {nsamples, npulses}
         Func phs_func = phs;
         ComplexFunc phs_cmplx(c, phs_func);
-        phs_filt(x, pulse) = phs_cmplx(x, pulse) * filt(x) * win(x, pulse);
+        phs_filt(sample, pulse) = phs_cmplx(sample, pulse) * filt(sample) * win(sample, pulse);
 #if DEBUG_PHS_FILT
-        out_phs_filt(c, x, pulse) = phs_filt.inner(c, x, pulse);
+        out_phs_filt(c, sample, pulse) = phs_filt.inner(c, sample, pulse);
 #endif
 
         // Zero pad phase history: produces complex f64, shape {N_fft, npulses}
