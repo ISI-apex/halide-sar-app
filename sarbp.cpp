@@ -230,18 +230,18 @@ int main(int argc, char **argv) {
     }
 #endif // WITH_MPI
 
-    auto start = high_resolution_clock::now();
+    auto start = steady_clock::now();
     PlatformData pd = platform_load(platform_dir, is_distributed);
-    auto stop = high_resolution_clock::now();
+    auto stop = steady_clock::now();
     cout << "Loaded platform data in "
          << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
     cout << "Number of pulses: " << pd.npulses << endl;
     cout << "Pulse sample size: " << pd.nsamples << endl;
 
     const float *n_hat = pd.n_hat.has_value() ? pd.n_hat.value().begin() : &N_HAT[0];
-    start = high_resolution_clock::now();
+    start = steady_clock::now();
     ImgPlane ip = img_plane_create(pd, res_factor, n_hat, aspect, upsample, is_distributed);
-    stop = high_resolution_clock::now();
+    stop = steady_clock::now();
     cout << "Computed image plane parameters in "
          << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
     cout << "X length: " << ip.nu << endl;
@@ -264,9 +264,9 @@ int main(int argc, char **argv) {
 #endif // WITH_DISTRIBUTE
     buf_bp.allocate();
     cout << "Halide backprojection start " << endl;
-    start = high_resolution_clock::now();
+    start = steady_clock::now();
     int rv = backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs, buf_bp);
-    stop = high_resolution_clock::now();
+    stop = steady_clock::now();
     cout << "Halide backprojection returned " << rv << " in "
          << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
     if (rv != 0) {
@@ -280,7 +280,7 @@ int main(int argc, char **argv) {
         buf_bp.copy_to_host();
         if (rank == 0) {
             cout << "MPI full backprojection receive start" << endl;
-            start = high_resolution_clock::now();
+            start = steady_clock::now();
             buf_bp_full = Buffer<double, 3>(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
             // Copy buf_bp to buf_bp_full
             memcpy(buf_bp_full.data(), buf_bp.data(), sizeof(double) * buf_bp.dim(1).extent() * buf_bp.dim(2).extent() * 2);
@@ -296,18 +296,18 @@ int main(int argc, char **argv) {
                          MPI_DOUBLE,
                          r, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             }
-            stop = high_resolution_clock::now();
+            stop = steady_clock::now();
             cout << "MPI full backprojection receive completed in "
                  << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
         } else {
             cout << "MPI local backprojection send start" << endl;
-            start = high_resolution_clock::now();
+            start = steady_clock::now();
             int r_min = buf_bp.dim(2).min() * buf_bp.dim(1).extent(), r_extent = buf_bp.dim(2).extent() * buf_bp.dim(1).extent();
             MPI_Send(&r_min, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
             MPI_Send(&r_extent, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
             // Sending the actual content
             MPI_Send(buf_bp.data(), r_extent * 2, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
-            stop = high_resolution_clock::now();
+            stop = steady_clock::now();
             cout << "MPI local backprojection send completed in "
                  << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
         }
@@ -328,9 +328,9 @@ int main(int argc, char **argv) {
         // Convert to dB
         Buffer<double, 2> buf_bp_dB(ip.u.dim(0).extent(), ip.v.dim(0).extent());
         cout << "Halide dB conversion start" << endl;
-        start = high_resolution_clock::now();
+        start = steady_clock::now();
         rv = img_output_to_dB(buf_bp_full, buf_bp_dB);
-        stop = high_resolution_clock::now();
+        stop = steady_clock::now();
         cout << "Halide dB conversion returned " << rv << " in "
              << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
         if (rv != 0) {
@@ -345,17 +345,17 @@ int main(int argc, char **argv) {
         // Produce output image
         Buffer<uint8_t, 2> buf_bp_u8(buf_bp_dB.dim(0).extent(), buf_bp_dB.dim(1).extent());
         cout << "Halide PNG production start" << endl;
-        start = high_resolution_clock::now();
+        start = steady_clock::now();
         rv = img_output_u8(buf_bp_dB, dB_min, dB_max, buf_bp_u8);
-        stop = high_resolution_clock::now();
+        stop = steady_clock::now();
         cout << "Halide PNG production returned " << rv << " in "
              << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
         if (rv != 0) {
             return rv;
         }
-        start = high_resolution_clock::now();
+        start = steady_clock::now();
         Halide::Tools::convert_and_save_image(buf_bp_u8, output_png);
-        stop = high_resolution_clock::now();
+        stop = steady_clock::now();
         cout << "Wrote " << output_png << " in "
              << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
     }
