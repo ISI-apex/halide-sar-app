@@ -50,7 +50,7 @@ using Halide::Runtime::Buffer;
 #define RES_FACTOR_DEFAULT RES_FACTOR
 #define ASPECT_DEFAULT ASPECT
 
-static const char short_options[] = "p:o:d:D:s:t:u:r:a:h";
+static const char short_options[] = "p:o:d:D:s:t:u:r:a:n:h";
 static const struct option long_options[] = {
   {"platform-dir",    required_argument,  NULL, 'p'},
   {"output",          required_argument,  NULL, 'o'},
@@ -61,6 +61,7 @@ static const struct option long_options[] = {
   {"upsample",        required_argument,  NULL, 'u'},
   {"res-factor",      required_argument,  NULL, 'r'},
   {"aspect",          required_argument,  NULL, 'a'},
+  {"num-iters",       required_argument,  NULL, 'n'},
   {"help",            no_argument,        NULL, 'h'},
   {0, 0, 0, 0}
 };
@@ -87,6 +88,8 @@ static void print_usage(string prog, ostream& os) {
     os << "                          Default: " << RES_FACTOR_DEFAULT << endl;
     os << "  -a, --aspect=REAL       Aspect ratio of range to cross range" << endl;
     os << "                          Default: " << ASPECT_DEFAULT << endl;
+    os << "  -n, --num-iters=INT     Number of backprojection iterations" << endl;
+    os << "                          Default: 1" << endl;
     os << "  -h, --help              Print this message and exit" << endl;
 }
 
@@ -100,6 +103,7 @@ int main(int argc, char **argv) {
     double dB_max = DB_MAX_DEFAULT;
     double res_factor = RES_FACTOR_DEFAULT;
     double aspect = ASPECT_DEFAULT;
+    uint32_t num_iters = 1;
     while (1) {
         switch (getopt_long(argc, argv, short_options, long_options, NULL)) {
             case -1:
@@ -130,6 +134,9 @@ int main(int argc, char **argv) {
                 continue;
             case 'a':
                 aspect = atof(optarg);
+                continue;
+            case 'n':
+                num_iters = atoi(optarg);
                 continue;
             case 'h':
                 print_usage(argv[0], cout);
@@ -263,57 +270,61 @@ int main(int argc, char **argv) {
     }
 #endif // WITH_DISTRIBUTE
     buf_bp.allocate();
-    cout << "Halide backprojection start " << endl;
-    start = steady_clock::now();
-    int rv = backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs, buf_bp);
-    stop = steady_clock::now();
-    cout << "Halide backprojection returned " << rv << " in "
-         << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
-    if (rv != 0) {
-        return rv;
-    }
-
     Buffer<double, 2> buf_bp_full(nullptr, 0);
-    if (is_distributed) {
-#if defined(WITH_MPI)
-        // Send data to rank 0
-        buf_bp.copy_to_host();
-        if (rank == 0) {
-            cout << "MPI full backprojection receive start" << endl;
-            start = steady_clock::now();
-            buf_bp_full = Buffer<double, 3>(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
-            // Copy buf_bp to buf_bp_full
-            memcpy(buf_bp_full.data(), buf_bp.data(), sizeof(double) * buf_bp.dim(1).extent() * buf_bp.dim(2).extent() * 2);
-            for (int r = 1; r < numprocs; r++) {
-                // Obtain the min & extent from the node
-                int r_min = 0, r_extent = 0;
-                MPI_Recv(&r_min, 1, MPI_INT, r, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                MPI_Recv(&r_extent, 1, MPI_INT, r, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                cout << "Received r_min = " << r_min << ", r_extent = " << r_extent << " from rank " << r << std::endl;
-                // Receving the actual content
-                MPI_Recv(buf_bp_full.data() + r_min * 2,
-                         r_extent * 2,
-                         MPI_DOUBLE,
-                         r, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            }
-            stop = steady_clock::now();
-            cout << "MPI full backprojection receive completed in "
-                 << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
-        } else {
-            cout << "MPI local backprojection send start" << endl;
-            start = steady_clock::now();
-            int r_min = buf_bp.dim(2).min() * buf_bp.dim(1).extent(), r_extent = buf_bp.dim(2).extent() * buf_bp.dim(1).extent();
-            MPI_Send(&r_min, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-            MPI_Send(&r_extent, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
-            // Sending the actual content
-            MPI_Send(buf_bp.data(), r_extent * 2, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
-            stop = steady_clock::now();
-            cout << "MPI local backprojection send completed in "
-                 << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
+    int rv;
+    for (uint32_t i = 1; i <= num_iters; i++) {
+        cout << "(" << i << ") Halide backprojection start " << endl;
+        start = steady_clock::now();
+        rv = backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs, buf_bp);
+        stop = steady_clock::now();
+        cout << "(" << i << ") Halide backprojection returned " << rv << " in "
+             << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
+        if (rv != 0) {
+            return rv;
         }
+        if (is_distributed) {
+#if defined(WITH_MPI)
+            // Send data to rank 0
+            buf_bp.copy_to_host();
+            if (rank == 0) {
+                cout << "(" << i << ") MPI full backprojection receive start" << endl;
+                start = steady_clock::now();
+                buf_bp_full = Buffer<double, 3>(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
+                // Copy buf_bp to buf_bp_full
+                memcpy(buf_bp_full.data(), buf_bp.data(), sizeof(double) * buf_bp.dim(1).extent() * buf_bp.dim(2).extent() * 2);
+                for (int r = 1; r < numprocs; r++) {
+                    // Obtain the min & extent from the node
+                    int r_min = 0, r_extent = 0;
+                    MPI_Recv(&r_min, 1, MPI_INT, r, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    MPI_Recv(&r_extent, 1, MPI_INT, r, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    cout << "(" << i << ") Received r_min = " << r_min << ", r_extent = " << r_extent << " from rank " << r << std::endl;
+                    // Receiving the actual content
+                    MPI_Recv(buf_bp_full.data() + r_min * 2,
+                             r_extent * 2,
+                             MPI_DOUBLE,
+                             r, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                }
+                stop = steady_clock::now();
+                cout << "(" << i << ") MPI full backprojection receive completed in "
+                     << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
+            } else {
+                cout << "(" << i << ") MPI local backprojection send start" << endl;
+                start = steady_clock::now();
+                int r_min = buf_bp.dim(2).min() * buf_bp.dim(1).extent(), r_extent = buf_bp.dim(2).extent() * buf_bp.dim(1).extent();
+                MPI_Send(&r_min, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+                MPI_Send(&r_extent, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
+                // Sending the actual content
+                MPI_Send(buf_bp.data(), r_extent * 2, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
+                stop = steady_clock::now();
+                cout << "(" << i << ") MPI local backprojection send completed in "
+                     << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
+            }
+            // Prevent ranks from continuing before previous loop is complete
+            MPI_Barrier(MPI_COMM_WORLD);
 #endif // WITH_MPI
-    } else {
-        buf_bp_full = buf_bp;
+        } else {
+            buf_bp_full = buf_bp;
+        }
     }
 #if DEBUG_BP
     vector<size_t> shape_bp { static_cast<size_t>(buf_bp_full.dim(2).extent()),
