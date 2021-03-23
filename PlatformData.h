@@ -61,6 +61,6 @@ struct PlatformData {
     Halide::Runtime::Buffer<float, 3> phs;
 };
 
-PlatformData platform_load(std::string platform_dir, bool is_distributed);
+PlatformData platform_load(std::string platform_dir);
 
 #endif

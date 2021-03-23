@@ -18,7 +18,7 @@ static bool file_exists(const string& path) {
     return false;
 }
 
-PlatformData platform_load(string platform_dir, bool is_distributed) {
+PlatformData platform_load(string platform_dir) {
     // Load primitives
 
     optional<double> B = nullopt;
@@ -114,13 +114,7 @@ PlatformData platform_load(string platform_dir, bool is_distributed) {
         if (npy_freq.shape.size() != 1 || npy_freq.shape[0] != nsamples) {
             throw runtime_error("Bad shape: freq");
         }
-        freq.emplace(Buffer<float, 1>(nsamples));
-#if defined(WITH_DISTRIBUTE)
-        if (is_distributed) {
-            freq.value().set_distributed({nsamples});
-        }
-#endif // WITH_DISTRIBUTE
-        
+        freq.emplace(Buffer<float, 1>(nsamples));        
         if (npy_freq.word_size == sizeof(float)) {
             memcpy(freq.value().begin(), npy_freq.data<float>(), npy_freq.num_bytes());
         } else if (npy_freq.word_size == sizeof(double)) {
@@ -141,11 +135,6 @@ PlatformData platform_load(string platform_dir, bool is_distributed) {
         throw runtime_error("Bad shape: k_r");
     }
     Buffer<float, 1> k_r(nsamples);
-#if defined(WITH_DISTRIBUTE)
-    if (is_distributed) {
-        k_r.set_distributed({nsamples});
-    }
-#endif // WITH_DISTRIBUTE
     if (npy_k_r.word_size == sizeof(float)) {
         memcpy(k_r.begin(), npy_k_r.data<float>(), npy_k_r.num_bytes());
     } else if (npy_k_r.word_size == sizeof(double)) {
@@ -170,11 +159,6 @@ PlatformData platform_load(string platform_dir, bool is_distributed) {
             throw runtime_error("Bad word size: k_y");
         }
         k_y.emplace(Buffer<double, 1>(npulses));
-#if defined(WITH_DISTRIBUTE)
-        if (is_distributed) {
-            k_y.value().set_distributed({npulses});
-        }
-#endif // WITH_DISTRIBUTE
         memcpy(k_y.value().begin(), npy_k_y.data<double>(), npy_k_y.num_bytes());
         k_y.value().set_host_dirty();
     }
@@ -189,11 +173,6 @@ PlatformData platform_load(string platform_dir, bool is_distributed) {
             throw runtime_error("Bad word size: n_hat");
         }
         n_hat.emplace(Buffer<float, 1>(3));
-#if defined(WITH_DISTRIBUTE)
-        if (is_distributed) {
-            n_hat.value().set_distributed({3});
-        }
-#endif // WITH_DISTRIBUTE
         memcpy(n_hat.value().begin(), npy_n_hat.data<float>(), npy_n_hat.num_bytes());
         n_hat.value().set_host_dirty();
     }
@@ -203,11 +182,6 @@ PlatformData platform_load(string platform_dir, bool is_distributed) {
         throw runtime_error("Bad shape: R_c");
     }
     Buffer<float, 1> R_c(3);
-#if defined(WITH_DISTRIBUTE)
-    if (is_distributed) {
-        R_c.set_distributed({3});
-    }
-#endif // WITH_DISTRIBUTE
     if (npy_R_c.word_size == sizeof(float)) {
         memcpy(R_c.begin(), npy_R_c.data<float>(), npy_R_c.num_bytes());
     } else if (npy_R_c.word_size == sizeof(double)) {
@@ -232,11 +206,6 @@ PlatformData platform_load(string platform_dir, bool is_distributed) {
             throw runtime_error("Bad word size: t");
         }
         t.emplace(Buffer<double, 1>(nsamples));
-#if defined(WITH_DISTRIBUTE)
-        if (is_distributed) {
-            t.value().set_distributed({nsamples});
-        }
-#endif // WITH_DISTRIBUTE
         memcpy(t.value().begin(), npy_t.data<double>(), npy_t.num_bytes());
         t.value().set_host_dirty();
     }
@@ -248,11 +217,6 @@ PlatformData platform_load(string platform_dir, bool is_distributed) {
         throw runtime_error("Bad shape: pos");
     }
     Buffer<float, 2> pos(3, npulses);
-#if defined(WITH_DISTRIBUTE)
-    if (is_distributed) {
-        pos.set_distributed({3, npulses});
-    }
-#endif // WITH_DISTRIBUTE
     if (npy_pos.word_size == sizeof(float)) {
         memcpy(pos.begin(), npy_pos.data<float>(), npy_pos.num_bytes());
     } else if (npy_pos.word_size == sizeof(double)) {
@@ -272,11 +236,6 @@ PlatformData platform_load(string platform_dir, bool is_distributed) {
         throw runtime_error("Bad shape: phs");
     }
     Buffer<float, 3> phs(2, nsamples, npulses);
-#if defined(WITH_DISTRIBUTE)
-    if (is_distributed) {
-        phs.set_distributed({2, nsamples, npulses});
-    }
-#endif // WITH_DISTRIBUTE
     if (npy_phs.word_size == sizeof(complex<float>)) {
         memcpy(phs.begin(), reinterpret_cast<float *>(npy_phs.data<complex<float>>()), npy_phs.num_bytes());
     } else if (npy_phs.word_size == sizeof(complex<double>)) {

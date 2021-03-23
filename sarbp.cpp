@@ -238,7 +238,7 @@ int main(int argc, char **argv) {
 #endif // WITH_MPI
 
     auto start = steady_clock::now();
-    PlatformData pd = platform_load(platform_dir, is_distributed);
+    PlatformData pd = platform_load(platform_dir);
     auto stop = steady_clock::now();
     cout << "Loaded platform data in "
          << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
