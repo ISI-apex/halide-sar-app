@@ -40,7 +40,6 @@ ImgPlane img_plane_create(PlatformData &pd,
                           double res_factor = RES_FACTOR,
                           const float *n_hat = &N_HAT[0],
                           double aspect = ASPECT,
-                          bool upsample = true,
-                          bool is_distributed = false);
+                          bool upsample = true);
 
 #endif

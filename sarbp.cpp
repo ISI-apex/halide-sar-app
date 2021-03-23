@@ -247,7 +247,7 @@ int main(int argc, char **argv) {
 
     const float *n_hat = pd.n_hat.has_value() ? pd.n_hat.value().begin() : &N_HAT[0];
     start = steady_clock::now();
-    ImgPlane ip = img_plane_create(pd, res_factor, n_hat, aspect, upsample, is_distributed);
+    ImgPlane ip = img_plane_create(pd, res_factor, n_hat, aspect, upsample);
     stop = steady_clock::now();
     cout << "Computed image plane parameters in "
          << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
