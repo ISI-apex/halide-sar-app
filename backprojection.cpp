@@ -297,7 +297,7 @@ public:
             output_img.compute_root()
                       .split(x, x_vo, x_vi, vectorsize)
                       .vectorize(x_vi)
-                      .parallel(y);
+                      .parallel(x_vo);
 #if defined(WITH_DISTRIBUTE)
             if (sched == Schedule::CPUDistributed) {
                 output_img.distribute(y);
