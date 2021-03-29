@@ -15,6 +15,7 @@
 #endif // WITH_MPI
 
 #include "dft.h"
+#include "ControlLoop.h"
 #include "PlatformData.h"
 #include "ImgPlane.h"
 
@@ -50,7 +51,7 @@ using Halide::Runtime::Buffer;
 #define RES_FACTOR_DEFAULT RES_FACTOR
 #define ASPECT_DEFAULT ASPECT
 
-static const char short_options[] = "p:o:d:D:s:t:u:r:a:n:h";
+static const char short_options[] = "p:o:d:D:s:t:u:r:a:n:lh";
 static const struct option long_options[] = {
   {"platform-dir",    required_argument,  NULL, 'p'},
   {"output",          required_argument,  NULL, 'o'},
@@ -62,6 +63,7 @@ static const struct option long_options[] = {
   {"res-factor",      required_argument,  NULL, 'r'},
   {"aspect",          required_argument,  NULL, 'a'},
   {"num-iters",       required_argument,  NULL, 'n'},
+  {"log-iters",       no_argument,        NULL, 'l'},
   {"help",            no_argument,        NULL, 'h'},
   {0, 0, 0, 0}
 };
@@ -90,6 +92,8 @@ static void print_usage(string prog, ostream& os) {
     os << "                          Default: " << ASPECT_DEFAULT << endl;
     os << "  -n, --num-iters=INT     Number of backprojection iterations" << endl;
     os << "                          Default: 1" << endl;
+    os << "  -l, --log-iters         Produce log files for iteration results" << endl;
+    os << "                          Log files are created in the working directory" << endl;
     os << "  -h, --help              Print this message and exit" << endl;
 }
 
@@ -104,6 +108,7 @@ int main(int argc, char **argv) {
     double res_factor = RES_FACTOR_DEFAULT;
     double aspect = ASPECT_DEFAULT;
     uint32_t num_iters = 1;
+    bool log_iters = false;
     while (1) {
         switch (getopt_long(argc, argv, short_options, long_options, NULL)) {
             case -1:
@@ -137,6 +142,9 @@ int main(int argc, char **argv) {
                 continue;
             case 'n':
                 num_iters = atoi(optarg);
+                continue;
+            case 'l':
+                log_iters = true;
                 continue;
             case 'h':
                 print_usage(argv[0], cout);
@@ -237,6 +245,21 @@ int main(int argc, char **argv) {
     }
 #endif // WITH_MPI
 
+    // Window size should be > 1 to have a sliding window of average performance
+    uint64_t ctl_window_len = 1;
+    if (const char *ws = getenv("SARBP_WINDOW_LENGTH")) {
+        ctl_window_len = stoul(ws);
+    }
+    ostringstream hb_log_ss;
+    if (log_iters) {
+        hb_log_ss << "heartbeat";
+        if (is_distributed) {
+            hb_log_ss << "-" << rank;
+        }
+        hb_log_ss << ".log";
+    }
+    ControlLoop ctl(ctl_window_len, hb_log_ss.str());
+
     auto start = steady_clock::now();
     PlatformData pd = platform_load(platform_dir);
     auto stop = steady_clock::now();
@@ -273,11 +296,14 @@ int main(int argc, char **argv) {
     int rv = 0;
     for (uint32_t i = 1; i <= num_iters; i++) {
         cout << "(" << i << ") Halide backprojection start " << endl;
-        start = steady_clock::now();
+        ctl.iteration_begin();
         rv = backprojection_impl(pd.phs, pd.k_r, taylor, N_fft, pd.delta_r, ip.u, ip.v, pd.pos, ip.pixel_locs, buf_bp);
-        stop = steady_clock::now();
+        // There are several reasonable formulations for quantifying "work" and "accuracy"
+        // We report 1 work item per loop iteration, but alternatively could use number of pixels
+        // We report accuracy as the number of output bytes, but alternatively could use bytes per pixel
+        ctl.iteration_end(1, (uint64_t)buf_bp.size_in_bytes());
         cout << "(" << i << ") Halide backprojection returned " << rv << " in "
-             << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
+             << ctl.get_last_iteration_ms() << " ms" << endl;
         if (rv != 0) {
             return rv;
         }

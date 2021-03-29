@@ -26,6 +26,11 @@ find_package(PkgConfig REQUIRED)
 # Find FFTW3 double precision
 pkg_check_modules(FFTW fftw3 REQUIRED IMPORTED_TARGET)
 
+# Find heartbeats-simple
+find_package(HeartbeatsSimple QUIET)
+
+# Find EnergyMon
+pkg_check_modules(EnergyMon energymon-default QUIET IMPORTED_TARGET)
 
 option(HALIDE_SAR_TESTS "Enable tests" ON)
 if(HALIDE_SAR_TESTS)
@@ -117,7 +122,8 @@ target_link_libraries(img_output_u8_test PRIVATE Halide::Halide
                                                  Cnpy::Cnpy
                                                  img_output_u8)
 
-add_executable(sarbp sarbp.cpp dft.cpp PlatformData.cpp ImgPlane.cpp)
+add_executable(sarbp sarbp.cpp dft.cpp PlatformData.cpp ImgPlane.cpp
+                     ControlLoop.cpp Heartbeat.cpp EnergyMon.cpp AdaptiveController.cpp Actuator.cpp)
 target_compile_options(sarbp PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
 target_link_libraries(sarbp PRIVATE Halide::Halide
                                     Halide::ImageIO
@@ -146,4 +152,12 @@ if(MPI_FOUND)
     target_compile_definitions(sarbp PRIVATE WITH_MPI)
     target_include_directories(sarbp PRIVATE ${MPI_CXX_INCLUDE_DIRS})
     target_link_libraries(sarbp PRIVATE MPI::MPI_CXX)
+endif()
+if(HeartbeatsSimple_FOUND)
+    target_compile_definitions(sarbp PRIVATE WITH_HBS)
+    target_link_libraries(sarbp PRIVATE HeartbeatsSimple::heartbeats-simple)
+endif()
+if(EnergyMon_FOUND)
+    target_compile_definitions(sarbp PRIVATE WITH_ENERGYMON)
+    target_link_libraries(sarbp PRIVATE PkgConfig::EnergyMon)
 endif()
