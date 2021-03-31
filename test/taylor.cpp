@@ -12,7 +12,8 @@ public:
 
     void generate() {
         Var x{"x"};
-        output(x) = taylor(nsamples, S_L, x);
+        Taylor taylor(nsamples, S_L, x);
+        output(x) = taylor.taylor(x);
     }
 };
 
