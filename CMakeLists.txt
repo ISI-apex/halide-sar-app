@@ -24,7 +24,7 @@ find_package(Cnpy REQUIRED)
 find_package(PkgConfig REQUIRED)
 
 # Find FFTW3 double precision
-pkg_check_modules(FFTW fftw3 REQUIRED)
+pkg_check_modules(FFTW fftw3 REQUIRED IMPORTED_TARGET)
 
 
 option(HALIDE_SAR_TESTS "Enable tests" ON)
@@ -119,12 +119,10 @@ target_link_libraries(img_output_u8_test PRIVATE Halide::Halide
 
 add_executable(sarbp sarbp.cpp dft.cpp PlatformData.cpp ImgPlane.cpp)
 target_compile_options(sarbp PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O2>)
-target_include_directories(sarbp PRIVATE ${FFTW_INCLUDE_DIRS})
-target_link_directories(sarbp PRIVATE ${FFTW_LIBRARY_DIRS})
 target_link_libraries(sarbp PRIVATE Halide::Halide
                                     Halide::ImageIO
                                     Cnpy::Cnpy
-                                    ${FFTW_STATIC_LIBRARIES}
+                                    PkgConfig::FFTW
                                     ip_uv
                                     ip_k
                                     ip_v_hat
