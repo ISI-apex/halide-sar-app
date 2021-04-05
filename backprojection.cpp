@@ -202,7 +202,10 @@ public:
                        .parallel(pulse_vo);
             win.compute_root();
             filt.compute_root();
-            phs_filt.inner.compute_root();
+            phs_filt.inner.compute_root()
+                          .bound(c, 0, 2).unroll(c)
+                          .vectorize(sample, vectorsize)
+                          .parallel(pulse, blocksize);
             phs_pad.inner.compute_root()
                          .bound(c, 0, 2).unroll(c)
                          .vectorize(sample, vectorsize)
@@ -285,7 +288,10 @@ public:
                        .parallel(pulse_vo);
             win.compute_root();
             filt.compute_root();
-            phs_filt.inner.compute_root();
+            phs_filt.inner.compute_root()
+                          .bound(c, 0, 2).unroll(c)
+                          .vectorize(sample, vectorsize)
+                          .parallel(pulse, blocksize);;
             phs_pad.inner.compute_root()
                          .bound(c, 0, 2).unroll(c)
                          .vectorize(sample, vectorsize)
