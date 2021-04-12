@@ -72,7 +72,6 @@ public:
         Expr nv = v.dim(0).extent();
         Expr nd = pos_in.dim(0).extent(); // nd = 3 (spatial dimensions)
         rnpulses = RDom(0, npulses, "rnpulses");
-        rnd = RDom(0, nd, "rnd");
 
         // Boundary conditions
         pos = BoundaryConditions::constant_exterior(pos_in, Expr(0.0f));
@@ -107,17 +106,13 @@ public:
 
         // norm(r0): produces f64, shape {npulses}
         // f32 in RITSAR, but f64 produces better image with negligible performance impact
-        norm_r0(pulse) = Expr(0.0);
-        norm_r0(pulse) += pos(rnd, pulse) * pos(rnd, pulse);
-        norm_r0(pulse) = sqrt(norm_r0(pulse));
+        norm_r0(pulse) = norm3d(pos, pulse);
 
         // r - r0: produces f64, shape {nu*nv, nd, npulses}
         rr0(pixel, dim, pulse) = r(pixel, dim) - pos(dim, pulse);
 
         // norm(r - r0): produces f64, shape {nu*nv, npulses}
-        norm_rr0(pixel, pulse) = Expr(0.0);
-        norm_rr0(pixel, pulse) += rr0(pixel, rnd, pulse) * rr0(pixel, rnd, pulse);
-        norm_rr0(pixel, pulse) = sqrt(norm_rr0(pixel, pulse));
+        norm_rr0(pixel, pulse) = norm3d(rr0, pixel, pulse);
 
         // dr_i: produces f64, shape {nu*nv, npulses}
         dr_i(pixel, pulse) = norm_r0(pulse) - norm_rr0(pixel, pulse);
@@ -222,10 +217,6 @@ public:
                    //.gpu_tile(pulse, pulse_vo, pulse_vi, blocksize_gpu_tile); // causes dft to segfault
             norm_r0.compute_root()
                    .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize_gpu_tile);
-            norm_r0.update(0)
-                   .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize_gpu_tile);
-            norm_r0.update(1)
-                   .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize_gpu_tile);
             rr0.compute_inline();
             norm_rr0.compute_at(fimg.inner, x_vi)
                     .reorder(pulse, pixel)
@@ -309,23 +300,9 @@ public:
                    .split(pulse, pulse_vo, pulse_vi, vectorsize)
                    .vectorize(pulse_vi)
                    .parallel(pulse_vo);
-            norm_r0.update(0)
-                   .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
-                   .vectorize(pulse_vi)
-                   .parallel(pulse_vo);
-            norm_r0.update(1)
-                   .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
-                   .vectorize(pulse_vi)
-                   .parallel(pulse_vo);
             rr0.compute_inline();
             norm_rr0.compute_at(output_img, x_vo)
                     .split(pulse, pulse_vo, pulse_vi, vectorsize)
-                    .vectorize(pulse_vi);
-            norm_rr0.update(0)
-                    .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
-                    .vectorize(pulse_vi);
-            norm_rr0.update(1)
-                    .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
                     .vectorize(pulse_vi);
             dr_i.compute_inline();
             Q_hat.inner.compute_inline();
@@ -373,7 +350,6 @@ private:
     ComplexFunc img{c, "img"};
     ComplexFunc fimg{c, "fimg"};
     RDom rnpulses;
-    RDom rnd;
 };
 
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)

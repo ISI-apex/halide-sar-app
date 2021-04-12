@@ -61,6 +61,18 @@ inline Expr norm(Expr in, const std::string &inner_name_prefix = "norm") {
     return sqrt(sum(in * in, inner_name_prefix + "_sum"));
 }
 
+inline Expr norm3d(Func f, Var x) {
+    return sqrt(f(0, x) * f(0, x)
+              + f(1, x) * f(1, x)
+              + f(2, x) * f(2, x));
+}
+
+inline Expr norm3d(Func f, Var x, Var y) {
+    return sqrt(f(x, 0, y) * f(x, 0, y)
+              + f(x, 1, y) * f(x, 1, y)
+              + f(x, 2, y) * f(x, 2, y));
+}
+
 inline Expr repeat1(Func a, Expr extent_a, Var x) {
     return a(x % extent_a);
 }
