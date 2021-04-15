@@ -12,16 +12,20 @@ class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator
 public:
     enum class Schedule { CPU,
                           GPU,
+                          GPUSplit,
                           CPUDistributed,
                           GPUDistributed,
+                          GPUSplitDistributed,
                         };
     GeneratorParam<Schedule> sched {"schedule",
                                     Schedule::CPU,
                                     {{"cpu", Schedule::CPU},
                                      {"gpu", Schedule::GPU},
+                                     {"gpu-split", Schedule::GPUSplit},
 #if defined(WITH_DISTRIBUTE)
                                      {"cpu-distributed", Schedule::CPUDistributed},
                                      {"gpu-distributed", Schedule::GPUDistributed},
+                                     {"gpu-split-distributed", Schedule::GPUSplitDistributed},
 #endif // WITH_DISTRIBUTE
                                     }
                                    };
@@ -164,11 +168,15 @@ public:
         Var sample_vo{"sample_vo"}, sample_vi{"sample_vi"};
         Var pulse_vo{"pulse_vo"}, pulse_vi{"pulse_vi"};
         Var x_vo{"x_vo"}, x_vi{"x_vi"};
+        bool is_split;
         switch (sched) {
         case Schedule::GPU:
+        case Schedule::GPUSplit:
 #if defined(WITH_DISTRIBUTE)
         case Schedule::GPUDistributed:
+        case Schedule::GPUSplitDistributed:
 #endif // WITH_DISTRIBUTE
+            is_split = (sched == Schedule::GPUSplit || sched == Schedule::GPUSplitDistributed);
             if (!tgt.has_gpu_feature()) {
                 throw std::runtime_error("GPU schedules require GPU feature");
             }
@@ -227,6 +235,9 @@ public:
             norm_r0.update(1)
                    .gpu_tile(pulse, pulse_vo, pulse_vi, blocksize_gpu_tile);
             rr0.compute_inline();
+            if (is_split) {
+                r.compute_at(fimg.inner, y);
+            }
             norm_rr0.compute_at(fimg.inner, x_vi)
                     .reorder(pulse, pixel)
                     .reorder_storage(pulse, pixel);
@@ -235,21 +246,32 @@ public:
             img.inner.compute_at(fimg.inner, x_vi);
             img.inner.update(0)
                      .reorder(c, pixel, rnpulses.x);
-            fimg.inner.compute_root()
-                      .bound(c, 0, 2)
-                      .unroll(c)
-                      .split(x, x_vo, x_vi, blocksize_gpu_split_x)
-                      .gpu_blocks(y)
-                      .gpu_threads(x_vi);
             output_img.compute_root()
                       .bound(c, 0, 2)
                       .unroll(c)
-                      .vectorize(x, vectorsize)
-                      .parallel(y);
+                      .vectorize(x, vectorsize);
+            if (is_split) {
+                fimg.inner.compute_at(output_img, y)
+                        .bound(c, 0, 2)
+                        .unroll(c)
+                        .split(x, x_vo, x_vi, blocksize_gpu_split_x)
+                        .gpu_blocks(x_vo)
+                        .gpu_threads(x_vi);
+            } else {
+                fimg.inner.compute_root()
+                        .bound(c, 0, 2)
+                        .unroll(c)
+                        .split(x, x_vo, x_vi, blocksize_gpu_split_x)
+                        .gpu_blocks(y)
+                        .gpu_threads(x_vi);
+                output_img.parallel(y);
+            }
 #if defined(WITH_DISTRIBUTE)
-            if (sched == Schedule::GPUDistributed) {
+            if (sched == Schedule::GPUDistributed || sched == Schedule::GPUSplitDistributed) {
                 output_img.distribute(y);
-                fimg.inner.distribute(y);
+                if (!is_split) {
+                    fimg.inner.distribute(y);
+                }
             }
 #endif // WITH_DISTRIBUTE
             if (print_loop_nest) {
@@ -379,5 +401,7 @@ private:
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_distributed)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda)
+HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda_split)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda_distributed)
+HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda_split_distributed)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_auto_m16)

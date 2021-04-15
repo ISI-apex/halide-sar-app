@@ -82,6 +82,14 @@ add_halide_library(backprojection_cuda FROM backprojection.generator
                                               blocksize=16
                                               blocksize_gpu_tile=16
                                               blocksize_gpu_split_x=16)
+add_halide_library(backprojection_cuda_split FROM backprojection.generator
+                                       FEATURES c_plus_plus_name_mangling
+                                                large_buffers
+                                                cuda
+                                       PARAMS schedule=gpu-split
+                                              blocksize=16
+                                              blocksize_gpu_tile=16
+                                              blocksize_gpu_split_x=16)
 if(Halide_HAS_DISTRIBUTE)
     add_halide_library(backprojection_distributed FROM backprojection.generator
                                                   FEATURES c_plus_plus_name_mangling
@@ -95,6 +103,14 @@ if(Halide_HAS_DISTRIBUTE)
                                                               blocksize=16
                                                               blocksize_gpu_tile=16
                                                               blocksize_gpu_split_x=16)
+    add_halide_library(backprojection_cuda_split_distributed FROM backprojection.generator
+                                                             FEATURES c_plus_plus_name_mangling
+                                                                      large_buffers
+                                                                      cuda
+                                                             PARAMS schedule=gpu-split-distributed
+                                                                    blocksize=16
+                                                                    blocksize_gpu_tile=16
+                                                                    blocksize_gpu_split_x=16)
 endif()
 add_halide_library(backprojection_auto_m16 FROM backprojection.generator
                                            FEATURES c_plus_plus_name_mangling
@@ -130,6 +146,7 @@ target_link_libraries(sarbp PRIVATE Halide::Halide
                                     ip_pixel_locs
                                     backprojection
                                     backprojection_cuda
+                                    backprojection_cuda_split
                                     backprojection_ritsar
                                     backprojection_ritsar_s
                                     backprojection_ritsar_p
@@ -140,7 +157,8 @@ target_link_libraries(sarbp PRIVATE Halide::Halide
 if(Halide_HAS_DISTRIBUTE)
     target_compile_definitions(sarbp PRIVATE WITH_DISTRIBUTE)
     target_link_libraries(sarbp PRIVATE backprojection_distributed
-                                        backprojection_cuda_distributed)
+                                        backprojection_cuda_distributed
+                                        backprojection_cuda_split_distributed)
 endif()
 if(MPI_FOUND)
     target_compile_definitions(sarbp PRIVATE WITH_MPI)
