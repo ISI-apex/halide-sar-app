@@ -270,8 +270,7 @@ int main(int argc, char **argv) {
     }
 #endif // WITH_DISTRIBUTE
     buf_bp.allocate();
-    Buffer<double, 2> buf_bp_full(nullptr, 0);
-    int rv;
+    int rv = 0;
     for (uint32_t i = 1; i <= num_iters; i++) {
         cout << "(" << i << ") Halide backprojection start " << endl;
         start = steady_clock::now();
@@ -282,54 +281,11 @@ int main(int argc, char **argv) {
         if (rv != 0) {
             return rv;
         }
-        if (is_distributed) {
-#if defined(WITH_MPI)
-            // Send data to rank 0
-            buf_bp.copy_to_host();
-            if (rank == 0) {
-                cout << "(" << i << ") MPI full backprojection receive start" << endl;
-                start = steady_clock::now();
-                buf_bp_full = Buffer<double, 3>(2, ip.u.dim(0).extent(), ip.v.dim(0).extent());
-                // Copy buf_bp to buf_bp_full
-                memcpy(buf_bp_full.data(), buf_bp.data(), sizeof(double) * buf_bp.dim(1).extent() * buf_bp.dim(2).extent() * 2);
-                for (int r = 1; r < numprocs; r++) {
-                    // Obtain the min & extent from the node
-                    int r_min = 0, r_extent = 0;
-                    MPI_Recv(&r_min, 1, MPI_INT, r, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                    MPI_Recv(&r_extent, 1, MPI_INT, r, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                    cout << "(" << i << ") Received r_min = " << r_min << ", r_extent = " << r_extent << " from rank " << r << std::endl;
-                    // Receiving the actual content
-                    MPI_Recv(buf_bp_full.data() + r_min * 2,
-                             r_extent * 2,
-                             MPI_DOUBLE,
-                             r, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                }
-                stop = steady_clock::now();
-                cout << "(" << i << ") MPI full backprojection receive completed in "
-                     << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
-            } else {
-                cout << "(" << i << ") MPI local backprojection send start" << endl;
-                start = steady_clock::now();
-                int r_min = buf_bp.dim(2).min() * buf_bp.dim(1).extent(), r_extent = buf_bp.dim(2).extent() * buf_bp.dim(1).extent();
-                MPI_Send(&r_min, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-                MPI_Send(&r_extent, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
-                // Sending the actual content
-                MPI_Send(buf_bp.data(), r_extent * 2, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD);
-                stop = steady_clock::now();
-                cout << "(" << i << ") MPI local backprojection send completed in "
-                     << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;
-            }
-            // Prevent ranks from continuing before previous loop is complete
-            MPI_Barrier(MPI_COMM_WORLD);
-#endif // WITH_MPI
-        } else {
-            buf_bp_full = buf_bp;
-        }
     }
 #if DEBUG_BP
-    vector<size_t> shape_bp { static_cast<size_t>(buf_bp_full.dim(2).extent()),
-                              static_cast<size_t>(buf_bp_full.dim(1).extent()) };
-    cnpy::npy_save("sarbp_debug-bp.npy", (complex<double> *)buf_bp_full.begin(), shape_bp);
+    vector<size_t> shape_bp { static_cast<size_t>(buf_bp.dim(2).extent()),
+                              static_cast<size_t>(buf_bp.dim(1).extent()) };
+    cnpy::npy_save("sarbp_debug-bp.npy", (complex<double> *)buf_bp.begin(), shape_bp);
 #endif
 
     // FFTW: clean up shared context
@@ -340,7 +296,7 @@ int main(int argc, char **argv) {
         Buffer<double, 2> buf_bp_dB(ip.u.dim(0).extent(), ip.v.dim(0).extent());
         cout << "Halide dB conversion start" << endl;
         start = steady_clock::now();
-        rv = img_output_to_dB(buf_bp_full, buf_bp_dB);
+        rv = img_output_to_dB(buf_bp, buf_bp_dB);
         stop = steady_clock::now();
         cout << "Halide dB conversion returned " << rv << " in "
              << duration_cast<milliseconds>(stop - start).count() << " ms" << endl;

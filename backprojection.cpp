@@ -239,7 +239,7 @@ public:
                       .parallel(y);
 #if defined(WITH_DISTRIBUTE)
             if (sched == Schedule::GPUDistributed) {
-                output_img.distribute(y);
+                output_img.distribute(y).send_to(0);
                 fimg.inner.distribute(y);
             }
 #endif // WITH_DISTRIBUTE
@@ -315,7 +315,7 @@ public:
                       .parallel(x_vo);
 #if defined(WITH_DISTRIBUTE)
             if (sched == Schedule::CPUDistributed) {
-                output_img.distribute(y);
+                output_img.distribute(y).send_to(0);;
             }
 #endif // WITH_DISTRIBUTE
             if (print_loop_nest) {
