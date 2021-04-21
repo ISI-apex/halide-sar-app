@@ -127,17 +127,17 @@ public:
         // k_c: produces f32 scalar
         Expr k_c = k_r(nsamples / 2);
 
-        // img: produces complex f64, shape {nu*nv}
-        img(pixel) = ComplexExpr(c, Expr(0.0), Expr(0.0));
-        img(pixel) += Q_hat(pixel, rnpulses) * expj(c, -k_c * dr_i(pixel, rnpulses));
-
         // mapping from image (x,y) coordinates to elements in the per-pixel vectors
         Expr xy_to_pixel = (nu * (nv - y - 1)) + x;
+
+        // img: produces complex f64, shape {nu*nv}
+        img(x, y) = ComplexExpr(c, Expr(0.0), Expr(0.0));
+        img(x, y) += Q_hat(xy_to_pixel, rnpulses) * expj(c, -k_c * dr_i(xy_to_pixel, rnpulses));
 
         // finally...
         // fimg: produces complex f64, shape {nu, nv}
         // Updates img in RITSAR, but we need a separate Func which is also easier to schedule
-        fimg(x, y) = img(xy_to_pixel) * expj(c, k_c * dr_i(xy_to_pixel, npulses / 2));
+        fimg(x, y) = img(x, y) * expj(c, k_c * dr_i(xy_to_pixel, npulses / 2));
 
         // output_img: produce complex f64, shape {nu, nv}, but reverse row order
         output_img(c, x, y) = fimg.inner(c, x, y);
@@ -229,7 +229,7 @@ public:
             Q_hat.inner.compute_inline();
             img.inner.compute_at(fimg.inner, x_vi);
             img.inner.update(0)
-                     .reorder(c, pixel, rnpulses.x);
+                     .reorder(c, x, y, rnpulses.x);
             fimg.inner.compute_root()
                       .bound(c, 0, 2)
                       .unroll(c)
@@ -313,10 +313,12 @@ public:
             dr_i.compute_inline();
             Q_hat.inner.compute_inline();
             img.inner.compute_root()
-                     .gpu_tile(pixel, x_vo, x_vi, blocksize_gpu_tile);
+                     .gpu_blocks(y)
+                     .gpu_tile(x, x_vo, x_vi, blocksize_gpu_tile);
             img.inner.update(0)
-                     .reorder(c, pixel, rnpulses.x)
-                     .gpu_tile(pixel, x_vo, x_vi, blocksize_gpu_tile);
+                     .reorder(c, x, y, rnpulses.x)
+                     .gpu_blocks(y)
+                     .gpu_tile(x, x_vo, x_vi, blocksize_gpu_tile);
             fimg.inner.compute_root()
                       .reorder(c, x, y)
                       .gpu_blocks(y)
@@ -329,6 +331,8 @@ public:
 #if defined(WITH_DISTRIBUTE)
             if (sched == Schedule::GPUSplitDistributed) {
                 output_img.distribute(y);
+                fimg.inner.distribute(y);
+                img.inner.distribute(y);
             }
 #endif // WITH_DISTRIBUTE
             if (print_loop_nest) {
@@ -395,7 +399,7 @@ public:
             dr_i.compute_inline();
             Q_hat.inner.compute_inline();
             img.inner.compute_at(output_img, x_vo);
-            img.inner.update(0).reorder(c, pixel, rnpulses.x);
+            img.inner.update(0).reorder(c, x, y, rnpulses.x);
             fimg.inner.compute_inline();
             output_img.compute_root()
                       .split(x, x_vo, x_vi, vectorsize)
