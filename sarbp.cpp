@@ -21,9 +21,11 @@
 // Halide generators
 #include "backprojection.h"
 #include "backprojection_cuda.h"
+#include "backprojection_cuda_split.h"
 #if defined(WITH_DISTRIBUTE)
 #include "backprojection_distributed.h"
 #include "backprojection_cuda_distributed.h"
+#include "backprojection_cuda_split_distributed.h"
 #endif // WITH_DISTRIBUTE
 #include "backprojection_ritsar.h"
 #include "backprojection_ritsar_s.h"
@@ -76,7 +78,7 @@ static void print_usage(string prog, ostream& os) {
     os << "  -D, --db-max=REAL       Output image max dB" << endl;
     os << "                          Default: " << DB_MAX_DEFAULT << endl;
     os << "  -s, --schedule=NAME     One of: cpu[_distributed]" << endl;
-    os << "                                  cuda[_distributed]" << endl;
+    os << "                                  cuda[_split][_distributed]" << endl;
     os << "                                  ritsar[-s|-p|-vp]" << endl;
     os << "                                  auto-m16" << endl;
     os << "                          Default: " << SCHED_DEFAULT << endl;
@@ -198,11 +200,23 @@ int main(int argc, char **argv) {
     } else if (bp_sched == "cuda") {
         backprojection_impl = backprojection_cuda;
         cout << "Using schedule with CUDA" << endl;
+    } else if (bp_sched == "cuda_split") {
+        backprojection_impl = backprojection_cuda_split;
+        cout << "Using schedule with CUDA (split pulse)" << endl;
     } else if (bp_sched == "cuda_distributed") {
 #if defined(WITH_DISTRIBUTE)
         backprojection_impl = backprojection_cuda_distributed;
         is_distributed = true;
         cout << "Using schedule for distributed CUDA" << endl;
+#else
+        cerr << "Distributed schedules require distributed support in Halide" << endl;
+        return EXIT_FAILURE;
+#endif // WITH_DISTRIBUTE
+    } else if (bp_sched == "cuda_split_distributed") {
+#if defined(WITH_DISTRIBUTE)
+        backprojection_impl = backprojection_cuda_split_distributed;
+        is_distributed = true;
+        cout << "Using schedule for distributed CUDA (split pulse)" << endl;
 #else
         cerr << "Distributed schedules require distributed support in Halide" << endl;
         return EXIT_FAILURE;

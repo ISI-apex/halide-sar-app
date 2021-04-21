@@ -12,16 +12,20 @@ class BackprojectionGenerator : public Halide::Generator<BackprojectionGenerator
 public:
     enum class Schedule { CPU,
                           GPU,
+                          GPUSplit,
                           CPUDistributed,
                           GPUDistributed,
+                          GPUSplitDistributed,
                         };
     GeneratorParam<Schedule> sched {"schedule",
                                     Schedule::CPU,
                                     {{"cpu", Schedule::CPU},
                                      {"gpu", Schedule::GPU},
+                                     {"gpu-split", Schedule::GPUSplit},
 #if defined(WITH_DISTRIBUTE)
                                      {"cpu-distributed", Schedule::CPUDistributed},
                                      {"gpu-distributed", Schedule::GPUDistributed},
+                                     {"gpu-split-distributed", Schedule::GPUSplitDistributed},
 #endif // WITH_DISTRIBUTE
                                     }
                                    };
@@ -123,17 +127,17 @@ public:
         // k_c: produces f32 scalar
         Expr k_c = k_r(nsamples / 2);
 
-        // img: produces complex f64, shape {nu*nv}
-        img(pixel) = ComplexExpr(c, Expr(0.0), Expr(0.0));
-        img(pixel) += Q_hat(pixel, rnpulses) * expj(c, -k_c * dr_i(pixel, rnpulses));
-
         // mapping from image (x,y) coordinates to elements in the per-pixel vectors
         Expr xy_to_pixel = (nu * (nv - y - 1)) + x;
+
+        // img: produces complex f64, shape {nu*nv}
+        img(x, y) = ComplexExpr(c, Expr(0.0), Expr(0.0));
+        img(x, y) += Q_hat(xy_to_pixel, rnpulses) * expj(c, -k_c * dr_i(xy_to_pixel, rnpulses));
 
         // finally...
         // fimg: produces complex f64, shape {nu, nv}
         // Updates img in RITSAR, but we need a separate Func which is also easier to schedule
-        fimg(x, y) = img(xy_to_pixel) * expj(c, k_c * dr_i(xy_to_pixel, npulses / 2));
+        fimg(x, y) = img(x, y) * expj(c, k_c * dr_i(xy_to_pixel, npulses / 2));
 
         // output_img: produce complex f64, shape {nu, nv}, but reverse row order
         output_img(c, x, y) = fimg.inner(c, x, y);
@@ -225,7 +229,7 @@ public:
             Q_hat.inner.compute_inline();
             img.inner.compute_at(fimg.inner, x_vi);
             img.inner.update(0)
-                     .reorder(c, pixel, rnpulses.x);
+                     .reorder(c, x, y, rnpulses.x);
             fimg.inner.compute_root()
                       .bound(c, 0, 2)
                       .unroll(c)
@@ -241,6 +245,94 @@ public:
             if (sched == Schedule::GPUDistributed) {
                 output_img.distribute(y);
                 fimg.inner.distribute(y);
+            }
+#endif // WITH_DISTRIBUTE
+            if (print_loop_nest) {
+                output_img.print_loop_nest();
+            }
+            break;
+        case Schedule::GPUSplit:
+#if defined(WITH_DISTRIBUTE)
+        case Schedule::GPUSplitDistributed:
+#endif // WITH_DISTRIBUTE
+            if (!tgt.has_gpu_feature()) {
+                throw std::runtime_error("GPU schedules require GPU feature");
+            }
+            // GPU target
+            std::cout << "Scheduling for Split GPU: " << tgt << std::endl
+                      << "Vector size: " << vectorsize.value() << std::endl
+                      << "Block size: " << blocksize.value() << std::endl
+                      << "Block size GPU tile: " << blocksize_gpu_tile.value() << std::endl
+                      << "Block size GPU split x: " << blocksize_gpu_split_x.value() << std::endl;
+            win_sample.taylor.compute_root()
+                             .vectorize(sample, vectorsize)
+                             .parallel(sample, blocksize);
+            win_sample.w.compute_root()
+                        .split(sample, sample_vo, sample_vi, vectorsize)
+                        .vectorize(sample_vi)
+                        .parallel(sample_vo);
+            win_sample.w.update(0)
+                        .split(sample, sample_vo, sample_vi, vectorsize, TailStrategy::GuardWithIf)
+                        .vectorize(sample_vi)
+                        .parallel(sample_vo);
+            win_pulse.taylor.compute_root()
+                            .vectorize(pulse, vectorsize)
+                            .parallel(pulse, blocksize);
+            win_pulse.w.compute_root()
+                       .split(pulse, pulse_vo, pulse_vi, vectorsize)
+                       .vectorize(pulse_vi)
+                       .parallel(pulse_vo);
+            win_pulse.w.update(0)
+                       .split(pulse, pulse_vo, pulse_vi, vectorsize, TailStrategy::GuardWithIf)
+                       .vectorize(pulse_vi)
+                       .parallel(pulse_vo);
+            win.compute_root();
+            filt.compute_root();
+            phs_filt.inner.compute_root()
+                          .bound(c, 0, 2).unroll(c)
+                          .vectorize(sample, vectorsize)
+                          .parallel(pulse, blocksize);
+            phs_pad.inner.compute_root()
+                         .bound(c, 0, 2).unroll(c)
+                         .vectorize(sample, vectorsize)
+                         .parallel(pulse, blocksize);
+            fftsh.inner.compute_root()
+                       .bound(c, 0, 2).unroll(c)
+                       .vectorize(sample, vectorsize)
+                       .parallel(pulse, blocksize);
+            dft.inner.compute_root().parallel(pulse);
+            Q.inner.compute_at(img.inner, rnpulses.x)
+                   .store_at(img.inner, rnpulses.x)
+                   .store_in(MemoryType::Heap)
+                   .split(sample, sample_vo, sample_vi, vectorsize)
+                   .vectorize(sample_vi)
+                   .parallel(pulse);
+            norm_r0.compute_root();
+            rr0.compute_inline();
+            norm_rr0.compute_inline();
+            dr_i.compute_inline();
+            Q_hat.inner.compute_inline();
+            img.inner.compute_root()
+                     .gpu_blocks(y)
+                     .gpu_tile(x, x_vo, x_vi, blocksize_gpu_tile);
+            img.inner.update(0)
+                     .reorder(c, x, y, rnpulses.x)
+                     .gpu_blocks(y)
+                     .gpu_tile(x, x_vo, x_vi, blocksize_gpu_tile);
+            fimg.inner.compute_root()
+                      .reorder(c, x, y)
+                      .gpu_blocks(y)
+                      .gpu_tile(x, x_vo, x_vi, blocksize_gpu_tile);
+            output_img.compute_root()
+                      .bound(c, 0, 2)
+                      .unroll(c)
+                      .vectorize(x, vectorsize)
+                      .parallel(y);
+#if defined(WITH_DISTRIBUTE)
+            if (sched == Schedule::GPUSplitDistributed) {
+                output_img.distribute(y);
+                fimg.inner.distribute(y);
+                img.inner.distribute(y);
             }
 #endif // WITH_DISTRIBUTE
             if (print_loop_nest) {
@@ -307,7 +399,7 @@ public:
             dr_i.compute_inline();
             Q_hat.inner.compute_inline();
             img.inner.compute_at(output_img, x_vo);
-            img.inner.update(0).reorder(c, pixel, rnpulses.x);
+            img.inner.update(0).reorder(c, x, y, rnpulses.x);
             fimg.inner.compute_inline();
             output_img.compute_root()
                       .split(x, x_vo, x_vi, vectorsize)
@@ -355,5 +447,7 @@ private:
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_distributed)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda)
+HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda_split)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda_distributed)
+HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_cuda_split_distributed)
 HALIDE_REGISTER_GENERATOR(BackprojectionGenerator, backprojection_auto_m16)
