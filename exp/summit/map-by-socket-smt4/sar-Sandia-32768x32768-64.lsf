@@ -1,0 +1,47 @@
+#!/bin/bash
+#BSUB -P CSC436
+#BSUB -q debug
+#BSUB -W 1:00
+#BSUB -nnodes 64
+#BSUB -J SARBP-Sandia-64
+#BSUB -o SARBP-Sandia-64.%J
+
+NODES=64 # match -nnodes above
+
+# jsrun params
+NUM_RS=$((2 * ${NODES}))
+CPUS_PER_RS=21
+GPUS_PER_RS=0
+RS_PER_HOST=2
+TASKS_PER_RS=1
+BIND=rs
+
+# sarbp params
+PULSES=32768
+SAMPLES=32768
+RES_FACTOR=0.0625
+DATA=${PROJWORK}/csc436/SAR-data/Sandia_P${PULSES}_S${SAMPLES}
+PNG=${MEMBERWORK}/csc436/Sandia_P${PULSES}_S${SAMPLES}-r${RES_FACTOR}-${NODES}.png
+
+module reset
+module load gcc/10.2.0
+
+# Restrict Halide threads to number of CPU Threads per task
+export HL_NUM_THREADS=$((4 * CPUS_PER_RS / TASKS_PER_RS))
+
+echo
+echo
+env
+echo
+echo
+
+START=$(date +%s)
+CMD=(
+  jsrun -n ${NUM_RS} -a ${TASKS_PER_RS} -c ${CPUS_PER_RS} -g ${GPUS_PER_RS} -r ${RS_PER_HOST} -b ${BIND} -e prepended
+  sarbp -p ${DATA} -o ${PNG} -d -45.0 -D 0.0 -t 30 -u 2 -r ${RES_FACTOR} -s cpu_distributed
+)
+echo "${CMD[*]}"
+"${CMD[@]}"
+echo "Exit code: $?"
+END=$(date +%s)
+echo "Total time (s): $((END - START))"
