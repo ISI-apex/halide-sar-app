@@ -70,7 +70,6 @@ public:
         Expr npulses = phs.dim(2).extent();
         Expr nu = u.dim(0).extent();
         Expr nv = v.dim(0).extent();
-        Expr nd = pos_in.dim(0).extent(); // nd = 3 (spatial dimensions)
         rnpulses = RDom(0, npulses, "rnpulses");
 
         // Boundary conditions
