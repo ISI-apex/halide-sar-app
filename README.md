@@ -18,13 +18,13 @@ Off-the-shelf dependencies (probably available from your preferred package manag
 
 Custom dependencies (may need to be built from source):
 
-* [Halide](https://halide-lang.org/) >= 10.0.0
-* [cnpy](https://github.com/rogersce/cnpy)
+* [Halide](https://halide-lang.org/) >= 10.0.0 ([fork](https://github.com/ISI-apex/Halide))
+* [cnpy](https://github.com/rogersce/cnpy) ([fork](https://github.com/ISI-apex/cnpy))
 
 To enable distributed scheduling support:
 
 * MPI - e.g., [OpenMPI](https://www.open-mpi.org/)
-* [Distributed Halide](https://github.com/BachiLi/Halide/tree/distributed) (instead of upstream Halide listed above)
+* [Distributed Halide](https://github.com/BachiLi/Halide/tree/distributed) (instead of upstream Halide listed above) ([fork](https://github.com/ISI-apex/Halide/tree/distributed))
 
 
 ## Compiling
