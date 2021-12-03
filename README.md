@@ -84,3 +84,21 @@ or with a GPU CUDA schedule:
 ```sh
 ./sarbp -p ../data/Sandia/npy -o Sandia-cuda.png -d -45.0 -D 0.0 -t 30 -u 2 -s cuda
 ```
+
+
+## Citation
+
+If using this software for scientific research or publications, please cite as:
+
+Connor Imes, Tzu-Mao Li, Mark Glines, Rishi Khan and John Paul Walters, "Distributed and Heterogeneous SAR Backprojection with Halide," 2021 IEEE High Performance Extreme Computing Conference (HPEC), 2021, pp. 1-9, doi: [10.1109/HPEC49654.2021.9622855](https://doi.org/10.1109/HPEC49654.2021.9622855).
+
+```BibTex
+@INPROCEEDINGS{imes2021,
+  author={Imes, Connor and Li, Tzu-Mao and Glines, Mark and Khan, Rishi and Walters, John Paul},
+  booktitle={2021 IEEE High Performance Extreme Computing Conference (HPEC)},
+  title={Distributed and Heterogeneous SAR Backprojection with Halide},
+  year={2021},
+  pages={1-9},
+  doi={10.1109/HPEC49654.2021.9622855}}
+}
+```
